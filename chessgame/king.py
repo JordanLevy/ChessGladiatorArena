@@ -29,9 +29,10 @@ class King:
     def set_rank(self, rank):
         self.rank = rank
 
-    # get_legal_moves(String prevMove)
+    # get_legal_moves(String prev_move)
+    # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
     # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
-    def get_legal_moves(self, prevMove):
+    def get_legal_moves(self, prev_move):
         pass
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
