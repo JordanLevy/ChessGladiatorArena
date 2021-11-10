@@ -12,7 +12,7 @@ pygame.init()
 pygame.display.set_caption('test game')
 screen = pygame.display.set_mode((500, 500), 0, 32)
 
-img = pygame.image.load('5.png').convert()
+#img = pygame.image.load('5.png').convert()
 
 offset = [0, 0]
 
@@ -36,7 +36,10 @@ while True:
         rot += 180
     if middle_click:
         rot += 90
-    screen.blit(pygame.transform.rotate(img, rot), (loc[0] + offset[0], loc[1] + offset[1]))
+
+    pygame.draw.rect(screen,(0, 0, 255),(200,150,100,50))
+
+    #screen.blit(pygame.transform.rotate(img, rot), (loc[0] + offset[0], loc[1] + offset[1]))
 
     # Buttons ------------------------------------------------ #
     right_clicking = False
