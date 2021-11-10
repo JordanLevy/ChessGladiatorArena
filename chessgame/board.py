@@ -13,14 +13,14 @@ from pygame.locals import *
 pygame.init()
 # just fare start screan
 pygame.display.set_caption('test game')
-screen = pygame.display.set_mode((800, 800), 0, 32)
+screen = pygame.display.set_mode((400, 400), 0, 32)
 
 board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9, "e": [None] * 9, "f": [None] * 9,
               "g": [None] * 9,
               "h": [None] * 9}
 
-white_king = King(board_grid, True, "h", 3)
-board_grid["h"][3] = white_king
+white_king = King(board_grid, True, "g", 3)
+board_grid["g"][3] = white_king
 
 offset = [0, 0]
 
@@ -36,7 +36,7 @@ def draw_board():
             # if it's not equal to None
             if board_grid[files[i]][j]:
                 screen.blit(pygame.transform.rotate(board_grid[files[i]][j].get_img(), rot),
-                            ((i - 1) * 100, 800 - j * 100))
+                            ((i - 1) * 50, 400 - j * 50))
 
 
 # Loop ------------------------------------------------------- #
@@ -47,14 +47,9 @@ while True:
 
     mx, my = pygame.mouse.get_pos()
 
+
     rot = 0
     loc = [mx, my]
-    if clicking:
-        rot -= 90
-    if right_clicking:
-        rot += 180
-    if middle_click:
-        rot += 90
 
     BLUE = (18, 201, 192)
     WHITE = (249, 255, 212)
@@ -65,7 +60,7 @@ while True:
             square_color = WHITE
             if (i + j) % 2 == 1:
                 square_color = BLUE
-            pygame.draw.rect(screen, square_color, (i * 100, j * 100, 100, 100))
+            pygame.draw.rect(screen, square_color, (i * 50, j * 50, 50, 50))
 
     draw_board()
 
