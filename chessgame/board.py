@@ -19,8 +19,8 @@ board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9
               "g": [None] * 9,
               "h": [None] * 9}
 
-white_king = King(board_grid, True, "h", 3)
-board_grid["h"][3] = white_king
+white_king = King(board_grid, True, "g", 3)
+board_grid["g"][3] = white_king
 
 offset = [0, 0]
 
@@ -47,14 +47,9 @@ while True:
 
     mx, my = pygame.mouse.get_pos()
 
+
     rot = 0
     loc = [mx, my]
-    if clicking:
-        rot -= 90
-    if right_clicking:
-        rot += 180
-    if middle_click:
-        rot += 90
 
     BLUE = (18, 201, 192)
     WHITE = (249, 255, 212)
