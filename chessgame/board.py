@@ -16,7 +16,7 @@ screen = pygame.display.set_mode((800, 800), 0, 32)
 
 board_grid = {"a":[0]*9, "b":[0]*9, "c":[0]*9, "d":[0]*9, "e":[0]*9, "f":[0]*9, "g":[0]*9, "h":[0]*9}
 
-white_king = King(True, "h", 3)
+white_king = King(board_grid, True, "h", 3)
 board_grid["h"][3] = white_king
 
 offset = [0, 0]
