@@ -4,6 +4,8 @@
 import pygame, sys
 
 # Setup pygame/window ---------------------------------------- #
+from king import King
+
 mainClock = pygame.time.Clock()
 from pygame.locals import *
 
@@ -12,11 +14,23 @@ pygame.init()
 pygame.display.set_caption('test game')
 screen = pygame.display.set_mode((800, 800), 0, 32)
 
+board_grid = {"a":[0]*9, "b":[0]*9, "c":[0]*9, "d":[0]*9, "e":[0]*9, "f":[0]*9, "g":[0]*9, "h":[0]*9}
+
+white_king = King(True, "h", 3)
+board_grid["h"][3] = white_king
+
 offset = [0, 0]
 
 clicking = False
 right_clicking = False
 middle_click = False
+
+def draw_board():
+    files = [0, "a", "b", "c", "d", "e", "f", "g", "h"]
+    for i in range(1, 9):
+        for j in range(1, 9):
+            if board_grid[files[i]][j] != 0:
+                screen.blit(pygame.transform.rotate(board_grid[files[i]][j].get_img(), rot), ((i-1)*100, 800-j*100))
 
 # Loop ------------------------------------------------------- #
 while True:
@@ -46,7 +60,7 @@ while True:
                 square_color = BLUE
             pygame.draw.rect(screen, square_color, (i*100, j*100, 100, 100))
 
-    # screen.blit(pygame.transform.rotate(img, rot), (loc[0] + offset[0], loc[1] + offset[1]))
+    draw_board()
 
     # Buttons ------------------------------------------------ #
     right_clicking = False
