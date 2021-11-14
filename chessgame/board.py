@@ -23,7 +23,7 @@ board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9
 white_king = King(board_grid, True, "d", 1)
 board_grid["d"][1] = white_king
 
-white_queen = Queen(board_grid, True, "e", 1)
+white_queen = Queen(board_grid, True, "a", 1)
 board_grid["e"][1] = white_queen
 
 offset = [0, 0]
@@ -96,6 +96,13 @@ while True:
     # Update ------------------------------------------------- #
     pygame.display.update()
     mainClock.tick(10)
+"""""
 def run_game():
     while True:
-        
+        move_row = input("input a row (1 to 8)")
+        move_cloumb = input("imput a columbe(a to h")
+        white_queen = Queen(board_grid, True, "a", 1)
+        board_grid[move_cloumb][move_row] = white_queen
+        break
+run_game()
+"""
