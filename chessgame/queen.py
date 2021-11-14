@@ -6,7 +6,7 @@ class Queen:
     def __init__(self, board_grid, is_white, file, rank):
         self.board_grid = board_grid
         self.is_white = is_white
-        self.img = pygame.image.load('Images/WhiteKing.png').convert()
+        self.img = pygame.image.load('Images/WhiteQueen.png').convert()
         self.file = file
         self.rank = rank
         self.has_moved = False

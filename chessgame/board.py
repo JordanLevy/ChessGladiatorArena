@@ -6,6 +6,7 @@ import sys
 
 # Setup pygame/window ---------------------------------------- #
 from king import King
+from queen import Queen
 
 mainClock = pygame.time.Clock()
 from pygame.locals import *
@@ -19,8 +20,11 @@ board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9
               "g": [None] * 9,
               "h": [None] * 9}
 
-white_king = King(board_grid, True, "g", 3)
+white_king = King(board_grid, True, "d", 1)
 board_grid["d"][1] = white_king
+
+white_queen = Queen(board_grid, True, "e", 1)
+board_grid["e"][1] = white_queen
 
 offset = [0, 0]
 
@@ -92,3 +96,6 @@ while True:
     # Update ------------------------------------------------- #
     pygame.display.update()
     mainClock.tick(10)
+def run_game():
+    while True:
+        
