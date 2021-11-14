@@ -20,7 +20,7 @@ board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9
               "h": [None] * 9}
 
 white_king = King(board_grid, True, "g", 3)
-board_grid["g"][3] = white_king
+board_grid["d"][1] = white_king
 
 offset = [0, 0]
 
