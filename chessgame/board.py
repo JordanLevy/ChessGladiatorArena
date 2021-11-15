@@ -35,7 +35,7 @@ for i in range(8):
     Pawn(board_grid, move_list, False, files[i], 7)
 
 King(board_grid, move_list, True, 'e', 1)
-Queen(board_grid,True,"d",1)
+Queen(board_grid, move_list, True, 'd', 1)
 offset = [0, 0]
 
 clicking = False
