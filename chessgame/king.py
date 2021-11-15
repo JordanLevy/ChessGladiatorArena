@@ -97,7 +97,7 @@ class King:
             return False
         is_capture = not self.board_grid[f][r] is None
         is_en_passant = False
-        self.move_list.append(Move(self.is_white, 'P', self.file, self.rank, is_capture, is_en_passant, f, r))
+        self.move_list.append(Move(self.is_white, 'K', self.file, self.rank, is_capture, is_en_passant, f, r))
         self.board_grid[self.file][self.rank] = None
         self.file = f
         self.rank = r
