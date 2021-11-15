@@ -11,7 +11,7 @@ import sys
 from enpassant import EnPassant
 from king import King
 from pawn import Pawn
-
+from queen import Queen
 mainClock = pygame.time.Clock()
 
 pygame.init()
@@ -35,7 +35,7 @@ for i in range(8):
     Pawn(board_grid, move_list, False, files[i], 7)
 
 King(board_grid, move_list, True, 'e', 1)
-
+Queen(board_grid,True,"d",1)
 offset = [0, 0]
 
 clicking = False
