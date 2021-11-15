@@ -62,7 +62,7 @@ class Pawn:
                 # move forward one
                 legal_moves.append(self.file + str(self.rank + (-1, 1)[w]))
             # if it hasn't moved yet, on rank 2, and no piece in the way
-            if not self.has_moved and self.rank == (7, 2)[w] and not self.board_grid[self.file][self.rank + (-2, 2)[w]]:
+            if not self.has_moved and self.rank == (7, 2)[w] and not self.board_grid[self.file][self.rank + (-1, 1)[w]] and not self.board_grid[self.file][self.rank + (-2, 2)[w]]:
                 # move forward two
                 legal_moves.append(self.file + str(self.rank + (-2, 2)[w]))
             file_num = files.index(self.file)
