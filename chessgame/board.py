@@ -10,11 +10,7 @@ import sys
 # Setup pygame/window ---------------------------------------- #
 from enpassant import EnPassant
 from king import King
-<<<<<<< Updated upstream
-from queen import Queen
-=======
 from pawn import Pawn
->>>>>>> Stashed changes
 
 mainClock = pygame.time.Clock()
 
@@ -38,15 +34,7 @@ for i in range(8):
 for i in range(8):
     Pawn(board_grid, move_list, False, files[i], 7)
 
-<<<<<<< Updated upstream
-white_king = King(board_grid, True, "d", 1)
-board_grid["d"][1] = white_king
-
-white_queen = Queen(board_grid, True, "a", 1)
-board_grid["e"][1] = white_queen
-=======
 King(board_grid, move_list, True, 'e', 1)
->>>>>>> Stashed changes
 
 offset = [0, 0]
 
@@ -146,18 +134,4 @@ while True:
 
     # Update ------------------------------------------------- #
     pygame.display.update()
-<<<<<<< Updated upstream
-    mainClock.tick(10)
-"""""
-def run_game():
-    while True:
-        move_row = input("input a row (1 to 8)")
-        move_cloumb = input("imput a columbe(a to h")
-        white_queen = Queen(board_grid, True, "a", 1)
-        board_grid[move_cloumb][move_row] = white_queen
-        break
-run_game()
-"""
-=======
     mainClock.tick(100)
->>>>>>> Stashed changes
