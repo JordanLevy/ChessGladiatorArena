@@ -12,8 +12,8 @@ from enpassant import EnPassant
 from king import King
 from pawn import Pawn
 from queen import Queen
-from Bishop import Bishop
-from Knight import Knight
+from bishop import Bishop
+from knight import Knight
 from rook import Rook
 
 mainClock = pygame.time.Clock()
@@ -45,22 +45,11 @@ release_square = ['', 0]
 
 
 def setup_board():
-    # white pawn row
-    for i in range(8):
-        Pawn(board_grid, move_list, True, files[i], 2)
-
-    # black pawn row
-    for i in range(8):
-        Pawn(board_grid, move_list, False, files[i], 7)
 
     King(board_grid, move_list, True, 'e', 1)
     King(board_grid, move_list, False, 'e', 8)
 
     Queen(board_grid, move_list, True, 'd', 1)
-    Bishop(board_grid,move_list,False,'c',8)
-    Knight(board_grid,move_list,True,'c',1)
-    Rook(board_grid, move_list, True, 'h', 4)
-
     Queen(board_grid, move_list, False, 'd', 8)
 
     Rook(board_grid, move_list, True, 'a', 1)
@@ -72,6 +61,18 @@ def setup_board():
     Bishop(board_grid, move_list, True, 'f', 1)
     Bishop(board_grid, move_list, False, 'c', 8)
     Bishop(board_grid, move_list, False, 'f', 8)
+
+    Knight(board_grid, move_list, True, 'b', 1)
+    Knight(board_grid, move_list, True, 'g', 1)
+    Knight(board_grid, move_list, False, 'b', 8)
+    Knight(board_grid, move_list, False, 'g', 8)
+
+    # white pawn row
+    for i in range(8):
+        Pawn(board_grid, move_list, True, files[i], 2)
+    # black pawn row
+    for i in range(8):
+        Pawn(board_grid, move_list, False, files[i], 7)
 
 def draw_board():
     f = [0, "a", "b", "c", "d", "e", "f", "g", "h"]
