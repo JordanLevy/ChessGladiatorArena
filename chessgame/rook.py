@@ -4,7 +4,7 @@ from enpassant import EnPassant
 from move import Move
 
 
-class King:
+class Rook:
 
     def __init__(self, board_grid, move_list, is_white, file, rank):
         self.board_grid = board_grid
@@ -12,9 +12,9 @@ class King:
         self.move_list = move_list
         self.is_white = is_white
         if is_white:
-            self.img = pygame.image.load('Images/WhiteKing.png')
+            self.img = pygame.image.load('Images/WhiteRook.png')
         else:
-            self.img = pygame.image.load('Images/BlackKing.png')
+            self.img = pygame.image.load('Images/BlackRook.png')
         self.img = pygame.transform.scale(self.img, (50, 50))
         self.file = file
         self.rank = rank
@@ -44,17 +44,6 @@ class King:
     def get_is_black(self):
         return not self.is_white
 
-    def defended_by_enemy(self, f, r):
-        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        target = f + str(r)
-        for i in range(0, 7):
-            for j in range(1, 8):
-                s = self.board_grid[files[i]][j]
-                if s and (not type(s) is EnPassant) and (self.is_white != s.get_is_white()) and (
-                        target in s.get_legal_captures()):
-                    return True
-        return False
-
     def get_legal_captures(self):
         return []
 
@@ -68,25 +57,49 @@ class King:
         b = self.get_is_black()
         file_num = files.index(self.file)
 
-        for i in range(-1, 2):
-            f = file_num + i
-            # if file out of bounds
-            if f < 0 or f > 7:
+        for i in range(0, 5):
+            if i == 2:
                 continue
-            for j in range(-1, 2):
-                r = self.rank + j
-                # if rank out of bounds
-                if r < 1 or r > 8:
-                    continue
-                s = self.board_grid[files[f]][r]
-                # if square is occupied by a friendly piece, it's not en en passant marker, and it's friendly
-                if s and not type(s) is EnPassant and w == s.get_is_white():
-                    # king is blocked by its own piece
-                    continue
-                # if square is controlled by an enemy piece
-                if self.defended_by_enemy(files[f], r):
-                    continue
-                legal_moves.append(files[f] + str(r))
+            print(i)
+
+        # left/right
+        for k in [range(file_num - 1, -1, -1), range(file_num + 1, 8)]:
+            for i in k:
+                s = self.board_grid[files[i]][self.rank]
+                # if there's something on this square
+                if s:
+                    # if it's an en passant marker
+                    if type(s) is EnPassant:
+                        # add move and keep looking
+                        legal_moves.append(files[i] + str(self.rank))
+                        continue
+                    # if it's a piece
+                    else:
+                        # if it's an opposing piece
+                        if w != s.get_is_white():
+                            # add the move
+                            legal_moves.append(files[i] + str(self.rank))
+                        # stop looking
+                        break
+                # if it's an empty square
+                else:
+                    # add the move and keep looking
+                    legal_moves.append(files[i] + str(self.rank))
+
+        # down/up
+        for k in [range(self.rank - 1, 1, -1), range(self.rank + 1, 9)]:
+            for i in k:
+                s = self.board_grid[self.file][i]
+                if s:
+                    if type(s) is EnPassant:
+                        legal_moves.append(self.file + str(i))
+                        continue
+                    else:
+                        if w != s.get_is_white():
+                            legal_moves.append(self.file + str(i))
+                        break
+                else:
+                    legal_moves.append(self.file + str(i))
 
         return legal_moves
 
@@ -100,7 +113,7 @@ class King:
         # only pawns can capture en passant markers
         is_capture = not self.board_grid[f][r] is None and not type(self.board_grid[f][r]) is EnPassant
         is_en_passant = False
-        self.move_list.append(Move(self.is_white, 'K', self.file, self.rank, is_capture, is_en_passant, f, r))
+        self.move_list.append(Move(self.is_white, 'R', self.file, self.rank, is_capture, is_en_passant, f, r))
         self.board_grid[self.file][self.rank] = None
         self.file = f
         self.rank = r

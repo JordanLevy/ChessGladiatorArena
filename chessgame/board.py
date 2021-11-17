@@ -14,6 +14,7 @@ from pawn import Pawn
 from queen import Queen
 from Bishop import Bishop
 
+from rook import Rook
 
 mainClock = pygame.time.Clock()
 
@@ -55,6 +56,7 @@ def setup_board():
     King(board_grid, move_list, True, 'e', 1)
     Queen(board_grid, move_list, True, 'd', 1)
     Bishop(board_grid,move_list,False,'c',8)
+    Rook(board_grid, move_list, True, 'h', 4)
 
 def draw_board():
     f = [0, "a", "b", "c", "d", "e", "f", "g", "h"]
