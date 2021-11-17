@@ -58,8 +58,7 @@ def setup_board():
 
     Queen(board_grid, move_list, True, 'd', 1)
     Bishop(board_grid,move_list,False,'c',8)
-    Knight(board_grid,move_list,True,'c',1)
-    Rook(board_grid, move_list, True, 'h', 4)
+    Knight(board_grid,move_list,True,'b',1)
 
     Queen(board_grid, move_list, False, 'd', 8)
 
