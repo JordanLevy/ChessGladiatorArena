@@ -87,7 +87,7 @@ class Rook:
                     legal_moves.append(files[i] + str(self.rank))
 
         # down/up
-        for k in [range(self.rank - 1, 1, -1), range(self.rank + 1, 9)]:
+        for k in [range(self.rank - 1, 0, -1), range(self.rank + 1, 9)]:
             for i in k:
                 s = self.board_grid[self.file][i]
                 if s:
