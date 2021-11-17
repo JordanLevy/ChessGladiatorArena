@@ -54,10 +54,24 @@ def setup_board():
         Pawn(board_grid, move_list, False, files[i], 7)
 
     King(board_grid, move_list, True, 'e', 1)
+    King(board_grid, move_list, False, 'e', 8)
+
     Queen(board_grid, move_list, True, 'd', 1)
     Bishop(board_grid,move_list,False,'c',8)
     Knight(board_grid,move_list,True,'c',1)
     Rook(board_grid, move_list, True, 'h', 4)
+
+    Queen(board_grid, move_list, False, 'd', 8)
+
+    Rook(board_grid, move_list, True, 'a', 1)
+    Rook(board_grid, move_list, True, 'h', 1)
+    Rook(board_grid, move_list, False, 'a', 8)
+    Rook(board_grid, move_list, False, 'h', 8)
+
+    Bishop(board_grid, move_list, True, 'c', 1)
+    Bishop(board_grid, move_list, True, 'f', 1)
+    Bishop(board_grid, move_list, False, 'c', 8)
+    Bishop(board_grid, move_list, False, 'f', 8)
 
 def draw_board():
     f = [0, "a", "b", "c", "d", "e", "f", "g", "h"]
