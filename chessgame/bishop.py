@@ -4,7 +4,7 @@ from enpassant import EnPassant
 from move import Move
 
 
-class Knight:
+class Bishop:
 
     def __init__(self, board_grid, move_list, is_white, file, rank):
         self.board_grid = board_grid
@@ -12,9 +12,9 @@ class Knight:
         self.move_list = move_list
         self.is_white = is_white
         if is_white:
-            self.img = pygame.image.load('Images/WhiteKnight.png')
+            self.img = pygame.image.load('Images/WhiteBishop.png')
         else:
-            self.img = pygame.image.load('Images/BlackKnight.png')
+            self.img = pygame.image.load('Images/BlackBishop.png')
         self.img = pygame.transform.scale(self.img, (50, 50))
         self.file = file
         self.rank = rank
@@ -70,20 +70,18 @@ class Knight:
         b = self.get_is_black()
         file_num = files.index(self.file)
 
-        for i in range(-2, 3):
+        for i in range(-7, 8):
             f = file_num + i
             # if file out of bounds
             if f < 0 or f > 7:
                 continue
-            for j in range(-2, 3):
+            for j in range(-7, 8):
                 r = self.rank + j
                 # if rank out of bounds
                 if r < 1 or r > 8:
                     continue
-                # this is for every move a king can make all 8 of them
-                if (f != file_num + 2 or r != self.rank + 1) and (f != file_num + 2 or r != self.rank - 1) and (f != file_num - 2 or r != self.rank + 1) and (f != file_num - 2 or r != self.rank - 1) and (f != file_num + 1 or r != self.rank + 2) and (f != file_num + 1 or r != self.rank - 2) and (f != file_num - 1 or r != self.rank + 2) and (f != file_num - 1 or r != self.rank - 2):
+                if i != j and i != -j:
                     continue
-
                 s = self.board_grid[files[f]][r]
                 # if square is occupied by a friendly piece, it's not en en passant marker, and it's friendly
                 if s and not type(s) is EnPassant and w == s.get_is_white():
@@ -104,7 +102,7 @@ class Knight:
         if not f + str(r) in legal_moves:
             print('illegal move')
             return False
-        is_capture = not self.board_grid[f][r] is None
+        is_capture = not self.board_grid[f][r] is None and not type(self.board_grid[f][r]) is EnPassant
         is_en_passant = False
         self.move_list.append(Move(self.is_white, 'K', self.file, self.rank, is_capture, is_en_passant, f, r))
         self.board_grid[self.file][self.rank] = None
