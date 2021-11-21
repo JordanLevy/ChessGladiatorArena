@@ -127,7 +127,67 @@ class Queen:
                     break
             else:
                 legal_moves.append(files[f] + str(r))
+
+        # down/right
+        for i in range(1, 9):
+            f = file_num + i
+            r = self.rank - i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    if w != s.get_is_white():
+                        legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+        # up/left
+        for i in range(1, 9):
+            f = file_num - i
+            r = self.rank + i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    if w != s.get_is_white():
+                        legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+            # down/left
+        for i in range(1, 9):
+            f = file_num - i
+            r = self.rank - i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    if w != s.get_is_white():
+                        legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+
         return legal_moves
+
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
     # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
     def move(self, f, r):
