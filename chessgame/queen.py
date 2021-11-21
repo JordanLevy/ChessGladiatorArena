@@ -70,31 +70,64 @@ class Queen:
         b = self.get_is_black()
         file_num = files.index(self.file)
 
-        for i in range(-7, 8):
+    # left/right
+        for k in [range(file_num - 1, -1, -1), range(file_num + 1, 8)]:
+            for i in k:
+                s = self.board_grid[files[i]][self.rank]
+                # if there's something on this square
+                if s:
+                    # if it's an en passant marker
+                    if type(s) is EnPassant:
+                        # add move and keep looking
+                        legal_moves.append(files[i] + str(self.rank))
+                        continue
+                    # if it's a piece
+                    else:
+                        # if it's an opposing piece
+                        if w != s.get_is_white():
+                            # add the move
+                            legal_moves.append(files[i] + str(self.rank))
+                        # stop looking
+                        break
+                # if it's an empty square
+                else:
+                    # add the move and keep looking
+                    legal_moves.append(files[i] + str(self.rank))
+
+        # down/up
+        for k in [range(self.rank - 1, 0, -1), range(self.rank + 1, 9)]:
+            for i in k:
+                s = self.board_grid[self.file][i]
+                if s:
+                    if type(s) is EnPassant:
+                        legal_moves.append(self.file + str(i))
+                        continue
+                    else:
+                        if w != s.get_is_white():
+                            legal_moves.append(self.file + str(i))
+                        break
+                else:
+                    legal_moves.append(self.file + str(i))
+        # up/right
+        for i in range(1,9):
             f = file_num + i
-            # if file out of bounds
+            r = self.rank + i
             if f < 0 or f > 7:
                 continue
-            for j in range(-7, 8):
-                r = self.rank + j
-                # if rank out of bounds
-                if r < 1 or r > 8:
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
                     continue
-                if f != file_num and i != j and i != -j and r != self.rank:
-                    continue
-                s = self.board_grid[files[f]][r]
-                # if square is occupied by a friendly piece, it's not en en passant marker, and it's friendly
-                if s and not type(s) is EnPassant and w == s.get_is_white():
-                    # king is blocked by its own piece
-                    continue
-                # if square is controlled by an enemy piece
-                if self.defended_by_enemy(files[f], r):
-                    continue
+                else:
+                    if w != s.get_is_white():
+                        legal_moves.append(files[f] + str(r))
+                    break
+            else:
                 legal_moves.append(files[f] + str(r))
-
         return legal_moves
-
-
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
     # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
     def move(self, f, r):

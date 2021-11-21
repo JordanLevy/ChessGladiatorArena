@@ -57,11 +57,6 @@ class Rook:
         b = self.get_is_black()
         file_num = files.index(self.file)
 
-        for i in range(0, 5):
-            if i == 2:
-                continue
-            print(i)
-
         # left/right
         for k in [range(file_num - 1, -1, -1), range(file_num + 1, 8)]:
             for i in k:
