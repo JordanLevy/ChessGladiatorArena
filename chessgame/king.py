@@ -2,6 +2,7 @@ import pygame
 
 from enpassant import EnPassant
 from move import Move
+from pawn import Pawn
 from rook import Rook
 
 
@@ -45,19 +46,40 @@ class King:
     def get_is_black(self):
         return not self.is_white
 
+    def is_in_check(self):
+        return self.defended_by_enemy(self.file, self.rank)
+
     def defended_by_enemy(self, f, r):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         target = f + str(r)
-        for i in range(0, 7):
-            for j in range(1, 8):
+        for i in range(0, 8):
+            for j in range(1, 9):
                 s = self.board_grid[files[i]][j]
                 if s and (not type(s) is EnPassant) and (self.is_white != s.get_is_white()) and (
-                        target in s.get_legal_captures()):
+                        target in s.get_defended_squares()):
                     return True
         return False
 
-    def get_legal_captures(self):
-        return []
+    def get_defended_squares(self):
+        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        legal_moves = []
+        w = self.get_is_white()
+        b = self.get_is_black()
+        file_num = files.index(self.file)
+
+        for i in range(-1, 2):
+            f = file_num + i
+            # if file out of bounds
+            if f < 0 or f > 7:
+                continue
+            for j in range(-1, 2):
+                r = self.rank + j
+                # if rank out of bounds
+                if r < 1 or r > 8:
+                    continue
+                legal_moves.append(files[f] + str(r))
+
+        return legal_moves
 
     # get_legal_moves(String prev_move)
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")

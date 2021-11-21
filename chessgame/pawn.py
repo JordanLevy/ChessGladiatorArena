@@ -1,7 +1,11 @@
 import pygame
 
+from bishop import Bishop
+from knight import Knight
 from move import Move
 from enpassant import EnPassant
+from queen import Queen
+from rook import Rook
 
 
 class Pawn:
@@ -44,8 +48,36 @@ class Pawn:
     def get_is_black(self):
         return not self.is_white
 
-    def get_legal_captures(self):
-        return[]
+    def promote(self, promo_piece):
+        if promo_piece == 'Q':
+            self.board_grid[self.file][self.rank] = Queen(self.board_grid, self.move_list, self.is_white, self.file,
+                                                          self.rank)
+        elif promo_piece == 'R':
+            self.board_grid[self.file][self.rank] = Rook(self.board_grid, self.move_list, self.is_white, self.file,
+                                                         self.rank)
+        elif promo_piece == 'B':
+            self.board_grid[self.file][self.rank] = Bishop(self.board_grid, self.move_list, self.is_white, self.file,
+                                                           self.rank)
+        else:
+            self.board_grid[self.file][self.rank] = Knight(self.board_grid, self.move_list, self.is_white, self.file,
+                                                           self.rank)
+
+    def get_defended_squares(self):
+        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        legal_moves = []
+        w = self.get_is_white()
+        b = self.get_is_black()
+        file_num = files.index(self.file)
+
+        # if it's not on the a-file
+        if file_num > 0:
+            legal_moves.append(files[file_num - 1] + str(self.rank + (-1, 1)[w]))
+
+        # if it's not on the h-file
+        if file_num < 7:
+            legal_moves.append(files[file_num + 1] + str(self.rank + (-1, 1)[w]))
+
+        return legal_moves
 
     # get_legal_moves(String prev_move)
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
@@ -93,6 +125,7 @@ class Pawn:
             return False
         is_capture = not self.board_grid[f][r] is None
         is_en_passant = type(self.board_grid[f][r]) is EnPassant
+        is_promotion = (r == 8)
         self.move_list.append(Move(self.is_white, 'P', self.file, self.rank, is_capture, is_en_passant, f, r))
         # if it's en passant, handle the capture
         if is_en_passant:
@@ -108,4 +141,11 @@ class Pawn:
         self.rank = r
         self.board_grid[self.file][self.rank] = self
         self.has_moved = True
+
+        if is_promotion:
+            promo_piece = ''
+            while not promo_piece in ['Q', 'R', 'B', 'N']:
+                print('Choose which piece to promote to (Q, R, B, N):\n')
+                promo_piece = input()
+            promote(promo_piece)
         return True

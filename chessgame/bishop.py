@@ -44,21 +44,87 @@ class Bishop:
     def get_is_black(self):
         return not self.is_white
 
-    def get_legal_captures(self):
-        return []
-
-
-
-    def defended_by_enemy(self, f, r):
+    def get_defended_squares(self):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        target = f + str(r)
-        for i in range(0, 7):
-            for j in range(1, 8):
-                s = self.board_grid[files[i]][j]
-                if s and (not type(s) is EnPassant) and (self.is_white != s.get_is_white()) and (target in s.get_legal_captures()):
-                    return True
-        return False
+        legal_moves = []
+        w = self.get_is_white()
+        b = self.get_is_black()
+        file_num = files.index(self.file)
+        # up/right
+        for i in range(1, 9):
+            f = file_num + i
+            r = self.rank + i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
 
+        # down/right
+        for i in range(1, 9):
+            f = file_num + i
+            r = self.rank - i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+        # up/left
+        for i in range(1, 9):
+            f = file_num - i
+            r = self.rank + i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+            # down/left
+        for i in range(1, 9):
+            f = file_num - i
+            r = self.rank - i
+            if f < 0 or f > 7:
+                continue
+            if r < 1 or r > 8:
+                continue
+            s = self.board_grid[files[f]][r]
+            if s:
+                if type(s) is EnPassant:
+                    legal_moves.append(files[f] + str(r))
+                    continue
+                else:
+                    legal_moves.append(files[f] + str(r))
+                    break
+            else:
+                legal_moves.append(files[f] + str(r))
+
+        return legal_moves
 
     # get_legal_moves(String prev_move)
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")

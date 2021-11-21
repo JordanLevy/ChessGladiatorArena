@@ -44,21 +44,8 @@ class Knight:
     def get_is_black(self):
         return not self.is_white
 
-    def get_legal_captures(self):
-        return []
-
-
-
-    def defended_by_enemy(self, f, r):
-        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        target = f + str(r)
-        for i in range(0, 7):
-            for j in range(1, 8):
-                s = self.board_grid[files[i]][j]
-                if s and (not type(s) is EnPassant) and (self.is_white != s.get_is_white()) and (target in s.get_legal_captures()):
-                    return True
-        return False
-
+    def get_defended_squares(self):
+        return self.get_legal_moves()
 
     # get_legal_moves(String prev_move)
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
@@ -88,9 +75,6 @@ class Knight:
                 # if square is occupied by a friendly piece, it's not en en passant marker, and it's friendly
                 if s and not type(s) is EnPassant and w == s.get_is_white():
                     # king is blocked by its own piece
-                    continue
-                # if square is controlled by an enemy piece
-                if self.defended_by_enemy(files[f], r):
                     continue
                 legal_moves.append(files[f] + str(r))
 

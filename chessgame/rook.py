@@ -44,8 +44,50 @@ class Rook:
     def get_is_black(self):
         return not self.is_white
 
-    def get_legal_captures(self):
-        return []
+    def get_defended_squares(self):
+        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        legal_moves = []
+        w = self.get_is_white()
+        b = self.get_is_black()
+        file_num = files.index(self.file)
+
+        # left/right
+        for k in [range(file_num - 1, -1, -1), range(file_num + 1, 8)]:
+            for i in k:
+                s = self.board_grid[files[i]][self.rank]
+                # if there's something on this square
+                if s:
+                    # if it's an en passant marker
+                    if type(s) is EnPassant:
+                        # add move and keep looking
+                        legal_moves.append(files[i] + str(self.rank))
+                        continue
+                    # if it's a piece
+                    else:
+                        # add the move
+                        legal_moves.append(files[i] + str(self.rank))
+                        # stop looking
+                        break
+                # if it's an empty square
+                else:
+                    # add the move and keep looking
+                    legal_moves.append(files[i] + str(self.rank))
+
+        # down/up
+        for k in [range(self.rank - 1, 0, -1), range(self.rank + 1, 9)]:
+            for i in k:
+                s = self.board_grid[self.file][i]
+                if s:
+                    if type(s) is EnPassant:
+                        legal_moves.append(self.file + str(i))
+                        continue
+                    else:
+                        legal_moves.append(self.file + str(i))
+                        break
+                else:
+                    legal_moves.append(self.file + str(i))
+
+        return legal_moves
 
     # get_legal_moves(String prev_move)
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")

@@ -43,11 +43,16 @@ release_y = -1
 click_square = ['', 0]
 release_square = ['', 0]
 
+white_king = None
+black_king = None
+
 
 def setup_board():
+    global white_king
+    global black_king
 
-    King(board_grid, move_list, True, 'e', 1)
-    King(board_grid, move_list, False, 'e', 8)
+    white_king = King(board_grid, move_list, True, 'e', 1)
+    black_king = King(board_grid, move_list, False, 'e', 8)
 
     Queen(board_grid, move_list, True, 'd', 1)
     Queen(board_grid, move_list, False, 'd', 8)
@@ -108,6 +113,7 @@ def run_game():
 
         BLUE = (18, 201, 192)
         WHITE = (249, 255, 212)
+        RED = (255, 0, 0)
 
         square_color = BLUE
         for i in range(8):
@@ -115,6 +121,10 @@ def run_game():
                 square_color = WHITE
                 if (i + j) % 2 == 1:
                     square_color = BLUE
+                if white_king.is_in_check() and i == files.index(white_king.get_file()) and (8-j) == white_king.get_rank():
+                    square_color = RED
+                if black_king.is_in_check() and i == files.index(black_king.get_file()) and (8-j) == black_king.get_rank():
+                    square_color = RED
                 pygame.draw.rect(screen, square_color, (i * 50, j * 50, 50, 50))
 
         draw_board()
