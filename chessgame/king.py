@@ -119,12 +119,16 @@ class King:
             if rook and type(rook) is Rook and not rook.get_has_moved():
                 # check for pieces in the way
                 piece_blocking = False
+                through_check = False
                 for i in ['b', 'c', 'd']:
                     s = self.board_grid[i][self.rank]
                     if s:
                         piece_blocking = True
+                for i in ['c', 'd', 'e']:
+                    if self.defended_by_enemy(i, self.rank):
+                        through_check = True
                 # if there are no pieces in the way of long castle
-                if not piece_blocking:
+                if not piece_blocking and not through_check:
                     # add long castle to legal moves
                     legal_moves.append('O-O-O')
 
@@ -133,12 +137,16 @@ class King:
             if rook and type(rook) is Rook and not rook.get_has_moved():
                 # check for pieces in the way
                 piece_blocking = False
+                through_check = False
                 for i in ['f', 'g']:
                     s = self.board_grid[i][self.rank]
                     if s:
                         piece_blocking = True
+                for i in ['e', 'f', 'g']:
+                    if self.defended_by_enemy(i, self.rank):
+                        through_check = True
                 # if there are no pieces in the way of long castle
-                if not piece_blocking:
+                if not piece_blocking and not through_check:
                     # add long castle to legal moves
                     legal_moves.append('O-O')
 
