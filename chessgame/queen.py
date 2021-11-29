@@ -1,3 +1,4 @@
+from move import Move
 from enpassant import EnPassant
 from king import King
 from move import Move
@@ -254,4 +255,10 @@ class Queen(Piece):
                     break
             else:
                 legal_moves.append(files[f] + str(r))
+        for i in range(len(legal_moves)):
+            f = legal_moves[i][0]
+            r = int(legal_moves[i][1])
+            m = Move(self.is_white, self.letter, self.file, self.rank, False, False, f, r)
+            if self.your_k_check(m):
+                legal_moves.pop(i)
         return legal_moves
