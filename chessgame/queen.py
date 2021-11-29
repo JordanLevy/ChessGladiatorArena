@@ -1,4 +1,5 @@
 from enpassant import EnPassant
+from king import King
 from piece import Piece
 
 
@@ -26,7 +27,7 @@ class Queen(Piece):
                 # if there's something on this square
                 if s:
                     # if it's an en passant marker
-                    if type(s) is EnPassant:
+                    if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                         # add move and keep looking
                         legal_moves.append(files[i] + str(self.rank))
                         continue
@@ -46,7 +47,7 @@ class Queen(Piece):
             for i in k:
                 s = self.board_grid[self.file][i]
                 if s:
-                    if type(s) is EnPassant:
+                    if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                         legal_moves.append(self.file + str(i))
                         continue
                     else:
@@ -64,7 +65,7 @@ class Queen(Piece):
                 continue
             s = self.board_grid[files[f]][r]
             if s:
-                if type(s) is EnPassant:
+                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                     legal_moves.append(files[f] + str(r))
                     continue
                 else:
@@ -83,7 +84,7 @@ class Queen(Piece):
                 continue
             s = self.board_grid[files[f]][r]
             if s:
-                if type(s) is EnPassant:
+                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                     legal_moves.append(files[f] + str(r))
                     continue
                 else:
@@ -101,7 +102,7 @@ class Queen(Piece):
                 continue
             s = self.board_grid[files[f]][r]
             if s:
-                if type(s) is EnPassant:
+                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                     legal_moves.append(files[f] + str(r))
                     continue
                 else:
@@ -119,7 +120,7 @@ class Queen(Piece):
                 continue
             s = self.board_grid[files[f]][r]
             if s:
-                if type(s) is EnPassant:
+                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                     legal_moves.append(files[f] + str(r))
                     continue
                 else:

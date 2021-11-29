@@ -46,6 +46,10 @@ class Board:
                     new_piece = Queen(new_board, s.get_is_white(), s.get_file(), s.get_rank())
                 elif type(s) is King:
                     new_piece = King(new_board, s.get_is_white(), s.get_file(), s.get_rank())
+                    if s.get_is_white():
+                        new_board.white_king = new_piece
+                    else:
+                        new_board.black_king = new_piece
                 new_board.board_grid[i][j] = new_piece
         for i in range(len(self.move_list)):
             new_board.move_list[i] = copy.deepcopy(self.move_list[i])

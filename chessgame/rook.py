@@ -29,7 +29,7 @@ class Rook(Piece):
                 # if there's something on this square
                 if s:
                     # if it's an en passant marker
-                    if type(s) is EnPassant:
+                    if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                         # add move and keep looking
                         legal_moves.append(files[i] + str(self.rank))
                         continue
@@ -49,7 +49,7 @@ class Rook(Piece):
             for i in k:
                 s = self.board_grid[self.file][i]
                 if s:
-                    if type(s) is EnPassant:
+                    if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
                         legal_moves.append(self.file + str(i))
                         continue
                     else:
