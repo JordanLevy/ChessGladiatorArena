@@ -1,50 +1,18 @@
-import pygame
-
 from enpassant import EnPassant
 from move import Move
-from pawn import Pawn
+from piece import Piece
 from rook import Rook
 
 
-class King:
+class King(Piece):
 
-    def __init__(self, board_grid, move_list, is_white, file, rank):
-        self.board_grid = board_grid
-        self.board_grid[file][rank] = self
-        self.move_list = move_list
-        self.is_white = is_white
+    def __init__(self, board, is_white, file, rank):
+        super().__init__(board, is_white, file, rank)
+        self.letter = 'K'
         if is_white:
-            self.img = pygame.image.load('Images/WhiteKing.png')
+            self.img = 'Images/WhiteKing.png'
         else:
-            self.img = pygame.image.load('Images/BlackKing.png')
-        self.img = pygame.transform.scale(self.img, (50, 50))
-        self.file = file
-        self.rank = rank
-        self.has_moved = False
-
-    def get_img(self):
-        return self.img
-
-    def get_has_moved(self):
-        return self.has_moved
-
-    def get_file(self):
-        return self.file
-
-    def get_rank(self):
-        return self.rank
-
-    def set_file(self, file):
-        self.file = file
-
-    def set_rank(self, rank):
-        self.rank = rank
-
-    def get_is_white(self):
-        return self.is_white
-
-    def get_is_black(self):
-        return not self.is_white
+            self.img = 'Images/BlackKing.png'
 
     def is_in_check(self):
         return self.defended_by_enemy(self.file, self.rank)
@@ -81,9 +49,6 @@ class King:
 
         return legal_moves
 
-    # get_legal_moves(String prev_move)
-    # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
-    # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
     def get_legal_moves(self):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         legal_moves = []

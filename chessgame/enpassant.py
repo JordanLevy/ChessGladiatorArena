@@ -5,16 +5,16 @@ from move import Move
 
 class EnPassant:
 
-    def __init__(self, board_grid, move_list, is_white, file, rank, move_num):
-        self.board_grid = board_grid
+    def __init__(self, board, is_white, file, rank, move_num):
+        self.letter = 'EP'
+        self.board_grid = board.board_grid
         self.board_grid[file][rank] = self
-        self.move_list = move_list
+        self.move_list = board.move_list
         self.is_white = is_white
         if is_white:
-            self.img = pygame.image.load('Images/WhitePawn.png')
+            self.img = 'Images/WhitePawn.png'
         else:
-            self.img = pygame.image.load('Images/BlackPawn.png')
-        self.img = pygame.transform.scale(self.img, (25, 25))
+            self.img = 'Images/BlackPawn.png'
         self.file = file
         self.rank = rank
         self.move_num = move_num
@@ -48,3 +48,6 @@ class EnPassant:
 
     def move(self, f, r):
         pass
+
+    def __str__(self):
+        return ('b', 'w')[self.is_white] + self.letter

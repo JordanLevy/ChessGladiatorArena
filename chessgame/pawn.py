@@ -1,66 +1,31 @@
-import pygame
-
 from bishop import Bishop
 from knight import Knight
 from move import Move
 from enpassant import EnPassant
+from piece import Piece
 from queen import Queen
 from rook import Rook
 
 
-class Pawn:
+class Pawn(Piece):
 
-    def __init__(self, board_grid, move_list, is_white, file, rank):
-        self.board_grid = board_grid
-        self.board_grid[file][rank] = self
-        self.move_list = move_list
-        self.is_white = is_white
+    def __init__(self, board, is_white, file, rank):
+        super().__init__(board, is_white, file, rank)
+        self.letter = 'P'
         if is_white:
-            self.img = pygame.image.load('Images/WhitePawn.png')
+            self.img = 'Images/WhitePawn.png'
         else:
-            self.img = pygame.image.load('Images/BlackPawn.png')
-        self.img = pygame.transform.scale(self.img, (50, 50))
-        self.file = file
-        self.rank = rank
-        self.has_moved = False
-
-    def get_img(self):
-        return self.img
-
-    def get_has_moved(self):
-        return self.has_moved
-
-    def get_file(self):
-        return self.file
-
-    def get_rank(self):
-        return self.rank
-
-    def set_file(self, file):
-        self.file = file
-
-    def set_rank(self, rank):
-        self.rank = rank
-
-    def get_is_white(self):
-        return self.is_white
-
-    def get_is_black(self):
-        return not self.is_white
+            self.img = 'Images/BlackPawn.png'
 
     def promote(self, promo_piece):
         if promo_piece == 'Q':
-            self.board_grid[self.file][self.rank] = Queen(self.board_grid, self.move_list, self.is_white, self.file,
-                                                          self.rank)
+            self.board_grid[self.file][self.rank] = Queen(self.board, self.is_white, self.file, self.rank)
         elif promo_piece == 'R':
-            self.board_grid[self.file][self.rank] = Rook(self.board_grid, self.move_list, self.is_white, self.file,
-                                                         self.rank)
+            self.board_grid[self.file][self.rank] = Rook(self.board, self.is_white, self.file, self.rank)
         elif promo_piece == 'B':
-            self.board_grid[self.file][self.rank] = Bishop(self.board_grid, self.move_list, self.is_white, self.file,
-                                                           self.rank)
+            self.board_grid[self.file][self.rank] = Bishop(self.board, self.is_white, self.file, self.rank)
         else:
-            self.board_grid[self.file][self.rank] = Knight(self.board_grid, self.move_list, self.is_white, self.file,
-                                                           self.rank)
+            self.board_grid[self.file][self.rank] = Knight(self.board, self.is_white, self.file, self.rank)
 
     def get_defended_squares(self):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -126,16 +91,13 @@ class Pawn:
         is_capture = not self.board_grid[f][r] is None
         is_en_passant = type(self.board_grid[f][r]) is EnPassant
         is_promotion = (r == 8)
-        self.move_list.append(Move(self.is_white, 'P', self.file, self.rank, is_capture, is_en_passant, f, r))
+        self.move_list.append(Move(self.is_white, self.letter, self.file, self.rank, is_capture, is_en_passant, f, r))
         # if it's en passant, handle the capture
         if is_en_passant:
             self.board_grid[f][(4, 5)[self.is_white]] = None
         # if it's a double pawn move, set an en passant marker behind it
         if (not self.has_moved) and r == (5, 4)[self.is_white]:
-            self.board_grid[self.file][(6, 3)[self.is_white]] = EnPassant(self.board_grid, self.move_list,
-                                                                          self.is_white, self.file,
-                                                                          (6, 3)[self.is_white],
-                                                                          len(self.move_list) - 1)
+            self.board_grid[self.file][(6, 3)[self.is_white]] = EnPassant(self.board, self.is_white, self.file, (6, 3)[self.is_white], len(self.move_list) - 1)
         self.board_grid[self.file][self.rank] = None
         self.file = f
         self.rank = r
@@ -147,5 +109,5 @@ class Pawn:
             while not promo_piece in ['Q', 'R', 'B', 'N']:
                 print('Choose which piece to promote to (Q, R, B, N):\n')
                 promo_piece = input()
-            promote(promo_piece)
+            self.promote(promo_piece)
         return True

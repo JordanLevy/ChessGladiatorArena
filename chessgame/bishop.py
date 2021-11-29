@@ -6,16 +6,16 @@ from move import Move
 
 class Bishop:
 
-    def __init__(self, board_grid, move_list, is_white, file, rank):
-        self.board_grid = board_grid
+    def __init__(self, board, is_white, file, rank):
+        self.board = board
+        self.board_grid = board.board_grid
         self.board_grid[file][rank] = self
-        self.move_list = move_list
+        self.move_list = board.move_list
         self.is_white = is_white
         if is_white:
-            self.img = pygame.image.load('Images/WhiteBishop.png')
+            self.img = 'Images/WhiteBishop.png'
         else:
-            self.img = pygame.image.load('Images/BlackBishop.png')
-        self.img = pygame.transform.scale(self.img, (50, 50))
+            self.img = 'Images/BlackBishop.png'
         self.file = file
         self.rank = rank
         self.has_moved = False
@@ -230,3 +230,6 @@ class Bishop:
         self.board_grid[self.file][self.rank] = self
         self.has_moved = True
         return True
+
+    def __str__(self):
+        return ('b', 'w')[self.is_white] + 'B'
