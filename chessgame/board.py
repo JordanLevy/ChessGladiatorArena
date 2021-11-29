@@ -24,6 +24,34 @@ class Board:
         self.move_list = []
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
+    # 0 means game is still going
+    # 1 means white wins
+    # 2 means black wins
+    # 3 means stale mate
+    def is_game_over(self):
+        if self.black_in_check:
+            for i in self.files:
+                for j in range(len(self.board_grid[i])):
+                    s = self.board_grid[i][j]
+                    if not s:
+                        continue
+                    if not s.is_white:
+                        if s.get_legal_moves():
+                            return 0
+            print("white wins")
+            return 1
+        if self.white_in_check:
+            for i in self.files:
+                for j in range(len(self.board_grid[i])):
+                    s = self.board_grid[i][j]
+                    if not s:
+                        continue
+                    if s.is_white:
+                        if s.get_legal_moves():
+                            return 0
+            print("black wins")
+            return 2
+        return 0
     # returns a copied board
     def copy(self):
         new_board = Board()

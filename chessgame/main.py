@@ -32,7 +32,6 @@ release_square = ['', 0]
 
 game_board = None
 
-
 def run_game():
     global game_board
     game_board = Board()
@@ -43,7 +42,10 @@ def run_game():
     print(game_board)
     print(new_board)
 
+    game_going = True
+    tern_num = 1
     while True:
+
 
         # Background color--------------------------------------------- #
         screen.fill((0, 0, 50))
@@ -88,11 +90,24 @@ def run_game():
                     release_x, release_y = pygame.mouse.get_pos()
                     release_x, release_y = game_board.files[math.floor(release_x / 50)], math.ceil(8 - release_y / 50)
                     if square_clicked:
-                        valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                        # if it is whites tern
+                        if game_board.board_grid[click_x][click_y].is_white:
+                            if tern_num % 2 != 0:
+                                valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                            else:
+                                valid_move = False
+                        # id its blacks tern
+                        else:
+                            if tern_num % 2 == 0:
+                                valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                            else:
+                                valid_move = False
                         if valid_move:
+                            print(game_board.is_game_over())
+                            print(tern_num)
+                            tern_num += 1
                             print(game_board.move_list[-1])
                             game_board.clear_en_passant_markers()
-
         # Update ------------------------------------------------- #
         pygame.display.update()
         mainClock.tick(100)
