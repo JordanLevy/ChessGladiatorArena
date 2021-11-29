@@ -1,5 +1,6 @@
 from enpassant import EnPassant
 from king import King
+from move import Move
 from piece import Piece
 
 

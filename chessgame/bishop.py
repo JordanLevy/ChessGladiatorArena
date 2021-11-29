@@ -185,23 +185,3 @@ class Bishop(Piece):
                 legal_moves.append(files[f] + str(r))
 
         return legal_moves
-
-    # move(String destination) modifies the state of the board based on the location the piece is moving to (and
-    # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
-    def move(self, f, r):
-        legal_moves = self.get_legal_moves()
-        if not f + str(r) in legal_moves:
-            print('illegal move')
-            return False
-        is_capture = not self.board_grid[f][r] is None and not type(self.board_grid[f][r]) is EnPassant
-        is_en_passant = False
-        self.move_list.append(Move(self.is_white, 'K', self.file, self.rank, is_capture, is_en_passant, f, r))
-        self.board_grid[self.file][self.rank] = None
-        self.file = f
-        self.rank = r
-        self.board_grid[self.file][self.rank] = self
-        self.has_moved = True
-        return True
-
-    def __str__(self):
-        return ('b', 'w')[self.is_white] + 'B'

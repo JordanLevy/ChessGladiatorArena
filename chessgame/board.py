@@ -52,7 +52,7 @@ class Board:
                         new_board.black_king = new_piece
                 new_board.board_grid[i][j] = new_piece
         for i in range(len(self.move_list)):
-            new_board.move_list[i] = copy.deepcopy(self.move_list[i])
+            new_board.move_list.append(copy.deepcopy(self.move_list[i]))
         return new_board
 
     def setup_board(self):
