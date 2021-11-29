@@ -71,3 +71,19 @@ class Piece:
 
     def __str__(self):
         return ('b', 'w')[self.is_white] + self.letter
+
+    # returns true if making this move puts your own king in check and false if anything else
+
+    def your_k_check(self, move):
+        new_board = self.board.copy()
+        legal_move = new_board.move(move.from_file, move.from_rank, move.to_file, move.to_rank)
+        if not legal_move:
+            return False
+        color = move.is_white
+        if color:
+            if new_board.white_king.is_in_check():
+                return True
+        else:
+            if new_board.black_king.is_in_check():
+                return True
+        return False
