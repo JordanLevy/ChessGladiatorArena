@@ -108,5 +108,4 @@ class Rook(Piece):
                         break
                 else:
                     legal_moves.append(self.file + str(i))
-
         return legal_moves

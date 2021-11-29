@@ -79,6 +79,12 @@ class Pawn(Piece):
                 if right_cap and w != right_cap.get_is_white():
                     # capture diagonal-right
                     legal_moves.append(right_cap.file + str(right_cap.rank))
+        for i in range(len(legal_moves) - 1, -1, -1):
+            f = legal_moves[i][0]
+            r = int(legal_moves[i][1])
+            m = Move(self.is_white, self.letter, self.file, self.rank, False, False, f, r)
+            if self.your_k_check(m):
+                legal_moves.pop(i)
         return legal_moves
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
