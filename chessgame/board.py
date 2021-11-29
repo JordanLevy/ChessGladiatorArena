@@ -15,6 +15,8 @@ class Board:
     def __init__(self):
         self.white_king = None
         self.black_king = None
+        self.white_in_check = False
+        self.black_in_check = False
         self.board_grid = {"a": [None] * 9, "b": [None] * 9, "c": [None] * 9, "d": [None] * 9, "e": [None] * 9,
                            "f": [None] * 9,
                            "g": [None] * 9,
@@ -22,6 +24,7 @@ class Board:
         self.move_list = []
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
+    # returns a copied board
     def copy(self):
         new_board = Board()
         for i in self.files:
@@ -51,12 +54,15 @@ class Board:
                     else:
                         new_board.black_king = new_piece
                 new_board.board_grid[i][j] = new_piece
-        print(self.move_list)
-        print(new_board.move_list)
         for i in range(len(self.move_list)):
-
             new_board.move_list.append(copy.deepcopy(self.move_list[i]))
+        return new_board
 
+    # returns a copied board with a move applied to it
+    def copy_with_move(self, move):
+        new_board = self.copy()
+        new_board.board_grid[move.to_file][move.to_rank] = new_board.board_grid[move.from_file][move.from_rank]
+        new_board.board_grid[move.from_file][move.from_rank] = None
         return new_board
 
     def setup_board(self):
@@ -111,10 +117,10 @@ class Board:
                 square_color = WHITE
                 if (i + j) % 2 == 1:
                     square_color = BLUE
-                if self.white_king.is_in_check() and i == self.files.index(
+                if self.white_in_check and i == self.files.index(
                         self.white_king.get_file()) and (8 - j) == self.white_king.get_rank():
                     square_color = RED
-                if self.black_king.is_in_check() and i == self.files.index(
+                if self.black_in_check and i == self.files.index(
                         self.black_king.get_file()) and (8 - j) == self.black_king.get_rank():
                     square_color = RED
                 pygame.draw.rect(screen, square_color, (i * 50, j * 50, 50, 50))
@@ -133,7 +139,11 @@ class Board:
                                 ((i - 1) * 50, 400 - j * 50))
 
     def move(self, from_file, from_rank, to_file, to_rank):
-        return self.board_grid[from_file][from_rank].move(to_file, to_rank)
+        is_legal = self.board_grid[from_file][from_rank].move(to_file, to_rank)
+        if is_legal:
+            self.white_in_check = self.white_king.is_in_check()
+            self.black_in_check = self.black_king.is_in_check()
+        return is_legal
 
     def __str__(self):
         a = ''

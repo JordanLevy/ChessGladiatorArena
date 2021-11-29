@@ -39,8 +39,6 @@ def run_game():
     game_board.setup_board()
 
     new_board = game_board.copy()
-    new_board.move('a', 2, 'a', 4)
-    new_board.move('a', 1, 'a', 3)
 
     print(game_board)
     print(new_board)
@@ -93,7 +91,6 @@ def run_game():
                         valid_move = game_board.move(click_x, click_y, release_x, release_y)
                         if valid_move:
                             print(game_board.move_list[-1])
-                            print(new_board.move_list[-1])
                             game_board.clear_en_passant_markers()
 
         # Update ------------------------------------------------- #

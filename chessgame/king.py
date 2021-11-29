@@ -23,7 +23,9 @@ class King(Piece):
         for i in range(0, 8):
             for j in range(1, 9):
                 s = self.board_grid[files[i]][j]
-                if s and (not type(s) is EnPassant) and (self.is_white != s.get_is_white()) and (
+                if not s or type(s) is EnPassant:
+                    continue
+                if (self.is_white != s.get_is_white()) and (
                         target in s.get_defended_squares()):
                     return True
         return False
@@ -114,7 +116,6 @@ class King(Piece):
                 if not piece_blocking and not through_check:
                     # add long castle to legal moves
                     legal_moves.append('O-O')
-
         return legal_moves
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
