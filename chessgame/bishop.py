@@ -16,177 +16,56 @@ class Bishop(Piece):
             self.img = 'Images/BlackBishop.png'
 
     def get_defended_squares(self):
-        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        legal_moves = []
+        defended = []
         w = self.get_is_white()
-        b = self.get_is_black()
-        file_num = files.index(self.file)
-        # up/right
-        for i in range(1, 9):
-            f = file_num + i
-            r = self.rank + i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
+        opposing = lambda x: x and w != x.get_is_white()
+        moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
+        captureable = lambda x: x != -1 and (x is not None)
+        add_move = lambda x: defended.append(''.join(map(str, self.get_offset(x))))
+        searching = [True, True, True, True]  # True if still searching a direction [ur, ul, dr, dl]
 
-        # down/right
         for i in range(1, 9):
-            f = file_num + i
-            r = self.rank - i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
-                    legal_moves.append(files[f] + str(r))
+            offsets = [(i, i), (-i, i), (i, -i), (-i, -i)]
+            for j in range(len(offsets)):
+                if not searching[j]:
                     continue
+                k = offsets[j]
+                s = self.get_piece_at_offset(k)
+                if moveable(s) or captureable(s):
+                    add_move(k)
+                    # x-ray the opposing king
+                    if captureable(s) and not (s.letter == 'K' and opposing(s)):
+                        searching[j] = False
                 else:
-                    legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
-        # up/left
-        for i in range(1, 9):
-            f = file_num - i
-            r = self.rank + i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
-            # down/left
-        for i in range(1, 9):
-            f = file_num - i
-            r = self.rank - i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant or (s.letter == 'K' and w != s.get_is_white()):
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
+                    # defend your own piece and stop looking
+                    if s != -1 and not opposing(s):
+                        add_move(k)
+                        searching[j] = False
 
-        return legal_moves
+        return defended
 
-    # get_legal_moves(String prev_move)
-    # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
-    # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
-    def get_legal_moves(self):
-        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        legal_moves = []
+    def get_possible_moves(self):
+        possible = []
         w = self.get_is_white()
-        b = self.get_is_black()
-        file_num = files.index(self.file)
-        # up/right
-        for i in range(1, 9):
-            f = file_num + i
-            r = self.rank + i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant:
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    if w != s.get_is_white():
-                        legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
+        opposing = lambda x: x and w != x.get_is_white()
+        moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
+        captureable = lambda x: x != -1 and (x is not None and opposing(x))
+        add_move = lambda x, c, e: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e))
+        searching = [True, True, True, True] # True if still searching a direction [ur, ul, dr, dl]
 
-        # down/right
         for i in range(1, 9):
-            f = file_num + i
-            r = self.rank - i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant:
-                    legal_moves.append(files[f] + str(r))
+            offsets = [(i, i), (-i, i), (i, -i), (-i, -i)]
+            for j in range(len(offsets)):
+                if not searching[j]:
                     continue
+                k = offsets[j]
+                s = self.get_piece_at_offset(k)
+                if moveable(s) or captureable(s):
+                    add_move(k, captureable(s), False)
+                    if captureable(s):
+                        searching[j] = False
                 else:
-                    if w != s.get_is_white():
-                        legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
-        # up/left
-        for i in range(1, 9):
-            f = file_num - i
-            r = self.rank + i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant:
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    if w != s.get_is_white():
-                        legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
-            # down/left
-        for i in range(1, 9):
-            f = file_num - i
-            r = self.rank - i
-            if f < 0 or f > 7:
-                continue
-            if r < 1 or r > 8:
-                continue
-            s = self.board_grid[files[f]][r]
-            if s:
-                if type(s) is EnPassant:
-                    legal_moves.append(files[f] + str(r))
-                    continue
-                else:
-                    if w != s.get_is_white():
-                        legal_moves.append(files[f] + str(r))
-                    break
-            else:
-                legal_moves.append(files[f] + str(r))
-        for i in range(len(legal_moves) - 1, -1, -1):
-            f = legal_moves[i][0]
-            r = int(legal_moves[i][1])
-            m = Move(self.is_white, self.letter, self.file, self.rank, False, False, f, r)
-            if self.your_k_check(m):
-                legal_moves.pop(i)
-        return legal_moves
+                    if s != -1 and not opposing(s):
+                        searching[j] = False
+
+        return possible

@@ -7,8 +7,6 @@ class Piece:
     def __init__(self, board, is_white, file, rank):
         self.letter = '-'
         self.board = board
-        self.board_grid = board.board_grid
-        self.board_grid[file][rank] = self
         self.move_list = board.move_list
         self.is_white = is_white
         if is_white:
@@ -18,12 +16,16 @@ class Piece:
         self.file = file
         self.rank = rank
         self.has_moved = False
+        self.board.set_piece(self)
 
     def get_img(self):
         return self.img
 
     def get_has_moved(self):
         return self.has_moved
+
+    def set_has_moved(self, has_moved):
+        self.has_moved = has_moved
 
     def get_file(self):
         return self.file
@@ -43,43 +45,83 @@ class Piece:
     def get_is_black(self):
         return not self.is_white
 
-    def get_defended_squares(self):
-        return self.get_legal_moves()
+    # returns a tuple (f, r) representing the square at an offset d=(df, dr) from this piece
+    # returns -1 if the offset refers to a square that is out of bounds
+    def get_offset(self, d):
+        df, dr = d
+        f = self.board.files.index(self.file) + df
+        r = self.rank + dr
+        if f < 0 or f > 7:
+            return -1
+        if r < 1 or r > 8:
+            return -1
+        f = self.board.files[f]
+        return f, r
 
-    # get_legal_moves(String prev_move)
+    # returns the piece on the board at an offset d=(df, dr) from this piece
+    # returns -1 if the offset refers to a square that is out of bounds
+    def get_piece_at_offset(self, d):
+        a = self.get_offset(d)
+        if a == -1:
+            return -1
+        f, r = a
+        return self.board.get_piece(f, r)
+
+    def get_defended_squares(self):
+        return self.get_possible_moves()
+
+    # return list of squares this piece could move to, regardless of legality
+    # e.g. even if a move results in a check to one's own king, it is still returned by this function
+    def get_possible_moves(self):
+        return []
+
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
     # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
     def get_legal_moves(self):
-        return []
+        legal_moves = self.get_possible_moves()
+        for i in range(len(legal_moves) - 1, -1, -1):
+            # f = legal_moves[i][0]
+            # r = int(legal_moves[i][1])
+            # m = Move(self.is_white, self.letter, self.file, self.rank, False, False, f, r)
+            m = legal_moves[i]
+            if self.your_king_check(m):
+                legal_moves.pop(i)
+        return legal_moves
+
+    def is_legal_move(self, move):
+        legal_moves = self.get_legal_moves()
+        for m in legal_moves:
+            if m == move:
+                return True
+        return False
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
     # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
-    def move(self, f, r):
-        legal_moves = self.get_legal_moves()
-        if not f + str(r) in legal_moves:
-            print('illegal move')
-            return False
-        is_capture = not self.board_grid[f][r] is None and not type(self.board_grid[f][r]) is EnPassant
-        is_en_passant = False
-        self.move_list.append(Move(self.is_white, self.letter, self.file, self.rank, is_capture, is_en_passant, f, r))
-        self.board_grid[self.file][self.rank] = None
+    def move(self, move, check_legality=True):
+        if check_legality:
+            if not self.is_legal_move(move):
+                print('illegal move')
+                return False
+        f = move.to_file
+        r = move.to_rank
+        self.move_list.append(move)
+        self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
-        self.board_grid[self.file][self.rank] = self
         self.has_moved = True
+        self.board.set_piece(self)
         return True
 
-    def __str__(self):
-        return ('b', 'w')[self.is_white] + self.letter
-
     # returns true if making this move puts your own king in check and false if anything else
-    def your_k_check(self, move):
+    def your_king_check(self, move):
         new_board = self.board.copy_with_move(move)
-        color = move.is_white
-        if color:
+        if move.is_white:
             if new_board.white_king.is_in_check():
                 return True
         else:
             if new_board.black_king.is_in_check():
                 return True
         return False
+
+    def __str__(self):
+        return (self.letter.lower(), self.letter)[self.is_white]

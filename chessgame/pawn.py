@@ -19,96 +19,80 @@ class Pawn(Piece):
 
     def promote(self, promo_piece):
         if promo_piece == 'Q':
-            self.board_grid[self.file][self.rank] = Queen(self.board, self.is_white, self.file, self.rank)
+            self.board.set_piece(Queen(self.board, self.is_white, self.file, self.rank))
         elif promo_piece == 'R':
-            self.board_grid[self.file][self.rank] = Rook(self.board, self.is_white, self.file, self.rank)
+            self.board.set_piece(Rook(self.board, self.is_white, self.file, self.rank))
         elif promo_piece == 'B':
-            self.board_grid[self.file][self.rank] = Bishop(self.board, self.is_white, self.file, self.rank)
+            self.board.set_piece(Bishop(self.board, self.is_white, self.file, self.rank))
         else:
-            self.board_grid[self.file][self.rank] = Knight(self.board, self.is_white, self.file, self.rank)
+            self.board.set_piece(Knight(self.board, self.is_white, self.file, self.rank))
 
     def get_defended_squares(self):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        legal_moves = []
+        defended = []
         w = self.get_is_white()
         b = self.get_is_black()
+        add_move = lambda x: defended.append(''.join(map(str, self.get_offset(x))))
         file_num = files.index(self.file)
+        diag_left = (-1, (-1, 1)[w])
+        diag_right = (1, (-1, 1)[w])
 
-        # if it's not on the a-file
         if file_num > 0:
-            legal_moves.append(files[file_num - 1] + str(self.rank + (-1, 1)[w]))
-
-        # if it's not on the h-file
+            add_move(diag_left)
         if file_num < 7:
-            legal_moves.append(files[file_num + 1] + str(self.rank + (-1, 1)[w]))
+            add_move(diag_right)
+        return defended
 
-        return legal_moves
-
-    # get_legal_moves(String prev_move)
-    # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
-    # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
-    def get_legal_moves(self):
-        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        legal_moves = []
+    def get_possible_moves(self):
+        possible = []
         w = self.get_is_white()
-        b = self.get_is_black()
-        # if it's not at the end of the board
-        if (w and self.rank < 8) or (b and self.rank > 1):
-            # if no piece in the way
-            if not self.board_grid[self.file][self.rank + (-1, 1)[w]]:
-                # move forward one
-                legal_moves.append(self.file + str(self.rank + (-1, 1)[w]))
-            # if it hasn't moved yet, on rank 2, and no piece in the way
-            if not self.has_moved and self.rank == (7, 2)[w] and not self.board_grid[self.file][self.rank + (-1, 1)[w]] and not self.board_grid[self.file][self.rank + (-2, 2)[w]]:
-                # move forward two
-                legal_moves.append(self.file + str(self.rank + (-2, 2)[w]))
-            file_num = files.index(self.file)
+        opposing = lambda x: x and w != x.get_is_white()
+        moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
+        captureable = lambda x: x != -1 and (x is not None and opposing(x))
+        add_move = lambda x, c, e: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e))
+        # add_move = lambda x: possible.append(''.join(map(str, self.get_offset(x))))
+        fwd_1 = (0, (-1, 1)[w])
+        fwd_2 = (0, (-2, 2)[w])
+        diag_left = (-1, (-1, 1)[w])
+        diag_right = (1, (-1, 1)[w])
 
-            # if it's not on the a-file
-            if file_num > 0:
-                left_cap = self.board_grid[files[file_num - 1]][self.rank + (-1, 1)[w]]
-                # if there's an opposing piece to capture to the diagonal-left
-                if left_cap and w != left_cap.get_is_white():
-                    # capture diagonal-left
-                    legal_moves.append(left_cap.file + str(left_cap.rank))
+        # moving forward one square
+        if moveable(self.get_piece_at_offset(fwd_1)):
+            add_move(fwd_1, False, False)
+            # moving forward two squares
+            if not self.has_moved and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
+                add_move(fwd_2, False, False)
+        # diagonal captures
+        for i in [diag_left, diag_right]:
+            s = self.get_piece_at_offset(i)
+            if captureable(s):
+                add_move(i, True, type(s) is EnPassant)
 
-            # if it's not on the h-file
-            if file_num < 7:
-                right_cap = self.board_grid[files[file_num + 1]][self.rank + (-1, 1)[w]]
-                # if there's an opposing piece to capture to the diagonal-right
-                if right_cap and w != right_cap.get_is_white():
-                    # capture diagonal-right
-                    legal_moves.append(right_cap.file + str(right_cap.rank))
-        for i in range(len(legal_moves) - 1, -1, -1):
-            f = legal_moves[i][0]
-            r = int(legal_moves[i][1])
-            m = Move(self.is_white, self.letter, self.file, self.rank, False, False, f, r)
-            if self.your_k_check(m):
-                legal_moves.pop(i)
-        return legal_moves
+        return possible
 
-    # move(String destination) modifies the state of the board based on the location the piece is moving to (and
-    # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
-    def move(self, f, r):
-        legal_moves = self.get_legal_moves()
-        if not f + str(r) in legal_moves:
-            print('illegal move')
-            return False
-        is_capture = not self.board_grid[f][r] is None
-        is_en_passant = type(self.board_grid[f][r]) is EnPassant
+    def move(self, move, check_legality=True):
+        if check_legality:
+            if not self.is_legal_move(move):
+                print('illegal move')
+                return False
+        f = move.to_file
+        r = move.to_rank
+        is_capture = not self.board.get_piece(f, r) is None
+        is_en_passant = type(self.board.get_piece(f, r)) is EnPassant
         is_promotion = (r == 8)
-        self.move_list.append(Move(self.is_white, self.letter, self.file, self.rank, is_capture, is_en_passant, f, r))
+        self.move_list.append(move)
         # if it's en passant, handle the capture
         if is_en_passant:
-            self.board_grid[f][(4, 5)[self.is_white]] = None
+            self.board.remove_piece(f, (4, 5)[self.is_white])
         # if it's a double pawn move, set an en passant marker behind it
         if (not self.has_moved) and r == (5, 4)[self.is_white]:
-            self.board_grid[self.file][(6, 3)[self.is_white]] = EnPassant(self.board, self.is_white, self.file, (6, 3)[self.is_white], len(self.move_list) - 1)
-        self.board_grid[self.file][self.rank] = None
+            self.board.set_piece(
+                EnPassant(self.board, self.is_white, self.file, (6, 3)[self.is_white], self.board.turn_num))
+        self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
-        self.board_grid[self.file][self.rank] = self
         self.has_moved = True
+        self.board.set_piece(self)
 
         if is_promotion:
             promo_piece = ''
