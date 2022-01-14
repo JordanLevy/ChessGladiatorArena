@@ -1,5 +1,7 @@
 from random import *
 
+from enpassant import EnPassant
+
 
 class Engine:
 
@@ -8,7 +10,7 @@ class Engine:
         self.is_white = is_white
         self.max_depth = 2
 
-    def evaluate(self, analysis_board, depth):
+    def evaluate(self, analysis_board, line, depth):
         all_legal_moves = self.board.get_all_legal_moves(self.is_white)
         n = len(all_legal_moves)
         if n == 0:
@@ -17,7 +19,7 @@ class Engine:
         if depth > self.max_depth:
             return
         for i in all_legal_moves:
-            e = self.evaluate(analysis_board.copy_with_move(i), depth + 1)
+            e = self.evaluate(analysis_board.copy_with_move(i), line.apend(i), depth + 1)
             if e < min_val:
                 min_val = e
         return min_val
@@ -35,17 +37,17 @@ class Engine:
     def eval_position(self):
         white_val = 0
         black_val = 0
-        pawn = 1
-        knight = 3
-        bishop = 3.3
-        queen = 9
-        rook = 5
-        king = 90
+
+        values = {"P": 1, "N": 3, "B": 3.3, "R": 5, "Q": 9, "K": 90}
         for i in range(8):
-            for j in range(8):
+            for j in range(1, 9):
                 s = self.board.get_piece(self.board.files[i], j)
-                if s is None:
+                if s is None or s is EnPassant:
                     continue
                 if s.is_white:
+                    white_val += values[s.letter]
+                else:
+                    black_val += values[s.letter]
 
-                    white_val =
+        score = white_val - black_val
+        return score
