@@ -4,8 +4,10 @@ import math
 import pygame
 import sys
 
+from engine import Engine
 from enpassant import EnPassant
 from board import Board
+from gamestate import GameState
 
 mainClock = pygame.time.Clock()
 
@@ -27,6 +29,8 @@ def run_game():
     game_board = Board()
     game_board.setup_board()
     game_board.draw_board(pygame, screen)
+
+    engine = Engine(game_board, False)
 
     while True:
         for event in pygame.event.get():
@@ -57,10 +61,20 @@ def run_game():
                             valid_move = False
                         if valid_move:
                             game_board.next_turn()
+                            game_state = game_board.is_game_over()
+                            if game_state != GameState.IN_PROGRESS:
+                                print("game over")
+                                return
+                            cpu_move = engine.get_random_move()
+                            game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
+                            game_board.next_turn()
+                            game_state = game_board.is_game_over()
+                            if game_state != GameState.IN_PROGRESS:
+                                print("game over")
+                                return
                             # print(game_board.get_move_num())
                             # print(game_board.to_fen())
                             # print(game_board.board_repetitions)
-                            print(game_board.is_game_over())
                     game_board.draw_board(pygame, screen)
         pygame.display.update()
         mainClock.tick(100)
