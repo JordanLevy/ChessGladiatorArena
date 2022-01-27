@@ -8,7 +8,7 @@ from engine import Engine
 from enpassant import EnPassant
 from board import Board
 from gamestate import GameState
-
+import time
 mainClock = pygame.time.Clock()
 
 pygame.init()
@@ -60,11 +60,15 @@ def run_game():
                         else:
                             valid_move = False
                         if valid_move:
+                            print(game_board.mat_eval)
                             game_board.next_turn()
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                 print("game over")
+                            start_time = time.time()
                             cpu_eval, cpu_move = engine.depth_one(game_board) #engine.search_moves(game_board, 3)
+                            end_time = time.time()
+                            print("the computation time is", str(end_time-start_time))
                             game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
                             game_board.next_turn()
                             game_state = game_board.is_game_over()

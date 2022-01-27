@@ -10,7 +10,7 @@ from rook import Rook
 from gamestate import GameState
 import copy
 
-
+values = {"P": 100, "N": 300, "B": 330, "R": 500, "Q": 900, "K": 9000}
 class Board:
 
     def __init__(self):
@@ -27,6 +27,9 @@ class Board:
         self.fifty_move_clock = 0
         self.board_repetitions = {}  # (string fen: int #times_position_repeated), used for threefold repetition
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        self.pieces = {"P": [], "p": [], "R": [], "r": [], "N": [], "n": [],
+                       "B": [], "b": [], "Q": [], "q": [], "K": [], "k": [], "E": [], "e":[]}
+        self.mat_eval = 0
 
     def get_piece(self, f, r):
         return self.board_grid[f][r]
@@ -156,7 +159,7 @@ class Board:
 
     def setup_board(self):
         self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        #self.load_fen('8/K3Pr2/8/8/8/8/8/7k w - - 0 1')
+        # self.load_fen('8/K3Pr2/8/8/8/8/8/7k w - - 0 1')
 
     # removes old en passant markers from the board
     def clear_en_passant_markers(self):
@@ -243,6 +246,15 @@ class Board:
     # moves a piece on the board given a Move object
     def move_by_ref(self, move):
         s = self.get_piece(move.from_file, move.from_rank)
+        if move.get_is_capture():
+            #this is the peace letter
+            p = self.get_piece(move.to_file, move.to_rank)
+            value_p = values[p.letter]
+            if p.is_white:
+                self.mat_eval -= value_p
+            else:
+                self.mat_eval += value_p
+
         is_legal = s.move(move, False)
         return is_legal
 
@@ -257,6 +269,14 @@ class Board:
                 break
         if move is None:
             return False
+        if move.get_is_capture():
+            #this is the peace letter
+            p = self.get_piece(to_file, to_rank)
+            value_p = values[p.letter]
+            if p.is_white:
+                self.mat_eval -= value_p
+            else:
+                self.mat_eval += value_p
         is_legal = s.move(m)
         return is_legal
 
@@ -349,6 +369,7 @@ class Board:
                     self.black_king = new_piece
             if new_piece:
                 self.set_piece(new_piece)
+                self.pieces[new_piece.__str__()].append(new_piece)
             f += 1
 
     def __str__(self):

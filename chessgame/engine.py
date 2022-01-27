@@ -108,19 +108,4 @@ class Engine:
         return all_legal_moves[rand_index]
 
     def eval_position(self, analysis_board):
-        white_val = 0
-        black_val = 0
-
-        values = {"P": 1, "N": 3, "B": 3.3, "R": 5, "Q": 9, "K": 90}
-        for i in range(8):
-            for j in range(1, 9):
-                s = analysis_board.get_piece(analysis_board.files[i], j)
-                if s is None or s.letter == 'E':
-                    continue
-                if s.is_white:
-                    white_val += values[s.letter]
-                else:
-                    black_val += values[s.letter]
-
-        score = (white_val - black_val) #*(-1, 1)[analysis_board.white_turn]
-        return score
+        return analysis_board.mat_eval
