@@ -1,6 +1,6 @@
 class Move:
 
-    def __init__(self, is_white, letter, from_file, from_rank, to_file, to_rank, is_capture=False, is_en_passant=False, is_short_castle=False, is_long_castle=False):
+    def __init__(self, is_white, letter, from_file, from_rank, to_file, to_rank, is_capture=False, is_en_passant=False, is_short_castle=False, is_long_castle=False, is_promotion=False):
         self.is_white = is_white
         self.letter = letter  # 'K', 'Q', 'B', 'N', or 'P'
         self.from_file = from_file
@@ -11,6 +11,7 @@ class Move:
         self.is_en_passant = is_en_passant
         self.is_short_castle = is_short_castle
         self.is_long_castle = is_long_castle
+        self.is_promotion = is_promotion
 
     def get_is_white(self):
         return self.is_white
@@ -44,6 +45,9 @@ class Move:
 
     def get_is_long_castle(self):
         return self.is_long_castle
+
+    def get_is_promotion(self):
+        return self.is_promotion
 
     def __eq__(self, m):
         return self.is_white == m.is_white and self.letter == m.letter and self.from_file == m.from_file and self.from_rank == m.from_rank and self.to_file == m.to_file and self.to_rank == m.to_rank

@@ -10,21 +10,94 @@ class Engine:
         self.is_white = is_white
         self.max_depth = 2
 
-    def evaluate(self, analysis_board, line, depth):
-        all_legal_moves = self.board.get_all_legal_moves(self.is_white)
+    def depth_one(self, analysis_board):
+        # w = True if it's white's turn to move
+        w = analysis_board.white_turn
+        # get a list of all legal moves
+        all_legal_moves = analysis_board.get_all_legal_moves(w)
+        # n is number of legal moves in list
         n = len(all_legal_moves)
+        # if there are no moves, return
+        if n == 0:
+            return 0, None
+        best_eval = 1000
+        best_move = None
+
+        # for each legal move
+        for i in all_legal_moves:
+            # apply the move to the board
+            new_board = analysis_board.copy_with_move(i)
+            # it's the other player's turn now
+            new_board.next_turn()
+            # recurse, e is the eval, b is the best move
+            e = self.eval_position(new_board)
+            if e < best_eval:
+                best_eval = e
+                best_move = i
+        return best_eval, best_move
+
+    def evaluate_best_move(self, analysis_board, depth, line):
+        # w = True if it's white's turn to move
+        w = analysis_board.white_turn
+        # get a list of all legal moves
+        all_legal_moves = analysis_board.get_all_legal_moves(w)
+        # n is number of legal moves in list
+        n = len(all_legal_moves)
+        # if there are no moves, return
         if n == 0:
             return None
-        min_val = 1000
+        best_black_score = 1000
+        best_white_score = -1000
+        best_move = None
+        # if we reached max depth, return the position evaluation
         if depth > self.max_depth:
-            return
+            e = self.eval_position(analysis_board)
+            return e, None
+        # for each legal move
         for i in all_legal_moves:
-            e = self.evaluate(analysis_board.copy_with_move(i), line.apend(i), depth + 1)
-            if e < min_val:
-                min_val = e
-        return min_val
+            # apply the move to the board
+            new_board = analysis_board.copy_with_move(i)
+            # it's the other player's turn now
+            new_board.next_turn()
+            # recurse, e is the eval, b is the best move
+            e, b = self.evaluate_best_move(new_board, depth + 1, line + ' ' + i.__str__())
+            # if it's white's turn
+            if w:
+                # if this is the best white eval, set it as the best move
+                if e > best_white_score:
+                    best_white_score = e
+                    best_move = b
+            else:
+                if e < best_black_score:
+                    best_black_score = e
+                    best_move = b
+        if w:
+            return best_white_score, best_move
+        return best_black_score, best_move
 
+    def search_moves(self, analysis_board, depth):
+        if depth == 0:
+            return self.eval_position(analysis_board), None
 
+        w = analysis_board.white_turn
+        all_legal_moves = analysis_board.get_all_legal_moves(w)
+
+        if len(all_legal_moves) == 0:
+            return 0, None
+
+        best_eval = -1000
+        best_move = None
+
+        for m in all_legal_moves:
+            new_board = analysis_board.copy_with_move(m)
+            new_board.next_turn()
+            a = self.search_moves(new_board, depth - 1)
+            eval, q = -a[0], a[1]
+            if eval > best_eval:
+                best_eval = eval
+                best_move = m
+
+        return best_eval, best_move
 
     def get_random_move(self):
         all_legal_moves = self.board.get_all_legal_moves(self.is_white)
@@ -34,20 +107,20 @@ class Engine:
         rand_index = randint(0, n - 1)
         return all_legal_moves[rand_index]
 
-    def eval_position(self):
+    def eval_position(self, analysis_board):
         white_val = 0
         black_val = 0
 
         values = {"P": 1, "N": 3, "B": 3.3, "R": 5, "Q": 9, "K": 90}
         for i in range(8):
             for j in range(1, 9):
-                s = self.board.get_piece(self.board.files[i], j)
-                if s is None or s is EnPassant:
+                s = analysis_board.get_piece(analysis_board.files[i], j)
+                if s is None or s.letter == 'E':
                     continue
                 if s.is_white:
                     white_val += values[s.letter]
                 else:
                     black_val += values[s.letter]
 
-        score = white_val - black_val
+        score = (white_val - black_val) #*(-1, 1)[analysis_board.white_turn]
         return score

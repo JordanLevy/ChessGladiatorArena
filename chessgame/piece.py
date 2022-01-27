@@ -114,6 +114,10 @@ class Piece:
 
     # returns true if making this move puts your own king in check and false if anything else
     def your_king_check(self, move):
+        # if it's a promotion move, we don't check legality
+        # TODO, make this actually check if promotion is legal
+        if move.is_promotion:
+            return
         new_board = self.board.copy_with_move(move)
         if move.is_white:
             if new_board.white_king.is_in_check():

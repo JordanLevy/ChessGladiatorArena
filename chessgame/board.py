@@ -156,6 +156,7 @@ class Board:
 
     def setup_board(self):
         self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        #self.load_fen('8/K3Pr2/8/8/8/8/8/7k w - - 0 1')
 
     # removes old en passant markers from the board
     def clear_en_passant_markers(self):
@@ -357,7 +358,7 @@ class Board:
             for i in self.files:
                 s = self.get_piece(i, j)
                 if s is None:
-                    a += '  ' + '|'
+                    a += ' ' + '|'
                     continue
                 a += s.__str__() + '|'
             a += '\n'

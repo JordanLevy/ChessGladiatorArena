@@ -64,14 +64,12 @@ def run_game():
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                 print("game over")
-                                return
-                            cpu_move = engine.get_random_move()
+                            cpu_eval, cpu_move = engine.depth_one(game_board) #engine.search_moves(game_board, 3)
                             game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
                             game_board.next_turn()
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                 print("game over")
-                                return
                             # print(game_board.get_move_num())
                             # print(game_board.to_fen())
                             # print(game_board.board_repetitions)

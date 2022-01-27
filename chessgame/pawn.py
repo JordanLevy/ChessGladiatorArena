@@ -49,7 +49,7 @@ class Pawn(Piece):
         opposing = lambda x: x and w != x.get_is_white()
         moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
         captureable = lambda x: x != -1 and (x is not None and opposing(x))
-        add_move = lambda x, c, e: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e))
+        add_move = lambda x, c, e, p: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e, False, False, p))
         # add_move = lambda x: possible.append(''.join(map(str, self.get_offset(x))))
         fwd_1 = (0, (-1, 1)[w])
         fwd_2 = (0, (-2, 2)[w])
@@ -58,15 +58,15 @@ class Pawn(Piece):
 
         # moving forward one square
         if moveable(self.get_piece_at_offset(fwd_1)):
-            add_move(fwd_1, False, False)
+            add_move(fwd_1, False, False, self.rank == (7, 2)[not w])
             # moving forward two squares
             if not self.has_moved and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
-                add_move(fwd_2, False, False)
+                add_move(fwd_2, False, False, False)
         # diagonal captures
         for i in [diag_left, diag_right]:
             s = self.get_piece_at_offset(i)
             if captureable(s):
-                add_move(i, True, type(s) is EnPassant)
+                add_move(i, True, type(s) is EnPassant, self.rank == (7, 2)[not w])
 
         return possible
 
