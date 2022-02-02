@@ -34,7 +34,7 @@ class Move:
     def get_to_rank(self):
         return self.to_rank
 
-    def get_is_capture(self):
+    def get_piece_captured(self):
         return self.piece_captured
 
     def get_is_en_passant(self):

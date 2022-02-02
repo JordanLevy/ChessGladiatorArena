@@ -66,7 +66,7 @@ class Board:
         self.white_turn = not self.white_turn
         prev_move = self.move_list[-1]
         # if the previous move was a capture or a pawn move, reset the 50 move rule counter
-        if prev_move.get_is_capture() or prev_move.get_letter() == 'P':
+        if prev_move.get_piece_captured() or prev_move.get_letter() == 'P':
             self.fifty_move_clock = 0
         else:
             self.fifty_move_clock += 1
@@ -246,7 +246,7 @@ class Board:
     # moves a piece on the board given a Move object
     def move_by_ref(self, move):
         s = self.get_piece(move.from_file, move.from_rank)
-        if move.get_is_capture():
+        if move.get_piece_captured():
             #this is the peace letter
             p = self.get_piece(move.to_file, move.to_rank)
             value_p = values[p.letter]
@@ -287,7 +287,7 @@ class Board:
                 break
         if move is None:
             return False
-        if move.get_is_capture():
+        if move.piece_captured:
             #this is the peace letter
             p = self.get_piece(to_file, to_rank)
             value_p = values[p.letter]
