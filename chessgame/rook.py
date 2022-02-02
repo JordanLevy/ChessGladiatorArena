@@ -61,7 +61,7 @@ class Rook(Piece):
                 k = offsets[j]
                 s = self.get_piece_at_offset(k)
                 if moveable(s) or captureable(s):
-                    add_move(k, captureable(s), False)
+                    add_move(k, s, False)
                     if captureable(s):
                         searching[j] = False
                 else:

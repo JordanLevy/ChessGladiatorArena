@@ -7,7 +7,6 @@ class Piece:
     def __init__(self, board, is_white, file, rank):
         self.letter = '-'
         self.board = board
-        self.move_list = board.move_list
         self.is_white = is_white
         if is_white:
             self.img = ''
@@ -15,17 +14,26 @@ class Piece:
             self.img = ''
         self.file = file
         self.rank = rank
-        self.has_moved = False
+        self.num_times_moved = 0
         self.board.set_piece(self)
 
     def get_img(self):
         return self.img
 
     def get_has_moved(self):
-        return self.has_moved
+        return self.num_times_moved > 0
 
-    def set_has_moved(self, has_moved):
-        self.has_moved = has_moved
+    def get_num_times_moved(self):
+        return self.num_times_moved
+
+    def set_num_times_moved(self, num):
+        self.num_times_moved = num
+
+    def increment_num_times_moved(self):
+        self.num_times_moved += 1
+
+    def decrement_num_times_moved(self):
+        self.num_times_moved -= 1
 
     def get_file(self):
         return self.file
@@ -104,11 +112,10 @@ class Piece:
                 return False
         f = move.to_file
         r = move.to_rank
-        self.move_list.append(move)
         self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
-        self.has_moved = True
+        self.increment_num_times_moved()
         self.board.set_piece(self)
         return True
 

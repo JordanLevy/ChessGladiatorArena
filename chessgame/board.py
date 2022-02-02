@@ -256,7 +256,25 @@ class Board:
                 self.mat_eval += value_p
 
         is_legal = s.move(move, False)
+        if is_legal:
+            self.move_list.append(move)
         return is_legal
+
+    def undo_move(self):
+        if not self.move_list:
+            return
+        move = self.move_list[-1]
+        s = self.get_piece(move.to_file, move.to_rank)
+        self.remove_piece_by_ref(s)
+        if move.piece_captured:
+            self.set_piece(move.piece_captured)
+        s.set_file(move.from_file)
+        s.set_rank(move.from_rank)
+        self.set_piece(s)
+        self.move_list = self.move_list[:-1]
+        self.turn_num -= 1
+        self.white_turn = not self.white_turn
+        s.decrement_num_times_moved()
 
     # moves a piece on the board given files and ranks
     def move(self, from_file, from_rank, to_file, to_rank):
@@ -278,6 +296,8 @@ class Board:
             else:
                 self.mat_eval += value_p
         is_legal = s.move(m)
+        if is_legal:
+            self.move_list.append(m)
         return is_legal
 
     # returns a string representation of the board using FEN (Forsyth-Edwards Notation)
@@ -303,19 +323,19 @@ class Board:
                 pieces += ('', str(spaces))[spaces > 0] + s.__str__()
                 spaces = 0
             pieces += ('', str(spaces))[spaces > 0] + ('', '/')[j > 1]
-        if not self.white_king.get_has_moved():
+        if not self.white_king.get_num_times_moved():
             rook = self.get_piece('h', 1)
-            if rook and type(rook) is Rook and not rook.get_has_moved():
+            if rook and type(rook) is Rook and not rook.get_num_times_moved():
                 castling += 'K'
             rook = self.get_piece('a', 1)
-            if rook and type(rook) is Rook and not rook.get_has_moved():
+            if rook and type(rook) is Rook and not rook.get_num_times_moved():
                 castling += 'Q'
-        if not self.black_king.get_has_moved():
+        if not self.black_king.get_num_times_moved():
             rook = self.get_piece('h', 8)
-            if rook and type(rook) is Rook and not rook.get_has_moved():
+            if rook and type(rook) is Rook and not rook.get_num_times_moved():
                 castling += 'k'
             rook = self.get_piece('a', 8)
-            if rook and type(rook) is Rook and not rook.get_has_moved():
+            if rook and type(rook) is Rook and not rook.get_num_times_moved():
                 castling += 'q'
         if not castling:
             castling = '-'
@@ -352,13 +372,13 @@ class Board:
             elif letter == 'R':
                 new_piece = Rook(self, w, file, r)
                 if file == 'h' and w:
-                    new_piece.set_has_moved('K' not in castling)
+                    new_piece.set_num_times_moved('K' not in castling)
                 elif file == 'a' and w:
-                    new_piece.set_has_moved('Q' not in castling)
+                    new_piece.set_num_times_moved('Q' not in castling)
                 elif file == 'h' and not w:
-                    new_piece.set_has_moved('k' not in castling)
+                    new_piece.set_num_times_moved('k' not in castling)
                 elif file == 'a' and not w:
-                    new_piece.set_has_moved('q' not in castling)
+                    new_piece.set_num_times_moved('q' not in castling)
             elif letter == 'Q':
                 new_piece = Queen(self, w, file, r)
             elif letter == 'K':

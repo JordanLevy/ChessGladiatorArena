@@ -41,6 +41,6 @@ class Knight(Piece):
         for i in offsets:
             s = self.get_piece_at_offset(i)
             if moveable(s) or captureable(s):
-                add_move(i, captureable(s), False)
+                add_move(i, s, False)
 
         return possible

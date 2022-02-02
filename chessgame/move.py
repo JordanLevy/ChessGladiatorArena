@@ -1,13 +1,13 @@
 class Move:
 
-    def __init__(self, is_white, letter, from_file, from_rank, to_file, to_rank, is_capture=False, is_en_passant=False, is_short_castle=False, is_long_castle=False, is_promotion=False):
+    def __init__(self, is_white, letter, from_file, from_rank, to_file, to_rank, piece_captured=None, is_en_passant=False, is_short_castle=False, is_long_castle=False, is_promotion=False):
         self.is_white = is_white
         self.letter = letter  # 'K', 'Q', 'B', 'N', or 'P'
         self.from_file = from_file
         self.from_rank = from_rank
         self.to_file = to_file
         self.to_rank = to_rank
-        self.is_capture = is_capture
+        self.piece_captured = piece_captured
         self.is_en_passant = is_en_passant
         self.is_short_castle = is_short_castle
         self.is_long_castle = is_long_castle
@@ -35,7 +35,7 @@ class Move:
         return self.to_rank
 
     def get_is_capture(self):
-        return self.is_capture
+        return self.piece_captured
 
     def get_is_en_passant(self):
         return self.is_en_passant
@@ -57,4 +57,4 @@ class Move:
             return 'O-O'
         if self.is_long_castle:
             return 'O-O-O'
-        return self.letter + self.from_file + str(self.from_rank) + ('', 'x')[self.is_capture] + self.to_file + str(self.to_rank) + ('', '_ep')[self.is_en_passant]
+        return self.letter + self.from_file + str(self.from_rank) + ('', 'x')[self.piece_captured] + self.to_file + str(self.to_rank) + ('', '_ep')[self.is_en_passant]

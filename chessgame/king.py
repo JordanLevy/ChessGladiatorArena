@@ -63,14 +63,14 @@ class King(Piece):
                     continue
                 s = self.get_piece_at_offset((i, j))
                 if moveable(s) or captureable(s):
-                    add_move((i, j), captureable(s), False, False, False)
+                    add_move((i, j), s, False, False, False)
 
         # short castling
         # king cannot have moved
-        short_castle = not self.has_moved
+        short_castle = not self.get_has_moved()
         # h1/8 rook can't have moved
         s = self.board.get_piece('h', self.rank)
-        if not (s and type(s) is Rook and not s.has_moved):
+        if not (s and type(s) is Rook and not s.num_times_moved):
             short_castle = False
         # f1/8 and g1.8 must be empty and undefended
         for i in ['f', 'g']:
@@ -78,14 +78,14 @@ class King(Piece):
             if s or self.defended_by_enemy(i, self.rank):
                 short_castle = False
         if short_castle:
-            add_move((2, 0), False, False, True, False)
+            add_move((2, 0), None, False, True, False)
 
         # long castling
         # king cannot have moved
-        long_castle = not self.has_moved
+        long_castle = not self.get_has_moved()
         # a1/8 rook can't have moved
         s = self.board.get_piece('a', self.rank)
-        if not (s and type(s) is Rook and not s.has_moved):
+        if not (s and type(s) is Rook and not s.num_times_moved):
             long_castle = False
         # c1/8 and d1/8 must be empty and undefended
         for i in ['c', 'd']:
@@ -97,7 +97,7 @@ class King(Piece):
         if s:
             long_castle = False
         if long_castle:
-            add_move((-2, 0), False, False, False, True)
+            add_move((-2, 0), None, False, False, True)
 
         return possible
 
@@ -108,11 +108,10 @@ class King(Piece):
                 return False
         f = move.to_file
         r = move.to_rank
-        self.move_list.append(move)
         self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
-        self.has_moved = True
+        self.increment_num_times_moved()
         self.board.set_piece(self)
         if move.is_short_castle:
             s = self.board.get_piece('h', self.rank)

@@ -58,15 +58,15 @@ class Pawn(Piece):
 
         # moving forward one square
         if moveable(self.get_piece_at_offset(fwd_1)):
-            add_move(fwd_1, False, False, self.rank == (7, 2)[not w])
+            add_move(fwd_1, None, False, self.rank == (7, 2)[not w])
             # moving forward two squares
-            if not self.has_moved and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
-                add_move(fwd_2, False, False, False)
+            if not self.get_has_moved() and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
+                add_move(fwd_2, None, False, False)
         # diagonal captures
         for i in [diag_left, diag_right]:
             s = self.get_piece_at_offset(i)
             if captureable(s):
-                add_move(i, True, type(s) is EnPassant, self.rank == (7, 2)[not w])
+                add_move(i, s, type(s) is EnPassant, self.rank == (7, 2)[not w])
 
         return possible
 
@@ -80,18 +80,17 @@ class Pawn(Piece):
         is_capture = not self.board.get_piece(f, r) is None
         is_en_passant = type(self.board.get_piece(f, r)) is EnPassant
         is_promotion = (r == 8)
-        self.move_list.append(move)
         # if it's en passant, handle the capture
         if is_en_passant:
             self.board.remove_piece(f, (4, 5)[self.is_white])
         # if it's a double pawn move, set an en passant marker behind it
-        if (not self.has_moved) and r == (5, 4)[self.is_white]:
+        if (not self.num_times_moved) and r == (5, 4)[self.is_white]:
             self.board.set_piece(
                 EnPassant(self.board, self.is_white, self.file, (6, 3)[self.is_white], self.board.turn_num))
         self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
-        self.has_moved = True
+        self.increment_num_times_moved()
         self.board.set_piece(self)
 
         if is_promotion:
