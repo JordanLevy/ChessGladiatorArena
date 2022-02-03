@@ -262,12 +262,16 @@ class Board:
         return is_legal
 
     def undo_move(self):
+        # if there are no moves to undo
         if not self.move_list:
             return
         move = self.move_list[-1]
+        #where the piece ended up is s
         s = self.get_piece(move.to_file, move.to_rank)
         self.remove_piece_by_ref(s)
         c = move.get_piece_captured()
+        a = move.get_affected_piece()
+        # c is the piece captured on that move
         if c:
             self.set_piece(c)
             if c.letter == 'E':
@@ -278,6 +282,8 @@ class Board:
                 self.mat_eval += value_p
             else:
                 self.mat_eval -= value_p
+        if a:
+            self.set_piece(a)
         s.set_file(move.from_file)
         s.set_rank(move.from_rank)
         self.set_piece(s)

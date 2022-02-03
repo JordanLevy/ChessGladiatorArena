@@ -49,24 +49,34 @@ class Pawn(Piece):
         opposing = lambda x: x and w != x.get_is_white()
         moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
         captureable = lambda x: x != -1 and (x is not None and opposing(x))
-        add_move = lambda x, c, e, p: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e, False, False, p))
+        add_move = lambda x, c, e, p, a: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e, False, False, p, a))
         # add_move = lambda x: possible.append(''.join(map(str, self.get_offset(x))))
         fwd_1 = (0, (-1, 1)[w])
         fwd_2 = (0, (-2, 2)[w])
         diag_left = (-1, (-1, 1)[w])
         diag_right = (1, (-1, 1)[w])
-
         # moving forward one square
         if moveable(self.get_piece_at_offset(fwd_1)):
-            add_move(fwd_1, None, False, self.rank == (7, 2)[not w])
+            add_move(fwd_1, None, False, self.rank == (7, 2)[not w], None)
             # moving forward two squares
             if not self.get_has_moved() and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
-                add_move(fwd_2, None, False, False)
+                add_move(fwd_2, None, False, False, None)
         # diagonal captures
         for i in [diag_left, diag_right]:
             s = self.get_piece_at_offset(i)
             if captureable(s):
-                add_move(i, s, type(s) is EnPassant, self.rank == (7, 2)[not w])
+                add_move(i, s, False, self.rank == (7, 2)[not w], None)
+        # EnPassant capture
+        last_m = self.board.move_list[-1]
+        if last_m.letter == "P" and last_m.is_white != w:
+            if self.rank == (3,6)[w]:
+                if abs(last_m.to_rank - last_m.from_rank) == 2:
+                    f = last_m.from_file
+                    # this is where we left off
+                    ###
+                    ##
+                    ##
+                    #todo
 
         return possible
 

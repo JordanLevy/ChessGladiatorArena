@@ -67,9 +67,9 @@ def run_game():
                         if valid_move:
                             print(game_board.mat_eval)
                             game_board.next_turn()
-                            game_state = game_board.is_game_over()
-                            if game_state != GameState.IN_PROGRESS:
-                                print("game over")
+                            #game_state = game_board.is_game_over()
+                            #if game_state != GameState.IN_PROGRESS:
+                            #    print("game over")
                             """start_time = time.time()
                             cpu_eval, cpu_move = engine.depth_one(game_board) #engine.search_moves(game_board, 3)
                             end_time = time.time()
