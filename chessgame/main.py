@@ -39,6 +39,7 @@ def run_game():
                 sys.exit()
             if event.type == KEYDOWN and event.key == K_SPACE:
                 game_board.undo_move()
+                print(game_board.mat_eval)
                 game_board.draw_board(pygame, screen)
                 continue
             if event.type == MOUSEBUTTONDOWN:
@@ -64,6 +65,7 @@ def run_game():
                         else:
                             valid_move = False
                         if valid_move:
+                            print(game_board.mat_eval)
                             game_board.next_turn()
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:

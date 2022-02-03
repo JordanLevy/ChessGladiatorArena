@@ -57,4 +57,4 @@ class Move:
             return 'O-O'
         if self.is_long_castle:
             return 'O-O-O'
-        return self.letter + self.from_file + str(self.from_rank) + ('', 'x')[self.piece_captured] + self.to_file + str(self.to_rank) + ('', '_ep')[self.is_en_passant]
+        return self.letter + self.from_file + str(self.from_rank) + ('', 'x')[not self.piece_captured is None] + self.to_file + str(self.to_rank) + ('', '_ep')[self.is_en_passant]

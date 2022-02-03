@@ -246,15 +246,16 @@ class Board:
     # moves a piece on the board given a Move object
     def move_by_ref(self, move):
         s = self.get_piece(move.from_file, move.from_rank)
-        if move.get_piece_captured():
-            #this is the peace letter
-            p = self.get_piece(move.to_file, move.to_rank)
-            value_p = values[p.letter]
-            if p.is_white:
+        c = move.get_piece_captured()
+        if c:
+            if c.letter == 'E':
+                value_p = values['P']
+            else:
+                value_p = values[c.letter]
+            if c.is_white:
                 self.mat_eval -= value_p
             else:
                 self.mat_eval += value_p
-
         is_legal = s.move(move, False)
         if is_legal:
             self.move_list.append(move)
@@ -266,8 +267,17 @@ class Board:
         move = self.move_list[-1]
         s = self.get_piece(move.to_file, move.to_rank)
         self.remove_piece_by_ref(s)
-        if move.piece_captured:
-            self.set_piece(move.piece_captured)
+        c = move.get_piece_captured()
+        if c:
+            self.set_piece(c)
+            if c.letter == 'E':
+                value_p = values['P']
+            else:
+                value_p = values[c.letter]
+            if c.is_white:
+                self.mat_eval += value_p
+            else:
+                self.mat_eval -= value_p
         s.set_file(move.from_file)
         s.set_rank(move.from_rank)
         self.set_piece(s)
@@ -287,11 +297,13 @@ class Board:
                 break
         if move is None:
             return False
-        if move.piece_captured:
-            #this is the peace letter
-            p = self.get_piece(to_file, to_rank)
-            value_p = values[p.letter]
-            if p.is_white:
+        c = move.get_piece_captured()
+        if c:
+            if c.letter == 'E':
+                value_p = values['P']
+            else:
+                value_p = values[c.letter]
+            if c.is_white:
                 self.mat_eval -= value_p
             else:
                 self.mat_eval += value_p

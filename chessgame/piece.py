@@ -125,13 +125,17 @@ class Piece:
         # TODO, make this actually check if promotion is legal
         if move.is_promotion:
             return
+        #self.board.move_by_ref(move)
         new_board = self.board.copy_with_move(move)
         if move.is_white:
             if new_board.white_king.is_in_check():
+                #self.board.undo_move()
                 return True
         else:
             if new_board.black_king.is_in_check():
+                #self.board.undo_move()
                 return True
+        #self.board.undo_move()
         return False
 
     def __str__(self):
