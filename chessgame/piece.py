@@ -1,7 +1,3 @@
-from enpassant import EnPassant
-from move import Move
-
-
 class Piece:
 
     def __init__(self, board, is_white, file, rank):
@@ -123,7 +119,7 @@ class Piece:
     def your_king_check(self, move):
         # if it's a promotion move, we don't check legality
         # TODO, make this actually check if promotion is legal
-        if move.is_promotion:
+        if move.get_is_promotion():
             return
         #self.board.move_by_ref(move)
         new_board = self.board.copy_with_move(move)

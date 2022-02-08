@@ -1,8 +1,5 @@
 from random import *
 
-from enpassant import EnPassant
-
-
 class Engine:
 
     def __init__(self, board, is_white):

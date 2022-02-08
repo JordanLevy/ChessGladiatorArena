@@ -1,7 +1,6 @@
 from bishop import Bishop
 from knight import Knight
 from move import Move
-from enpassant import EnPassant
 from piece import Piece
 from queen import Queen
 from rook import Rook
@@ -47,37 +46,53 @@ class Pawn(Piece):
         possible = []
         w = self.get_is_white()
         opposing = lambda x: x and w != x.get_is_white()
-        moveable = lambda x: x != -1 and (x is None or type(x) is EnPassant)
+        moveable = lambda x: x != -1 and x is None
         captureable = lambda x: x != -1 and (x is not None and opposing(x))
-        add_move = lambda x, c, e, p, a: possible.append(Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e, False, False, p, a))
+        add_move = lambda x, c, e, p, a: possible.append(
+            Move(w, self.letter, self.file, self.rank, self.get_offset(x)[0], int(self.get_offset(x)[1]), c, e, False,
+                 False, p, a))
         # add_move = lambda x: possible.append(''.join(map(str, self.get_offset(x))))
         fwd_1 = (0, (-1, 1)[w])
         fwd_2 = (0, (-2, 2)[w])
         diag_left = (-1, (-1, 1)[w])
         diag_right = (1, (-1, 1)[w])
+        left = (-1, 0)
+        right = (1, 0)
+        promo_options = ['N', 'B', 'R', 'Q']
+        promotable = self.rank == (7, 2)[not w]
         # moving forward one square
         if moveable(self.get_piece_at_offset(fwd_1)):
-            add_move(fwd_1, None, False, self.rank == (7, 2)[not w], None)
+            if promotable:
+                for promo in promo_options:
+                    add_move(fwd_1, None, False, promo, None)
+            else:
+                add_move(fwd_1, None, False, '', None)
             # moving forward two squares
             if not self.get_has_moved() and self.rank == (7, 2)[w] and moveable(self.get_piece_at_offset(fwd_2)):
-                add_move(fwd_2, None, False, False, None)
+                add_move(fwd_2, None, False, '', None)
         # diagonal captures
         for i in [diag_left, diag_right]:
             s = self.get_piece_at_offset(i)
             if captureable(s):
-                add_move(i, s, False, self.rank == (7, 2)[not w], None)
+                if promotable:
+                    for promo in promo_options:
+                        add_move(i, s, False, promo, None)
+                else:
+                    add_move(i, s, False, '', None)
         # EnPassant capture
-        last_m = self.board.move_list[-1]
-        if last_m.letter == "P" and last_m.is_white != w:
-            if self.rank == (3,6)[w]:
-                if abs(last_m.to_rank - last_m.from_rank) == 2:
-                    f = last_m.from_file
-                    # this is where we left off
-                    ###
-                    ##
-                    ##
-                    #todo
-
+        if self.board.move_list:
+            last_m = self.board.move_list[-1]
+            if last_m.letter == "P" and last_m.is_white != w:
+                if self.rank == (4, 5)[w]:
+                    if abs(last_m.to_rank - last_m.from_rank) == 2:
+                        f = last_m.from_file
+                        enemy_file_num = self.board.files.index(f)
+                        file_num = self.board.files.index(self.file)
+                        if file_num - enemy_file_num == 1:
+                            # capture en passant to the left
+                            add_move(diag_left, self.get_piece_at_offset(left), True, '', None)
+                        elif file_num - enemy_file_num == -1:
+                            add_move(diag_right, self.get_piece_at_offset(right), True, '', None)
         return possible
 
     def move(self, move, check_legality=True):
@@ -88,25 +103,19 @@ class Pawn(Piece):
         f = move.to_file
         r = move.to_rank
         is_capture = not self.board.get_piece(f, r) is None
-        is_en_passant = type(self.board.get_piece(f, r)) is EnPassant
-        is_promotion = (r == 8)
+        is_en_passant = move.is_en_passant
+        promotion_letter = move.promotion_letter
         # if it's en passant, handle the capture
         if is_en_passant:
             self.board.remove_piece(f, (4, 5)[self.is_white])
-        # if it's a double pawn move, set an en passant marker behind it
-        if (not self.num_times_moved) and r == (5, 4)[self.is_white]:
-            self.board.set_piece(
-                EnPassant(self.board, self.is_white, self.file, (6, 3)[self.is_white], self.board.turn_num))
         self.board.remove_piece(self.file, self.rank)
         self.file = f
         self.rank = r
         self.increment_num_times_moved()
         self.board.set_piece(self)
 
-        if is_promotion:
-            promo_piece = ''
-            while not promo_piece in ['Q', 'R', 'B', 'N']:
-                print('Choose which piece to promote to (Q, R, B, N):\n')
-                promo_piece = input()
-            self.promote(promo_piece)
+        if promotion_letter:
+            print("pl: ", promotion_letter)
+            self.promote(promotion_letter)
+
         return True

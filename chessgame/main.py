@@ -1,3 +1,5 @@
+# TODO Make undo_move work with promotion, fix fen string stuff
+
 from pygame.locals import *
 import math
 
@@ -5,7 +7,6 @@ import pygame
 import sys
 
 from engine import Engine
-from enpassant import EnPassant
 from board import Board
 from gamestate import GameState
 import time
@@ -31,6 +32,7 @@ def run_game():
     game_board.draw_board(pygame, screen)
 
     engine = Engine(game_board, False)
+    promo = ''
 
     while True:
         for event in pygame.event.get():
@@ -42,6 +44,17 @@ def run_game():
                 print(game_board.mat_eval)
                 game_board.draw_board(pygame, screen)
                 continue
+            if event.type == KEYDOWN:
+                if event.key == K_q:
+                    promo = 'Q'
+                elif event.key == K_r:
+                    promo = 'R'
+                elif event.key == K_b:
+                    promo = 'B'
+                elif event.key == K_n:
+                    promo = 'N'
+            if event.type == KEYUP:
+                promo = ''
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
@@ -49,7 +62,7 @@ def run_game():
                     click_x, click_y = game_board.files[math.floor(click_x / 50)], math.ceil(8 - click_y / 50)
                     square_clicked = game_board.get_piece(click_x, click_y)
                     # if they clicked a square with a piece on it (and not an en passant marker)
-                    if square_clicked and not type(square_clicked) is EnPassant:
+                    if square_clicked:
                         game_board.set_move_preview(square_clicked)
                     game_board.draw_board(pygame, screen)
             if event.type == MOUSEBUTTONUP:
@@ -59,9 +72,15 @@ def run_game():
                     release_x, release_y = pygame.mouse.get_pos()
                     release_x, release_y = game_board.files[math.floor(release_x / 50)], math.ceil(8 - release_y / 50)
                     if square_clicked:
+                        piece = game_board.get_piece(click_x, click_y)
+                        w = piece.get_is_white()
                         # if it's that player's turn to move
-                        if game_board.get_piece(click_x, click_y).get_is_white() == game_board.white_turn:
-                            valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                        if w == game_board.white_turn:
+                            #valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                            if piece.letter == 'P' and piece.rank == (2, 7)[w] and release_y == (1, 8)[w]:
+                                valid_move = game_board.apply_move(click_x, click_y, release_x, release_y, promo)
+                            else:
+                                valid_move = game_board.apply_move(click_x, click_y, release_x, release_y, '')
                         else:
                             valid_move = False
                         if valid_move:

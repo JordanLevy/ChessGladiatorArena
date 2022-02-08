@@ -1,7 +1,6 @@
 import math
 
 from bishop import Bishop
-from enpassant import EnPassant
 from king import King
 from knight import Knight
 from pawn import Pawn
@@ -54,7 +53,6 @@ class Board:
 
     # increment turn and clear en passant
     def next_turn(self):
-        self.clear_en_passant_markers()
         fen = self.to_fen()
         # threefold repetition only cares about pieces, turn, castling rights, and en passant
         fen = ' '.join(fen.split(' ')[:-2])
@@ -125,9 +123,6 @@ class Board:
                 # if there's no piece here, set it to None
                 if not s:
                     new_board.remove_piece(i, j)
-                # otherwise, create a new piece with the same attributes on the new board
-                elif type(s) is EnPassant:
-                    new_piece = EnPassant(new_board, s.get_is_white(), i, j, s.get_move_num())
                 elif type(s) is Pawn:
                     new_piece = Pawn(new_board, s.get_is_white(), i, j)
                 elif type(s) is Knight:
@@ -160,25 +155,6 @@ class Board:
     def setup_board(self):
         self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         # self.load_fen('8/K3Pr2/8/8/8/8/8/7k w - - 0 1')
-
-    # removes old en passant markers from the board
-    def clear_en_passant_markers(self):
-        # check if capturing en passant is a legal move for the opponent
-        has_ep = False
-        opponent_moves = self.get_all_legal_moves(not self.white_turn)
-        for m in opponent_moves:
-            # if it's an en passant capture
-            if m.letter == 'P' and m.get_is_en_passant():
-                has_ep = True
-                break
-        for i in self.files:
-            for j in range(1, 9):
-                s = self.get_piece(i, j)
-                if not s or not type(s) is EnPassant:
-                    continue
-                # if this en passant marker is at least 1 move old, or can't be captured by the opponent anyway
-                if (self.turn_num - s.get_move_num()) >= 1 or not has_ep:
-                    self.remove_piece_by_ref(s)
 
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
@@ -221,10 +197,7 @@ class Board:
                 # if it's not equal to None
                 if self.board_grid[f[i]][j]:
                     img = pygame.image.load(self.board_grid[f[i]][j].img)
-                    if type(self.board_grid[f[i]][j]) is EnPassant:
-                        img = pygame.transform.scale(img, (25, 25))
-                    else:
-                        img = pygame.transform.scale(img, (50, 50))
+                    img = pygame.transform.scale(img, (50, 50))
                     screen.blit(pygame.transform.rotate(img, 0),
                                 ((i - 1) * 50, 400 - j * 50))
 
@@ -248,10 +221,7 @@ class Board:
         s = self.get_piece(move.from_file, move.from_rank)
         c = move.get_piece_captured()
         if c:
-            if c.letter == 'E':
-                value_p = values['P']
-            else:
-                value_p = values[c.letter]
+            value_p = values[c.letter]
             if c.is_white:
                 self.mat_eval -= value_p
             else:
@@ -259,6 +229,30 @@ class Board:
         is_legal = s.move(move, False)
         if is_legal:
             self.move_list.append(move)
+        return is_legal
+
+    # moves a piece on the board given files and ranks
+    # promotion is a character
+    def apply_move(self, from_file, from_rank, to_file, to_rank, promotion):
+        s = self.get_piece(from_file, from_rank)
+        legal_moves = s.get_legal_moves()
+        move = None
+        for m in legal_moves:
+            if m.to_file == to_file and m.to_rank == to_rank and m.promotion_letter == promotion:
+                move = m
+                break
+        if move is None:
+            return False
+        c = move.get_piece_captured()
+        if c:
+            value_p = values[c.letter]
+            if c.is_white:
+                self.mat_eval -= value_p
+            else:
+                self.mat_eval += value_p
+        is_legal = s.move(m)
+        if is_legal:
+            self.move_list.append(m)
         return is_legal
 
     def undo_move(self):
@@ -319,6 +313,7 @@ class Board:
         return is_legal
 
     # returns a string representation of the board using FEN (Forsyth-Edwards Notation)
+    # TODO en passant must now be determined without using en passant markers
     def to_fen(self):
         pieces = ''
         turn = ('b', 'w')[self.white_turn]
@@ -334,10 +329,11 @@ class Board:
                 if s is None:
                     spaces += 1
                     continue
-                if type(s) is EnPassant:
-                    ep = s.get_file() + str(s.get_rank())
-                    spaces += 1
-                    continue
+                # TODO check if last move allows en passant capture
+                # if type(s) is EnPassant:
+                #     ep = s.get_file() + str(s.get_rank())
+                #     spaces += 1
+                #     continue
                 pieces += ('', str(spaces))[spaces > 0] + s.__str__()
                 spaces = 0
             pieces += ('', str(spaces))[spaces > 0] + ('', '/')[j > 1]
@@ -360,13 +356,15 @@ class Board:
         return pieces + ' ' + turn + ' ' + castling + ' ' + ep + ' ' + fifty_move_clock + ' ' + full_move_num
 
     # sets up the board position using a FEN (Forsyth-Edwards Notation) string
+    # TODO en passant must now be determined without using en passant markers
     def load_fen(self, fen):
         pieces, turn, castling, ep, fifty_move_clock, full_move_num = fen.split(' ')
         self.white_turn = (turn == 'w')
         self.fifty_move_clock = int(fifty_move_clock)
         self.turn_num = 2 * int(full_move_num) - 1
-        if ep != '-':
-            self.set_piece(EnPassant(self, not self.white_turn, ep[0], int(ep[1]), self.turn_num))
+        # TODO fix en passant in fen string
+        # if ep != '-':
+        #     self.set_piece(EnPassant(self, not self.white_turn, ep[0], int(ep[1]), self.turn_num))
         f = 0
         r = 8
         for p in pieces:
