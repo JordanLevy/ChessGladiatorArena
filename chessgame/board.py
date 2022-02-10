@@ -11,7 +11,6 @@ import copy
 
 values = {"P": 100, "N": 300, "B": 330, "R": 500, "Q": 900, "K": 9000}
 class Board:
-
     def __init__(self):
         self.turn_num = 0  # counts halfmoves. even numbers are white's turn
         self.white_turn = True  # true if it's white's turn, false otherwise
@@ -265,27 +264,43 @@ class Board:
         self.remove_piece_by_ref(s)
         c = move.get_piece_captured()
         a = move.get_affected_piece()
+        p = move.get_is_promotion()
+        # p is a boolean if pro is true or not
+        # a is a piece is piece that is afectid by the move but not captered
         # c is the piece captured on that move
+        if a:
+            self.set_piece(a)
+            #this is for undoing prompted piece first
+        if p:
+            s = Pawn(s.board, s.is_white, s.file, s.rank)
+            # this is to fixe long caseling
+        if move.get_is_long_castle():
+            r = s.get_piece_at_offset((1, 0))
+            self.remove_piece_by_ref(r)
+            r.set_file("a")
+            self.set_piece(r)
+        if move.get_is_short_castle():
+            r = s.get_piece_at_offset((-1,0))
+            self.remove_piece_by_ref(r)
+            r.set_file("h")
+            self.set_piece(r)
+        s.set_file(move.from_file)
+        s.set_rank(move.from_rank)
+        self.set_piece(s)
         if c:
             self.set_piece(c)
-            if c.letter == 'E':
-                value_p = values['P']
-            else:
-                value_p = values[c.letter]
+            value_p = values[c.letter]
+            # is not done
             if c.is_white:
                 self.mat_eval += value_p
             else:
                 self.mat_eval -= value_p
-        if a:
-            self.set_piece(a)
-        s.set_file(move.from_file)
-        s.set_rank(move.from_rank)
-        self.set_piece(s)
+        else:
+            self.remove_piece(move.to_file, move.to_rank)
         self.move_list = self.move_list[:-1]
         self.turn_num -= 1
         self.white_turn = not self.white_turn
         s.decrement_num_times_moved()
-
     # moves a piece on the board given files and ranks
     def move(self, from_file, from_rank, to_file, to_rank):
         s = self.get_piece(from_file, from_rank)
@@ -299,10 +314,7 @@ class Board:
             return False
         c = move.get_piece_captured()
         if c:
-            if c.letter == 'E':
-                value_p = values['P']
-            else:
-                value_p = values[c.letter]
+            value_p = values[c.letter]
             if c.is_white:
                 self.mat_eval -= value_p
             else:
