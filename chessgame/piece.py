@@ -101,14 +101,10 @@ class Piece:
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
     # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")
-    def move(self, move, check_legality=True):
-        if check_legality:
-            if not self.is_legal_move(move):
-                print('illegal move')
-                return False
+    def move(self, move):
         f = move.to_file
         r = move.to_rank
-        self.board.remove_piece(self.file, self.rank)
+        self.board.remove_piece(move.from_file, move.from_rank)
         self.file = f
         self.rank = r
         self.increment_num_times_moved()
@@ -117,21 +113,17 @@ class Piece:
 
     # returns true if making this move puts your own king in check and false if anything else
     def your_king_check(self, move):
-        # if it's a promotion move, we don't check legality
-        # TODO, make this actually check if promotion is legal
-        if move.get_is_promotion():
-            return
-        #self.board.move_by_ref(move)
-        new_board = self.board.copy_with_move(move)
+        self.board.apply_move_by_ref(move)
+        self.board.next_turn()
         if move.is_white:
-            if new_board.white_king.is_in_check():
-                #self.board.undo_move()
+            if self.board.white_king.is_in_check():
+                self.board.undo_move()
                 return True
         else:
-            if new_board.black_king.is_in_check():
-                #self.board.undo_move()
+            if self.board.black_king.is_in_check():
+                self.board.undo_move()
                 return True
-        #self.board.undo_move()
+        self.board.undo_move()
         return False
 
     def __str__(self):

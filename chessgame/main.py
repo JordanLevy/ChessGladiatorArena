@@ -1,4 +1,4 @@
-# TODO Make undo_move work with promotion, fix fen string stuff
+# TODO fix your king check
 
 from pygame.locals import *
 import math
@@ -41,7 +41,6 @@ def run_game():
                 sys.exit()
             if event.type == KEYDOWN and event.key == K_SPACE:
                 game_board.undo_move()
-                print(game_board.mat_eval)
                 game_board.draw_board(pygame, screen)
                 continue
             if event.type == KEYDOWN:
@@ -84,20 +83,19 @@ def run_game():
                         else:
                             valid_move = False
                         if valid_move:
-                            print(game_board.mat_eval)
                             game_board.next_turn()
                             #game_state = game_board.is_game_over()
                             #if game_state != GameState.IN_PROGRESS:
                             #    print("game over")
-                            """start_time = time.time()
-                            cpu_eval, cpu_move = engine.depth_one(game_board) #engine.search_moves(game_board, 3)
+                            start_time = time.time()
+                            cpu_eval, cpu_move = engine.search_moves(3) #engine.depth_one(game_board)
                             end_time = time.time()
                             print("the computation time is", str(end_time-start_time))
                             game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
                             game_board.next_turn()
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
-                                print("game over")"""
+                                print("game over")
                     game_board.draw_board(pygame, screen)
         pygame.display.update()
         mainClock.tick(100)

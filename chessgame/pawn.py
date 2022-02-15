@@ -23,8 +23,11 @@ class Pawn(Piece):
             self.board.set_piece(Rook(self.board, self.is_white, self.file, self.rank))
         elif promo_piece == 'B':
             self.board.set_piece(Bishop(self.board, self.is_white, self.file, self.rank))
-        else:
+        elif promo_piece == 'N':
             self.board.set_piece(Knight(self.board, self.is_white, self.file, self.rank))
+        else:
+            print("promotion error")
+            return
 
     def get_defended_squares(self):
         files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -95,11 +98,7 @@ class Pawn(Piece):
                             add_move(diag_right, self.get_piece_at_offset(right), True, '', None)
         return possible
 
-    def move(self, move, check_legality=True):
-        if check_legality:
-            if not self.is_legal_move(move):
-                print('illegal move')
-                return False
+    def move(self, move):
         f = move.to_file
         r = move.to_rank
         is_capture = not self.board.get_piece(f, r) is None
@@ -108,14 +107,13 @@ class Pawn(Piece):
         # if it's en passant, handle the capture
         if is_en_passant:
             self.board.remove_piece(f, (4, 5)[self.is_white])
-        self.board.remove_piece(self.file, self.rank)
+        self.board.remove_piece(move.from_file, move.from_rank)
         self.file = f
         self.rank = r
         self.increment_num_times_moved()
         self.board.set_piece(self)
 
         if promotion_letter:
-            print("pl: ", promotion_letter)
             self.promote(promotion_letter)
 
         return True

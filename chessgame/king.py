@@ -100,14 +100,10 @@ class King(Piece):
 
         return possible
 
-    def move(self, move, check_legality=True):
-        if check_legality:
-            if not self.is_legal_move(move):
-                print('illegal move')
-                return False
+    def move(self, move):
         f = move.to_file
         r = move.to_rank
-        self.board.remove_piece(self.file, self.rank)
+        self.board.remove_piece(move.from_file, move.from_rank)
         self.file = f
         self.rank = r
         self.increment_num_times_moved()
