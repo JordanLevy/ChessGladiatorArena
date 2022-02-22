@@ -154,7 +154,7 @@ class Board:
 
     def setup_board(self):
         self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        #self.load_fen('1n1K4/2P5/8/q7/8/8/8/k7 w - - 0 1')
+        #self.load_fen('rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2')
 
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
