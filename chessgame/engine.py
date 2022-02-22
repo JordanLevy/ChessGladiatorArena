@@ -1,4 +1,5 @@
 from random import *
+from gamestate import GameState
 
 class Engine:
 
@@ -74,28 +75,52 @@ class Engine:
             return best_white_score, best_move
         return best_black_score, best_move
 
-    def search_moves(self, depth):
-        if depth == 0:
+    def search_moves(self, depth, alpha, beta, is_white):
+        if depth == 0 or self.board.is_game_over() != GameState.IN_PROGRESS:
             return self.eval_position(self.board), None
-
-        w = self.board.white_turn
-        all_legal_moves = self.board.get_all_legal_moves(w)
-
-        if len(all_legal_moves) == 0:
-            return 0, None
-
-        best_eval = -1000
-        best_move = None
-
-        for m in all_legal_moves:
-            self.board.apply_move_by_ref(m)
-            self.board.next_turn()
-            a = self.search_moves(depth - 1)
-            eval, q = -a[0], a[1]
-            if eval > best_eval:
-                best_eval = eval
-                best_move = m
-            self.board.undo_move()
+        if is_white:
+            best_eval = -40000
+            best_move = None
+            all_legal_moves = self.board.get_all_legal_moves(is_white)
+            for m in all_legal_moves:
+                # make the move on the board
+                self.board.apply_move_by_ref(m)
+                # just sayiing its the next tern
+                self.board.next_turn()
+                a = self.search_moves(depth - 1, alpha, beta, False)
+                # a0 and a1 is the eval and best move eg.Nc3
+                eval = a[0]
+                q = a[1]
+                # if we find a better move
+                if eval > best_eval:
+                    best_eval = eval
+                    best_move = m
+                self.board.undo_move()
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break
+        # this it for blacks tern
+        else:
+            best_eval = 40000
+            best_move = None
+            all_legal_moves = self.board.get_all_legal_moves(is_white)
+            for m in all_legal_moves:
+                # make the move on the board
+                self.board.apply_move_by_ref(m)
+                # just sayiing its the next tern
+                self.board.next_turn()
+                a = self.search_moves(depth - 1, alpha, beta, True)
+                # a0 and a1 is the eval and best move eg.Nc3
+                eval = a[0]
+                q = a[1]
+                # if we find a better move
+                if eval < best_eval:
+                    best_eval = eval
+                    best_move = m
+                self.board.undo_move()
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break
         return best_eval, best_move
 
     def get_random_move(self):

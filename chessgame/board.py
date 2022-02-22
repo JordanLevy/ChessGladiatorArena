@@ -53,6 +53,7 @@ class Board:
 
     # increment turn and clear en passant
     def next_turn(self):
+        """
         fen = self.to_fen()
         # threefold repetition only cares about pieces, turn, castling rights, and en passant
         fen = ' '.join(fen.split(' ')[:-2])
@@ -60,6 +61,7 @@ class Board:
             self.board_repetitions[fen] += 1
         else:
             self.board_repetitions[fen] = 1
+        """
         self.turn_num += 1
         self.white_turn = not self.white_turn
         prev_move = self.move_list[-1]
@@ -79,9 +81,11 @@ class Board:
     def is_game_over(self):
         if self.fifty_move_clock >= 100:
             return GameState.FIFTY_MOVE_RULE
+        """
         for i in self.board_repetitions.keys():
             if self.board_repetitions[i] >= 3:
                 return GameState.THREEFOLD_REPETITION
+                """
         if self.white_turn:
             white_moves = self.get_all_legal_moves(True)
             if not white_moves:
