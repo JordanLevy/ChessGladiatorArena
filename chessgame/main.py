@@ -88,7 +88,7 @@ def run_game():
                             #if game_state != GameState.IN_PROGRESS:
                             #    print("game over")
                             start_time = time.time()
-                            cpu_eval, cpu_move = engine.search_moves(3) #engine.depth_one(game_board)
+                            cpu_eval, cpu_move = engine.search_moves(3, -40000, 40000, False) #engine.depth_one(game_board)
                             end_time = time.time()
                             print("the computation time is", str(end_time-start_time))
                             game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
