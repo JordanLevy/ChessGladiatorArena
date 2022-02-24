@@ -24,6 +24,7 @@ class Board:
                            "f": [None] * 9,
                            "g": [None] * 9,
                            "h": [None] * 9}
+        self.knight_square = []
         self.move_list = []
         self.fifty_move_clock = 0
         self.board_repetitions = {}  # (string fen: int #times_position_repeated), used for threefold repetition
@@ -160,11 +161,21 @@ class Board:
         return new_board
 
     def setup_board(self):
-        # self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
+        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
         # self.load_fen('k7/7R/2P5/1R1p4/8/8/K7/8 w - - 0 1') # promotion test
         # self.load_fen('rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1') # white mate in one
         # self.load_fen('rnb1k1nr/pppp1ppp/5q2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1') # black mate in one
-        self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
+        # self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
+        self.load_squares_val()
+
+    def load_squares_val(self):
+        with open("Data_of_squares/Knight_squares.txt", "r") as f:
+            for line in f:
+                p = line.split(",")[:-1]
+                for i in range(len(p)):
+                    p[i] = int(p[i].strip())
+                self.knight_square.append(p)
+        print(self.knight_square)
 
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
