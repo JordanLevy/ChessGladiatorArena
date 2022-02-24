@@ -11,6 +11,8 @@ from gamestate import GameState
 import copy
 
 values = {"P": 100, "N": 300, "B": 330, "R": 500, "Q": 900, "K": 9000}
+
+
 class Board:
     def __init__(self):
         self.turn_num = 0  # counts halfmoves. even numbers are white's turn
@@ -27,8 +29,9 @@ class Board:
         self.board_repetitions = {}  # (string fen: int #times_position_repeated), used for threefold repetition
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self.pieces = {"P": [], "p": [], "R": [], "r": [], "N": [], "n": [],
-                       "B": [], "b": [], "Q": [], "q": [], "K": [], "k": [], "E": [], "e":[]}
+                       "B": [], "b": [], "Q": [], "q": [], "K": [], "k": [], "E": [], "e": []}
         self.mat_eval = 0
+        self.prev_fifty_move_clock = 0
 
     def get_piece(self, f, r):
         return self.board_grid[f][r]
@@ -79,9 +82,9 @@ class Board:
 
     # returns a GameState based on the board position
     def is_game_over(self):
+        """
         if self.fifty_move_clock >= 100:
             return GameState.FIFTY_MOVE_RULE
-        """
         for i in self.board_repetitions.keys():
             if self.board_repetitions[i] >= 3:
                 return GameState.THREEFOLD_REPETITION
@@ -157,8 +160,11 @@ class Board:
         return new_board
 
     def setup_board(self):
-        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        #self.load_fen('rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2')
+        # self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
+        # self.load_fen('k7/7R/2P5/1R1p4/8/8/K7/8 w - - 0 1') # promotion test
+        # self.load_fen('rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1') # white mate in one
+        # self.load_fen('rnb1k1nr/pppp1ppp/5q2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1') # black mate in one
+        self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
 
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
@@ -237,6 +243,7 @@ class Board:
 
     # moves a piece on the board given a Move object
     def apply_move_by_ref(self, move):
+        self.prev_fifty_move_clock = self.fifty_move_clock
         s = self.get_piece(move.from_file, move.from_rank)
         c = move.get_piece_captured()
         if c:
@@ -245,6 +252,13 @@ class Board:
                 self.mat_eval -= value_p
             else:
                 self.mat_eval += value_p
+        p = move.promotion_letter
+        if p:
+            value_p = values[p]
+            if move.get_is_white():
+                self.mat_eval += (value_p - 100)
+            else:
+                self.mat_eval -= (value_p - 100)
         is_legal = s.move(move)
         if is_legal:
             self.move_list.append(move)
@@ -253,6 +267,7 @@ class Board:
     # moves a piece on the board given files and ranks
     # promotion is a character
     def apply_move(self, from_file, from_rank, to_file, to_rank, promotion):
+        self.prev_fifty_move_clock = self.fifty_move_clock
         s = self.get_piece(from_file, from_rank)
         legal_moves = s.get_legal_moves()
         move = None
@@ -269,6 +284,13 @@ class Board:
                 self.mat_eval -= value_p
             else:
                 self.mat_eval += value_p
+        p = move.promotion_letter
+        if p:
+            value_p = values[p]
+            if move.get_is_white():
+                self.mat_eval += (value_p - 100)
+            else:
+                self.mat_eval -= (value_p - 100)
         is_legal = s.move(m)
         if is_legal:
             self.move_list.append(m)
@@ -279,7 +301,7 @@ class Board:
         if not self.move_list:
             return
         move = self.move_list[-1]
-        #where the piece ended up is s
+        # where the piece ended up is s
         s = self.get_piece(move.to_file, move.to_rank)
         self.remove_piece_by_ref(s)
         c = move.get_piece_captured()
@@ -288,9 +310,9 @@ class Board:
         # p is a boolean if pro is true or not
         # a is a piece is piece that is afectid by the move but not captered
         # c is the piece captured on that move
-        #if a:
-            #self.set_piece(a)
-            #this is for undoing prompted piece first
+        # if a:
+        # self.set_piece(a)
+        # this is for undoing prompted piece first
         if p:
             s = Pawn(s.board, s.is_white, s.file, s.rank)
             # this is to fixe long caseling
@@ -300,7 +322,7 @@ class Board:
             r.set_file("a")
             self.set_piece(r)
         if move.get_is_short_castle():
-            r = s.get_piece_at_offset((-1,0))
+            r = s.get_piece_at_offset((-1, 0))
             self.remove_piece_by_ref(r)
             r.set_file("h")
             self.set_piece(r)
@@ -317,10 +339,18 @@ class Board:
                 self.mat_eval -= value_p
         else:
             self.remove_piece(move.to_file, move.to_rank)
+        p = move.promotion_letter
+        if p:
+            value_p = values[p]
+            if move.get_is_white():
+                self.mat_eval -= (value_p - 100)
+            else:
+                self.mat_eval += (value_p - 100)
         self.move_list = self.move_list[:-1]
         self.turn_num -= 1
         self.white_turn = not self.white_turn
         s.decrement_num_times_moved()
+        self.fifty_move_clock = self.prev_fifty_move_clock
 
     # moves a piece on the board given files and ranks
     def move(self, from_file, from_rank, to_file, to_rank):
@@ -402,7 +432,8 @@ class Board:
             file = ep[0]
             rank = int(ep[1])
             white_pawn = not self.white_turn
-            ep_move = Move(white_pawn, 'P', file, rank + (1, -1)[white_pawn], file, rank + (-1, 1)[white_pawn], None, False, False, False, '', None)
+            ep_move = Move(white_pawn, 'P', file, rank + (1, -1)[white_pawn], file, rank + (-1, 1)[white_pawn], None,
+                           False, False, False, '', None)
             self.move_list.append(ep_move)
         # if ep != '-':
         #     self.set_piece(EnPassant(self, not self.white_turn, ep[0], int(ep[1]), self.turn_num))

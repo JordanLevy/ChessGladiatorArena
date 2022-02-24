@@ -84,18 +84,20 @@ def run_game():
                             valid_move = False
                         if valid_move:
                             game_board.next_turn()
-                            #game_state = game_board.is_game_over()
-                            #if game_state != GameState.IN_PROGRESS:
-                            #    print("game over")
-                            start_time = time.time()
-                            cpu_eval, cpu_move = engine.search_moves(3, -40000, 40000, False) #engine.depth_one(game_board)
-                            end_time = time.time()
-                            print("the computation time is", str(end_time-start_time))
-                            game_board.move(cpu_move.get_from_file(), cpu_move.get_from_rank(), cpu_move.get_to_file(), cpu_move.get_to_rank())
-                            game_board.next_turn()
+                            print(game_board.mat_eval)
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
-                                print("game over")
+                               print("white turn", game_state)
+                            start_time = time.time()
+                            cpu_eval, cpu_move = engine.search_moves(4, -engine.mate_value, engine.mate_value, False) #engine.depth_one(game_board)
+                            end_time = time.time()
+                            print("the computation time is", str(end_time-start_time))
+                            game_board.apply_move_by_ref(cpu_move)
+                            game_board.next_turn()
+                            print(game_board.mat_eval)
+                            game_state = game_board.is_game_over()
+                            if game_state != GameState.IN_PROGRESS:
+                                print("black turn", game_state)
                     game_board.draw_board(pygame, screen)
         pygame.display.update()
         mainClock.tick(100)

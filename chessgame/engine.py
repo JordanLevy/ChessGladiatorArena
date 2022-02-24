@@ -1,12 +1,25 @@
 from random import *
 from gamestate import GameState
 
+
+def sort_candidate_moves(m):
+    captures = []
+    other = []
+    for i in m:
+        if i.get_piece_captured():
+            captures.append(i)
+        else:
+            other.append(i)
+    return captures + other
+
+
 class Engine:
 
     def __init__(self, board, is_white):
         self.board = board
         self.is_white = is_white
         self.max_depth = 2
+        self.mate_value = 1000000000
 
     def depth_one(self, analysis_board):
         # w = True if it's white's turn to move
@@ -75,6 +88,8 @@ class Engine:
             return best_white_score, best_move
         return best_black_score, best_move
 
+    # returns a sorted version of m with "good" candidate moves at the start
+
     def search_moves(self, depth, alpha, beta, is_white):
         if depth == 0 or self.board.is_game_over() != GameState.IN_PROGRESS:
             return self.eval_position(self.board), None
@@ -82,6 +97,7 @@ class Engine:
             best_eval = -40000
             best_move = None
             all_legal_moves = self.board.get_all_legal_moves(is_white)
+            all_legal_moves = sort_candidate_moves(all_legal_moves)
             for m in all_legal_moves:
                 # make the move on the board
                 self.board.apply_move_by_ref(m)
@@ -99,11 +115,12 @@ class Engine:
                 alpha = max(alpha, eval)
                 if beta <= alpha:
                     break
-        # this it for blacks tern
+        # this is for blacks turn
         else:
             best_eval = 40000
             best_move = None
             all_legal_moves = self.board.get_all_legal_moves(is_white)
+            all_legal_moves = sort_candidate_moves(all_legal_moves)
             for m in all_legal_moves:
                 # make the move on the board
                 self.board.apply_move_by_ref(m)
@@ -132,4 +149,11 @@ class Engine:
         return all_legal_moves[rand_index]
 
     def eval_position(self, analysis_board):
+        game_state = analysis_board.is_game_over()
+        if game_state == GameState.WHITE_CHECKMATE:
+            return self.mate_value
+        elif game_state == GameState.BLACK_CHECKMATE:
+            return -self.mate_value
+        elif game_state == GameState.STALEMATE or game_state == GameState.THREEFOLD_REPETITION or game_state == GameState.FIFTY_MOVE_RULE:
+            return 0
         return analysis_board.mat_eval
