@@ -84,7 +84,7 @@ def run_game():
                             valid_move = False
                         if valid_move:
                             game_board.next_turn()
-                            print(game_board.mat_eval)
+                            print(game_board.pos_eval)
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                print("white turn", game_state)
@@ -94,7 +94,6 @@ def run_game():
                             print("the computation time is", str(end_time-start_time))
                             game_board.apply_move_by_ref(cpu_move)
                             game_board.next_turn()
-                            print(game_board.mat_eval)
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                 print("black turn", game_state)

@@ -156,9 +156,5 @@ class Engine:
             return -self.mate_value
         elif game_state == GameState.STALEMATE or game_state == GameState.THREEFOLD_REPETITION or game_state == GameState.FIFTY_MOVE_RULE:
             return 0
-        return analysis_board.mat_eval
-
-    def square_incentive(self, analysis_board):
-
-        pass
+        return analysis_board.mat_eval + analysis_board.pos_eval
 

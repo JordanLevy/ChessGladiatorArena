@@ -1,3 +1,10 @@
+pawn_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+knight_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+bishop_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+rook_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+queen_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+king_square = {"a": [0] * 9, "b": [0] * 9, "c": [0] * 9, "d": [0] * 9, "e": [0] * 9, "f": [0] * 9, "g": [0] * 9, "h": [0] * 9}
+
 class Move:
 
     def __init__(self, is_white, letter, from_file, from_rank, to_file, to_rank, piece_captured=None, is_en_passant=False, is_short_castle=False, is_long_castle=False, promotion_letter='', affected_piece=None):
@@ -52,6 +59,38 @@ class Move:
 
     def get_affected_piece(self):
         return self.affected_piece
+
+    def get_square_incentive(self):
+        initial = 0
+        final = 0
+        ff = self.from_file
+        fr = self.from_rank
+        tf = self.to_file
+        tr = self.to_rank
+
+        if not self.is_white:
+            fr = 9 - fr
+            tr = 9 - tr
+
+        if self.letter == 'P':
+            initial = pawn_square[ff][fr]
+            final = pawn_square[tf][tr]
+        elif self.letter == 'N':
+            initial = knight_square[ff][fr]
+            final = knight_square[tf][tr]
+        elif self.letter == 'B':
+            initial = bishop_square[ff][fr]
+            final = bishop_square[tf][tr]
+        elif self.letter == 'R':
+            initial = rook_square[ff][fr]
+            final = rook_square[tf][tr]
+        elif self.letter == 'Q':
+            initial = queen_square[ff][fr]
+            final = queen_square[tf][tr]
+        elif self.letter == 'K':
+            initial = king_square[ff][fr]
+            final = king_square[tf][tr]
+        return final - initial
 
     def __eq__(self, m):
         return self.is_white == m.is_white and self.letter == m.letter and self.from_file == m.from_file and self.from_rank == m.from_rank and self.to_file == m.to_file and self.to_rank == m.to_rank

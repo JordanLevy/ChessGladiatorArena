@@ -3,7 +3,7 @@ import math
 from bishop import Bishop
 from king import King
 from knight import Knight
-from move import Move
+from move import Move, pawn_square, knight_square, bishop_square, rook_square, queen_square, king_square
 from pawn import Pawn
 from queen import Queen
 from rook import Rook
@@ -24,7 +24,6 @@ class Board:
                            "f": [None] * 9,
                            "g": [None] * 9,
                            "h": [None] * 9}
-        self.knight_square = []
         self.move_list = []
         self.fifty_move_clock = 0
         self.board_repetitions = {}  # (string fen: int #times_position_repeated), used for threefold repetition
@@ -32,6 +31,7 @@ class Board:
         self.pieces = {"P": [], "p": [], "R": [], "r": [], "N": [], "n": [],
                        "B": [], "b": [], "Q": [], "q": [], "K": [], "k": [], "E": [], "e": []}
         self.mat_eval = 0
+        self.pos_eval = 0
         self.prev_fifty_move_clock = 0
 
     def get_piece(self, f, r):
@@ -169,13 +169,65 @@ class Board:
         self.load_squares_val()
 
     def load_squares_val(self):
+        with open("Data_of_squares/Pawn_squares.txt", "r") as f:
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    pawn_square[self.files[j]][8 - i] = p[j]
+
         with open("Data_of_squares/Knight_squares.txt", "r") as f:
-            for line in f:
-                p = line.split(",")[:-1]
-                for i in range(len(p)):
-                    p[i] = int(p[i].strip())
-                self.knight_square.append(p)
-        print(self.knight_square)
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    knight_square[self.files[j]][8 - i] = p[j]
+
+        with open("Data_of_squares/Bishop_squares.txt", "r") as f:
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    bishop_square[self.files[j]][8 - i] = p[j]
+
+        with open("Data_of_squares/Rook_squares.txt", "r") as f:
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    rook_square[self.files[j]][8 - i] = p[j]
+
+        with open("Data_of_squares/Queen_squares.txt", "r") as f:
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    queen_square[self.files[j]][8 - i] = p[j]
+
+        with open("Data_of_squares/King_squares.txt", "r") as f:
+            for (i, line) in enumerate(f):
+                p = line.split(",")[:8]
+                for j in range(len(p)):
+                    p[j] = int(p[j].strip())
+                    king_square[self.files[j]][8 - i] = p[j]
+
+        for i in pawn_square:
+            print(i, pawn_square[i])
+
+        for i in knight_square:
+            print(i, knight_square[i])
+
+        for i in bishop_square:
+            print(i, bishop_square[i])
+
+        for i in rook_square:
+            print(i, rook_square[i])
+
+        for i in queen_square:
+            print(i, queen_square[i])
+
+        for i in king_square:
+            print(i, king_square[i])
 
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
@@ -238,19 +290,19 @@ class Board:
                                        ((5 - 2) * 50 - 25, (8 - (8, 1)[self.move_preview.is_white]) * 50 + 25), 10)
 
     # moves a piece on the board given a Move object
-    def move_by_ref(self, move):
-        s = self.get_piece(move.from_file, move.from_rank)
-        c = move.get_piece_captured()
-        if c:
-            value_p = values[c.letter]
-            if c.is_white:
-                self.mat_eval -= value_p
-            else:
-                self.mat_eval += value_p
-        is_legal = s.move(move)
-        if is_legal:
-            self.move_list.append(move)
-        return is_legal
+    # def move_by_ref(self, move):
+    #     s = self.get_piece(move.from_file, move.from_rank)
+    #     c = move.get_piece_captured()
+    #     if c:
+    #         value_p = values[c.letter]
+    #         if c.is_white:
+    #             self.mat_eval -= value_p
+    #         else:
+    #             self.mat_eval += value_p
+    #     is_legal = s.move(move)
+    #     if is_legal:
+    #         self.move_list.append(move)
+    #     return is_legal
 
     # moves a piece on the board given a Move object
     def apply_move_by_ref(self, move):
@@ -270,6 +322,10 @@ class Board:
                 self.mat_eval += (value_p - 100)
             else:
                 self.mat_eval -= (value_p - 100)
+        if move.get_is_white():
+            self.pos_eval += move.get_square_incentive()
+        else:
+            self.pos_eval -= move.get_square_incentive()
         is_legal = s.move(move)
         if is_legal:
             self.move_list.append(move)
@@ -302,6 +358,10 @@ class Board:
                 self.mat_eval += (value_p - 100)
             else:
                 self.mat_eval -= (value_p - 100)
+        if move.get_is_white():
+            self.pos_eval += move.get_square_incentive()
+        else:
+            self.pos_eval -= move.get_square_incentive()
         is_legal = s.move(m)
         if is_legal:
             self.move_list.append(m)
@@ -357,6 +417,10 @@ class Board:
                 self.mat_eval -= (value_p - 100)
             else:
                 self.mat_eval += (value_p - 100)
+        if move.get_is_white():
+            self.pos_eval -= move.get_square_incentive()
+        else:
+            self.pos_eval += move.get_square_incentive()
         self.move_list = self.move_list[:-1]
         self.turn_num -= 1
         self.white_turn = not self.white_turn
