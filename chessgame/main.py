@@ -41,6 +41,7 @@ def run_game():
                 sys.exit()
             if event.type == KEYDOWN and event.key == K_SPACE:
                 game_board.undo_move()
+                game_board.update_all_pieces()
                 game_board.draw_board(pygame, screen)
                 continue
             if event.type == KEYDOWN:
@@ -75,7 +76,7 @@ def run_game():
                         w = piece.get_is_white()
                         # if it's that player's turn to move
                         if w == game_board.white_turn:
-                            #valid_move = game_board.move(click_x, click_y, release_x, release_y)
+                            # if the move is pawn promotion
                             if piece.letter == 'P' and piece.rank == (2, 7)[w] and release_y == (1, 8)[w]:
                                 valid_move = game_board.apply_move(click_x, click_y, release_x, release_y, promo)
                             else:
@@ -83,13 +84,15 @@ def run_game():
                         else:
                             valid_move = False
                         if valid_move:
+                            # player makes a move for white
                             game_board.next_turn()
-                            print(game_board.pos_eval)
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                print("white turn", game_state)
+
+                            # engine makes a move for black
                             start_time = time.time()
-                            cpu_eval, cpu_move = engine.search_moves(3, -engine.mate_value, engine.mate_value, False) #engine.depth_one(game_board)
+                            cpu_eval, cpu_move = engine.search_moves(3, -engine.mate_value, engine.mate_value, False)
                             end_time = time.time()
                             print("the computation time is", str(end_time-start_time))
                             game_board.apply_move_by_ref(cpu_move)
@@ -97,6 +100,7 @@ def run_game():
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                 print("black turn", game_state)
+
                     game_board.draw_board(pygame, screen)
         pygame.display.update()
         mainClock.tick(100)

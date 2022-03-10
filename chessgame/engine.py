@@ -101,7 +101,7 @@ class Engine:
             for m in all_legal_moves:
                 # make the move on the board
                 self.board.apply_move_by_ref(m)
-                # just sayiing its the next tern
+                # just saying it's the next tern
                 self.board.next_turn()
                 a = self.search_moves(depth - 1, alpha, beta, False)
                 # a0 and a1 is the eval and best move eg.Nc3
