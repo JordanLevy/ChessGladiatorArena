@@ -12,7 +12,6 @@ def sort_candidate_moves(m):
             other.append(i)
     return captures + other
 
-
 class Engine:
 
     def __init__(self, board, is_white):
