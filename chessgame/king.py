@@ -25,7 +25,7 @@ class King(Piece):
                 if not s:
                     continue
                 if (self.is_white != s.get_is_white()) and (
-                        target in s.defended_squares):
+                        target in s.get_defended_squares()):
                     return True
         return False
 

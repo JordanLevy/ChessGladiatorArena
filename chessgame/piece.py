@@ -11,9 +11,6 @@ class Piece:
         self.file = file
         self.rank = rank
         self.num_times_moved = 0
-        self.defended_squares = []
-        self.possible_moves = []
-        self.legal_moves = []
         self.board.set_piece(self)
 
     def get_img(self):
@@ -75,7 +72,7 @@ class Piece:
         return self.board.get_piece(f, r)
 
     def get_defended_squares(self):
-        return self.possible_moves
+        return self.get_possible_moves()
 
     # return list of squares this piece could move to, regardless of legality
     # e.g. even if a move results in a check to one's own king, it is still returned by this function
@@ -85,7 +82,7 @@ class Piece:
     # e.g. if the previous move was Bishop to h4, board_grid["a"][3].get_legal_moves("Bh4")
     # return list of legal squares to move to (e.g. ["a1", "a2", "a3", etc.])"""
     def get_legal_moves(self):
-        legal_moves = self.possible_moves
+        legal_moves = self.get_possible_moves()
         for i in range(len(legal_moves) - 1, -1, -1):
             # f = legal_moves[i][0]
             # r = int(legal_moves[i][1])
@@ -96,17 +93,11 @@ class Piece:
         return legal_moves
 
     def is_legal_move(self, move):
-        legal_moves = self.legal_moves
+        legal_moves = self.get_legal_moves()
         for m in legal_moves:
             if m == move:
                 return True
         return False
-
-    # setter for self.defended_squares, possible_moves, and legal_moves
-    def update_moves(self):
-        self.defended_squares = self.get_defended_squares()
-        self.possible_moves = self.get_possible_moves()
-        self.legal_moves = self.get_legal_moves()
 
     # move(String destination) modifies the state of the board based on the location the piece is moving to (and
     # takes care of any captures that may have happened) e.g. board_grid["a"][3].move("b2")

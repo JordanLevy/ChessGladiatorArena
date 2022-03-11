@@ -28,7 +28,8 @@ class Board:
         self.fifty_move_clock = 0
         self.board_repetitions = {}  # (string fen: int #times_position_repeated), used for threefold repetition
         self.files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        self.pieces = dict()
+        self.pieces = {"P": [], "p": [], "R": [], "r": [], "N": [], "n": [],
+                       "B": [], "b": [], "Q": [], "q": [], "K": [], "k": [], "E": [], "e": []}
         self.mat_eval = 0
         self.pos_eval = 0
         self.prev_fifty_move_clock = 0
@@ -110,7 +111,6 @@ class Board:
 
     # returns a list of all legal moves one side has
     def get_all_legal_moves(self, is_white):
-        self.update_all_pieces()
         moves = []
         for i in self.files:
             for j in range(1, 9):
@@ -118,16 +118,8 @@ class Board:
                 if not s:
                     continue
                 if is_white == s.get_is_white():
-                    moves.extend(s.legal_moves)
+                    moves.extend(s.get_legal_moves())
         return moves
-
-    def update_all_pieces(self):
-        for i in self.files:
-            for j in range(1, 9):
-                s = self.get_piece(i, j)
-                if not s:
-                    continue
-                s.update_moves()
 
     # returns a copied board
     def copy(self):
@@ -169,14 +161,12 @@ class Board:
         return new_board
 
     def setup_board(self):
-        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')  # initial position
+        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
         # self.load_fen('k7/7R/2P5/1R1p4/8/8/K7/8 w - - 0 1') # promotion test
         # self.load_fen('rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1') # white mate in one
         # self.load_fen('rnb1k1nr/pppp1ppp/5q2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1') # black mate in one
         # self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
         self.load_squares_val()
-        self.update_all_pieces()
-        print(self.pieces)
 
     def load_squares_val(self):
         with open("Data_of_squares/Pawn_squares.txt", "r") as f:
@@ -285,7 +275,7 @@ class Board:
                                 ((i - 1) * 50, 400 - j * 50))
 
         if self.move_preview:
-            moves = self.move_preview.legal_moves
+            moves = self.move_preview.get_legal_moves()
             color = (GREY, GREEN)[self.move_preview.is_white == self.white_turn]
         # draw move preview
         for m in moves:
@@ -346,7 +336,7 @@ class Board:
     def apply_move(self, from_file, from_rank, to_file, to_rank, promotion):
         self.prev_fifty_move_clock = self.fifty_move_clock
         s = self.get_piece(from_file, from_rank)
-        legal_moves = s.legal_moves
+        legal_moves = s.get_legal_moves()
         move = None
         for m in legal_moves:
             if m.to_file == to_file and m.to_rank == to_rank and m.promotion_letter == promotion:
@@ -440,7 +430,7 @@ class Board:
     # moves a piece on the board given files and ranks
     def move(self, from_file, from_rank, to_file, to_rank):
         s = self.get_piece(from_file, from_rank)
-        legal_moves = s.legal_moves
+        legal_moves = s.get_legal_moves()
         move = None
         for m in legal_moves:
             if m.to_file == to_file and m.to_rank == to_rank:
@@ -562,9 +552,7 @@ class Board:
                     self.black_king = new_piece
             if new_piece:
                 self.set_piece(new_piece)
-                if p not in self.pieces:
-                    self.pieces[p] = set()
-                self.pieces[p].add(new_piece)
+                self.pieces[new_piece.__str__()].append(new_piece)
             f += 1
 
     def __str__(self):
