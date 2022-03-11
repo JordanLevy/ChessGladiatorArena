@@ -14,7 +14,6 @@ class King(Piece):
             self.img = 'Images/BlackKing.png'
 
     def is_in_check(self):
-
         return self.defended_by_enemy(self.file, self.rank)
 
     def defended_by_enemy(self, f, r):
