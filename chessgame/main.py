@@ -16,6 +16,8 @@ pygame.init()
 pygame.display.set_caption('Chess')
 screen = pygame.display.set_mode((400, 400), 0, 32)
 
+a = 1
+
 
 def run_game():
     clicking = False
