@@ -161,11 +161,12 @@ class Board:
         return new_board
 
     def setup_board(self):
-        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
+        #self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
         # self.load_fen('k7/7R/2P5/1R1p4/8/8/K7/8 w - - 0 1') # promotion test
         # self.load_fen('rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1') # white mate in one
         # self.load_fen('rnb1k1nr/pppp1ppp/5q2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1') # black mate in one
         # self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
+        self.load_fen('1Q2Q2Q/8/3brq2/1Q1nkp1Q/3NbR2/8/1Q2Q2Q/K7 w - - 0 1')  # pinned piece test
         self.load_squares_val()
 
     def load_squares_val(self):
@@ -211,24 +212,6 @@ class Board:
                     p[j] = int(p[j].strip())
                     king_square[self.files[j]][8 - i] = p[j]
 
-        for i in pawn_square:
-            print(i, pawn_square[i])
-
-        for i in knight_square:
-            print(i, knight_square[i])
-
-        for i in bishop_square:
-            print(i, bishop_square[i])
-
-        for i in rook_square:
-            print(i, rook_square[i])
-
-        for i in queen_square:
-            print(i, queen_square[i])
-
-        for i in king_square:
-            print(i, king_square[i])
-
     def draw_circle_alpha(self, pygame, surface, color, center, radius):
         target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
         shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
@@ -242,6 +225,7 @@ class Board:
         RED = (255, 0, 0)
         GREEN = (25, 166, 0, 150)
         GREY = (150, 150, 150, 150)
+        YELLOW = (255, 255, 0)
 
         moves = []
         color = ()
@@ -249,30 +233,26 @@ class Board:
         # draw board squares
         w_check = self.white_in_check()
         b_check = self.black_in_check()
-        square_color = BLUE
-        for i in range(8):
-            for j in range(8):
-                square_color = WHITE
-                if (i + j) % 2 == 1:
-                    square_color = BLUE
-                if w_check and i == self.files.index(
-                        self.white_king.get_file()) and (8 - j) == self.white_king.get_rank():
-                    square_color = RED
-                if b_check and i == self.files.index(
-                        self.black_king.get_file()) and (8 - j) == self.black_king.get_rank():
-                    square_color = RED
-                pygame.draw.rect(screen, square_color, (i * 50, j * 50, 50, 50))
 
         # draw pieces
         f = [0, "a", "b", "c", "d", "e", "f", "g", "h"]
         for i in range(1, 9):
             for j in range(1, 9):
                 # if it's not equal to None
-                if self.board_grid[f[i]][j]:
-                    img = pygame.image.load(self.board_grid[f[i]][j].img)
+                s = self.get_piece(f[i], j)
+                square_color = WHITE
+                if (i + j) % 2 == 0:
+                    square_color = BLUE
+                if s:
+                    if (s is self.white_king and w_check) or (s is self.black_king and b_check):
+                        square_color = RED
+                    if s.pin >= 0:
+                        square_color = YELLOW
+                pygame.draw.rect(screen, square_color, ((i - 1) * 50, 400 - j * 50, 50, 50))
+                if s:
+                    img = pygame.image.load(s.img)
                     img = pygame.transform.scale(img, (50, 50))
-                    screen.blit(pygame.transform.rotate(img, 0),
-                                ((i - 1) * 50, 400 - j * 50))
+                    screen.blit(pygame.transform.rotate(img, 0), ((i - 1) * 50, 400 - j * 50))
 
         if self.move_preview:
             moves = self.move_preview.get_legal_moves()

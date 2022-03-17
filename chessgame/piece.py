@@ -12,6 +12,7 @@ class Piece:
         self.rank = rank
         self.num_times_moved = 0
         self.board.set_piece(self)
+        self.pin = -1  # -1 if not pinned to own king, 0 through 7 denoting which direction [r, l, u, d, ur, ul, dr, dl]
 
     def get_img(self):
         return self.img

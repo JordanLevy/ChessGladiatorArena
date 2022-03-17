@@ -84,11 +84,9 @@ def run_game():
                             valid_move = False
                         if valid_move:
                             game_board.next_turn()
-                            print(game_board.pos_eval)
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                print("white turn", game_state)
-
                             # start_time = time.time()
                             # cpu_eval, cpu_move = engine.search_moves(3, -engine.mate_value, engine.mate_value, False) #engine.depth_one(game_board)
                             # end_time = time.time()
