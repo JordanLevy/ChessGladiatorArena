@@ -28,6 +28,14 @@ def get_rank_start(n):
 def get_rank_end(n):
     return (n + 1) * 8
 
+def rank_dif(s,f):
+    d = get_rank(f) - get_rank(s)
+    return d
+
+
+def file_dif(s, f):
+    d = get_file(f) - get_file(s)
+    return d
 
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
@@ -111,10 +119,11 @@ def is_legal_move(start, end):
     diff = end - start
     w_pawn = {7, 8, 9, 16}
     b_pawn = {-7, -8, -9, -16}
-    knight = {10, 17, 15, 6, -10, -17, -15, -6}
-    bishop = {7, 9}
-    rook = {8, -8, 1, -1}
-    king = {7, 8, 9, 1, -1, -7, -8, -9}
+    knight = [17, 15, -6, 10, -17, -15, 6, -10]
+    bishop = [9, -7, -9, 7]
+    rook = [8, 1, -8, -1]
+    queen = rook + bishop
+    king = queen
     if start == end:
         return False
     if piece == 0:
@@ -125,26 +134,71 @@ def is_legal_move(start, end):
     elif piece == 7:
         if diff in b_pawn:
             return True
+
+    # this is the knight
     elif piece == 2 or piece == 8:
-        if diff in knight:
-            return True
+        urdl = board_edge(start)
+        for i in range(4):
+            n = start
+            if urdl[i] < 2:
+                continue
+            if urdl[(n + 1)%4] > 0:
+                if diff == knight[i*2]:
+                    return True
+            if urdl[(n + 3)%4] > 0:
+                if diff == knight[i*2+1]:
+                    return True
+            continue
+    # biskop
     elif piece == 3 or piece == 9:
-        for i in bishop:
-            if abs(diff) % i == 0:
-                return True
+        u, r, d, l = board_edge(start)
+        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+        for i in range(4):
+            n = start
+            for j in range(diag[i]):
+                n += bishop[i]
+                if n == end:
+                    return True
+                if board[n] > 0:
+                    break
+    # this is for rook
     elif piece == 4 or piece == 10:
-        if get_rank(start) == get_rank(end) or get_file(start) == get_file(end):
-            return True
+        urdl = board_edge(start)
+        for i in range(4):
+            n = start
+            for j in range(urdl[i]):
+                n += rook[i]
+                if n == end:
+                    return True
+                if board[n] > 0:
+                    break
+    # queen
     elif piece == 5 or piece == 11:
-        for i in bishop:
-            if abs(diff) % i == 0:
-                return True
-        if get_rank(start) == get_rank(end) or get_file(start) == get_file(end):
-            return True
+        urdl = board_edge(start)
+        u, r, d, l = urdl
+        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+        all_dir = urdl + diag
+        for i in range(8):
+            n = start
+            for j in range(all_dir[i]):
+                n += queen[i]
+                if n == end:
+                    return True
+                if board[n] > 0:
+                    break
     elif piece == 6 or piece == 12:
-        if diff in king:
-            return True
-    return False
+        urdl = board_edge(start)
+        u, r, d, l = urdl
+        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+        all_dir = urdl + diag
+        for i in range(8):
+            n = start
+            if all_dir[i]:
+                n += king[i]
+                if n == end:
+                    return True
+                if board[n] > 0:
+                    continue
 
 def draw_board():
     BLUE = (18, 201, 192)
@@ -163,6 +217,15 @@ def draw_board():
         p = board[i]
         if p > 0:
             screen.blit(pygame.transform.rotate(piece_img[p], 0), (get_file(i) * 50, 350 - get_rank(i) * 50))
+# this function will retern fore numbers start u,r,d,l (CW) the # of squars to the edg of the board
+def board_edge (square):
+    up = 7 - get_rank(square)
+    right = 7 - get_file(square)
+    down = 7 - up
+    left = 7 - right
+    return [up, right, down, left]
 
+def board_attack_update(square_start,square_end):
+    pass
 
 run_game()
