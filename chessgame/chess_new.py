@@ -1,3 +1,10 @@
+# TODO
+# separate is_legal_move into functions per piece (wording TBD)
+# turn legal_moves into possible_moves
+# initialize move matrix
+# en-passant
+# castling
+
 import math
 
 import numpy as np
@@ -9,6 +16,12 @@ import sys
 board = np.zeros(64, dtype=int)
 screen = None
 piece_img = []
+
+knight_offset = [17, 15, -6, 10, -17, -15, 6, -10]
+bishop_offset = [9, -7, -9, 7]
+rook_offset = [8, 1, -8, -1]
+queen_offset = rook_offset + bishop_offset
+king_offset = queen_offset
 
 
 # get what file you are on given an index 0-63
@@ -28,7 +41,8 @@ def get_rank_start(n):
 def get_rank_end(n):
     return (n + 1) * 8
 
-def rank_dif(s,f):
+
+def rank_dif(s, f):
     d = get_rank(f) - get_rank(s)
     return d
 
@@ -36,6 +50,7 @@ def rank_dif(s,f):
 def file_dif(s, f):
     d = get_file(f) - get_file(s)
     return d
+
 
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
@@ -108,97 +123,149 @@ def run_game():
         pygame.display.update()
         mainClock.tick(100)
 
+
 # redraws the squares affected by a move
 def redraw_squares(start, end):
     pass
+
+
+def pawn_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    n = start
+    u, r, d, l = urdl
+    color = 1 # 1 if white, -1 if black
+    if piece == 7:
+        color = -1
+    # empty square in front
+    if board[n + 8 * color] == 0:
+        if diff == 8 * color:
+            return True
+        # 2 empty squares in front
+        if get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
+            if diff == 16 * color:
+                return True
+    if color == 1:
+        if l > 0 and diff == 7:
+            return True
+        if r > 0 and diff == 9:
+            return True
+    else:
+        if l > 0 and diff == -9:
+            return True
+        if r > 0 and diff == -7:
+            return True
+    return False
+
+
+def knight_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    for i in range(4):
+        n = start
+        if urdl[i] < 2:
+            continue
+        if urdl[(i + 1) % 4] > 0:
+            if diff == knight_offset[i * 2]:
+                return True
+        if urdl[(i + 3) % 4] > 0:
+            if diff == knight_offset[i * 2 + 1]:
+                return True
+        continue
+    return False
+
+
+def bishop_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    for i in range(4):
+        n = start
+        for j in range(diag[i]):
+            n += bishop_offset[i]
+            if n == end:
+                return True
+            if board[n] > 0:
+                break
+    return False
+
+
+def rook_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    for i in range(4):
+        n = start
+        for j in range(urdl[i]):
+            n += rook_offset[i]
+            if n == end:
+                return True
+            if board[n] > 0:
+                break
+    return False
+
+
+def queen_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    all_dir = urdl + diag
+    for i in range(8):
+        n = start
+        for j in range(all_dir[i]):
+            n += queen_offset[i]
+            if n == end:
+                return True
+            if board[n] > 0:
+                break
+    return False
+
+
+def king_move(start, end):
+    piece = board[start]
+    diff = end - start
+    urdl = board_edge(start)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    all_dir = urdl + diag
+    for i in range(8):
+        n = start
+        if all_dir[i]:
+            n += king_offset[i]
+            if n == end:
+                return True
+            if board[n] > 0:
+                continue
+    return False
 
 # start and end are both integers from 0-63, representing a square on the board
 # returns true if this is a legal move
 def is_legal_move(start, end):
     piece = board[start]
-    diff = end - start
-    w_pawn = {7, 8, 9, 16}
-    b_pawn = {-7, -8, -9, -16}
-    knight = [17, 15, -6, 10, -17, -15, 6, -10]
-    bishop = [9, -7, -9, 7]
-    rook = [8, 1, -8, -1]
-    queen = rook + bishop
-    king = queen
     if start == end:
         return False
     if piece == 0:
         return False
-    elif piece == 1:
-        if diff in w_pawn:
-            return True
-    elif piece == 7:
-        if diff in b_pawn:
-            return True
-
-    # this is the knight
+    elif piece == 1 or piece == 7:
+        return pawn_move(start, end)
     elif piece == 2 or piece == 8:
-        urdl = board_edge(start)
-        for i in range(4):
-            n = start
-            if urdl[i] < 2:
-                continue
-            if urdl[(n + 1)%4] > 0:
-                if diff == knight[i*2]:
-                    return True
-            if urdl[(n + 3)%4] > 0:
-                if diff == knight[i*2+1]:
-                    return True
-            continue
-    # biskop
+        return knight_move(start, end)
     elif piece == 3 or piece == 9:
-        u, r, d, l = board_edge(start)
-        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-        for i in range(4):
-            n = start
-            for j in range(diag[i]):
-                n += bishop[i]
-                if n == end:
-                    return True
-                if board[n] > 0:
-                    break
-    # this is for rook
+        return bishop_move(start, end)
     elif piece == 4 or piece == 10:
-        urdl = board_edge(start)
-        for i in range(4):
-            n = start
-            for j in range(urdl[i]):
-                n += rook[i]
-                if n == end:
-                    return True
-                if board[n] > 0:
-                    break
-    # queen
+        return rook_move(start, end)
     elif piece == 5 or piece == 11:
-        urdl = board_edge(start)
-        u, r, d, l = urdl
-        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-        all_dir = urdl + diag
-        for i in range(8):
-            n = start
-            for j in range(all_dir[i]):
-                n += queen[i]
-                if n == end:
-                    return True
-                if board[n] > 0:
-                    break
+        return queen_move(start, end)
     elif piece == 6 or piece == 12:
-        urdl = board_edge(start)
-        u, r, d, l = urdl
-        diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-        all_dir = urdl + diag
-        for i in range(8):
-            n = start
-            if all_dir[i]:
-                n += king[i]
-                if n == end:
-                    return True
-                if board[n] > 0:
-                    continue
+        return king_move(start, end)
+    return False
+
 
 def draw_board():
     BLUE = (18, 201, 192)
@@ -217,15 +284,19 @@ def draw_board():
         p = board[i]
         if p > 0:
             screen.blit(pygame.transform.rotate(piece_img[p], 0), (get_file(i) * 50, 350 - get_rank(i) * 50))
+
+
 # this function will retern fore numbers start u,r,d,l (CW) the # of squars to the edg of the board
-def board_edge (square):
+def board_edge(square):
     up = 7 - get_rank(square)
     right = 7 - get_file(square)
     down = 7 - up
     left = 7 - right
     return [up, right, down, left]
 
-def board_attack_update(square_start,square_end):
+
+def board_attack_update(square_start, square_end):
     pass
+
 
 run_game()
