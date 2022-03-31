@@ -1,9 +1,13 @@
 # TODO
-# separate is_legal_move into functions per piece (wording TBD)
+# separate is_legal_move into functions per piece (wording TBD)(done)
 # turn legal_moves into possible_moves
 # initialize move matrix
 # en-passant
 # castling
+#promotion
+
+# legel move are the moves that are alowed to me made and take into acount the state of the board
+# posable moves are all moves that are in the "line of sight of a given piece"
 
 import math
 
@@ -13,9 +17,21 @@ import pygame
 import sys
 
 # globle varabuls
+#the board it tels us what is on that square
 board = np.zeros(64, dtype=int)
+# tels us where each piece is
+pieces = np.zeros((12, 8), dtype=int)
+# witch pieces atacks witch square"this is posable moves
+pos_moves = np.zeros((32, 16), dtype=int)
 screen = None
 piece_img = []
+
+wight_king_move = 0
+black_king_move = 0
+black_a_rook = 0
+black_h_rook = 0
+wight_a_rook = 0
+wight_h_rook = 0
 
 knight_offset = [17, 15, -6, 10, -17, -15, 6, -10]
 bishop_offset = [9, -7, -9, 7]
@@ -61,6 +77,7 @@ def coords_to_num(n):
 # black: P = 7, N = 8, B = 9, R = 10, Q = 11, K = 12
 def init_board():
     global piece_img
+    # this is the board section
     # wight powns
     board[get_rank_start(1):get_rank_end(1)] = 1
 
@@ -83,9 +100,12 @@ def init_board():
     for j in range(1, 13):
         piece_img[j] = pygame.image.load(files[j])
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
-    print(board)
-    print(piece_img)
-
+    # this is where we staart pieces
+    a = np.array(list(range(8, 16)))
+    pieces[1] = a
+    pieces[7] = a +48
+    pieces[:,]
+    print(pieces)
 
 def run_game():
     global screen
@@ -146,6 +166,9 @@ def pawn_move(start, end):
         if get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
             if diff == 16 * color:
                 return True
+
+        # check if the last move was a doblel pawn push
+
     if color == 1:
         if l > 0 and diff == 7:
             return True
@@ -195,6 +218,7 @@ def bishop_move(start, end):
 
 
 def rook_move(start, end):
+    global wight_a_rook, wight_h_rook, black_a_rook, black_h_rook
     piece = board[start]
     diff = end - start
     urdl = board_edge(start)
@@ -203,6 +227,17 @@ def rook_move(start, end):
         for j in range(urdl[i]):
             n += rook_offset[i]
             if n == end:
+                if piece == 4:
+                    if start == 0:
+                        wight_a_rook += 1
+                    elif start == 7:
+                        wight_h_rook += 1
+                elif piece == 10:
+                    if start == 56:
+                        black_a_rook += 1
+                    elif start == 63:
+                        black_h_rook +=1
+                print(wight_a_rook, wight_h_rook, black_a_rook, black_h_rook)
                 return True
             if board[n] > 0:
                 break
@@ -228,6 +263,8 @@ def queen_move(start, end):
 
 
 def king_move(start, end):
+    global wight_king_move
+    global black_king_move
     piece = board[start]
     diff = end - start
     urdl = board_edge(start)
@@ -239,6 +276,10 @@ def king_move(start, end):
         if all_dir[i]:
             n += king_offset[i]
             if n == end:
+                if piece == 6:
+                    wight_king_move += 1
+                else:
+                    black_king_move += 1
                 return True
             if board[n] > 0:
                 continue
@@ -266,6 +307,8 @@ def is_legal_move(start, end):
         return king_move(start, end)
     return False
 
+# this updats the dicshonarys
+def update_charts()
 
 def draw_board():
     BLUE = (18, 201, 192)
