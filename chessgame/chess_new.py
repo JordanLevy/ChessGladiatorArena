@@ -20,7 +20,7 @@ import sys
 #the board it tels us what is on that square
 board = np.zeros(64, dtype=int)
 # tels us where each piece is
-pieces = np.zeros((12, 8), dtype=int)
+pieces = np.full((13, 8), -1, dtype=int)
 # witch pieces atacks witch square"this is posable moves
 pos_moves = np.zeros((32, 16), dtype=int)
 screen = None
@@ -103,8 +103,10 @@ def init_board():
     # this is where we staart pieces
     a = np.array(list(range(8, 16)))
     pieces[1] = a
-    pieces[7] = a +48
-    pieces[:,]
+    pieces[7] = a + 48
+    a = np.array([[1, 6], [2, 5], [0, 7], [3, -1], [4, -1]]) #knight on 1 and 6, bishop on 2 and 5, rook on 0 and 7, queen on 3, king on 4
+    pieces[2:7, 0:2] = a # white pieces
+    pieces[8:13, 0:2] = a + 56 # black pieces
     print(pieces)
 
 def run_game():
@@ -308,7 +310,8 @@ def is_legal_move(start, end):
     return False
 
 # this updats the dicshonarys
-def update_charts()
+def update_charts():
+    pass
 
 def draw_board():
     BLUE = (18, 201, 192)
