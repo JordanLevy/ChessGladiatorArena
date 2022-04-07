@@ -4,7 +4,8 @@
 # initialize move matrix
 # en-passant
 # castling
-#promotion
+# promotion
+# TODO init_pawn_targets needs to be completed
 
 # legel move are the moves that are alowed to me made and take into acount the state of the board
 # posable moves are all moves that are in the "line of sight of a given piece"
@@ -17,12 +18,13 @@ import pygame
 import sys
 
 # globle varabuls
-#the board it tels us what is on that square
+# the board it tels us what is on that square
 board = np.zeros(64, dtype=int)
-# tels us where each piece is
+# e.g. pieces[1] is a list of locations of all white pawns
 pieces = np.full((13, 8), -1, dtype=int)
-# witch pieces atacks witch square"this is posable moves
-pos_moves = np.zeros((32, 16), dtype=int)
+# e.g. target_squares[n]=[p0, p1, p2, ...] means square n is targeted by pieces on squares p0, p1, ...
+# target_squares = np.full((64, 16), -1, dtype=int)
+target_squares = []
 screen = None
 piece_img = []
 
@@ -73,10 +75,127 @@ def coords_to_num(n):
     return n[1] * 8 + n[0]
 
 
+def init_pawn_targets(square):
+    piece = board[square]
+    urdl = board_edge(square)
+    n = square
+    u, r, d, l = urdl
+    color = 1  # 1 if white, -1 if black
+    if piece == 7:
+        color = -1
+
+    target_squares[n + 8 * color].add(square)
+    # empty square in front
+    if board[n + 8 * color] == 0 and get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
+        target_squares[n + 16 * color].add(square)
+    if color == 1:
+        if l > 0 and diff == 7:
+            return True
+        if r > 0 and diff == 9:
+            return True
+    else:
+        if l > 0 and diff == -9:
+            return True
+        if r > 0 and diff == -7:
+            return True
+    return False
+
+
+def init_knight_targets(square):
+    piece = board[square]
+    urdl = board_edge(square)
+    for i in range(4):
+        n = square
+        if urdl[i] < 2:
+            continue
+        if urdl[(i + 1) % 4] > 0:
+            target_squares[n + knight_offset[i * 2]].add(square)
+        if urdl[(i + 3) % 4] > 0:
+            target_squares[n + knight_offset[i * 2 + 1]].add(square)
+
+
+def init_bishop_targets(square):
+    urdl = board_edge(square)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    for i in range(4):
+        n = square
+        for j in range(diag[i]):
+            n += bishop_offset[i]
+            target_squares[n].add(square)
+            if board[n] > 0:
+                break
+
+
+def init_rook_targets(square):
+    urdl = board_edge(square)
+    for i in range(4):
+        n = square
+        for j in range(urdl[i]):
+            n += rook_offset[i]
+            target_squares[n].add(square)
+            if board[n] > 0:
+                break
+
+
+def init_queen_targets(square):
+    urdl = board_edge(square)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    all_dir = urdl + diag
+    for i in range(8):
+        n = square
+        for j in range(all_dir[i]):
+            n += queen_offset[i]
+            target_squares[n].add(square)
+            if board[n] > 0:
+                break
+
+
+def init_king_targets(square):
+    urdl = board_edge(square)
+    u, r, d, l = urdl
+    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
+    all_dir = urdl + diag
+    for i in range(8):
+        n = square
+        if all_dir[i]:
+            n += king_offset[i]
+            target_squares[n].add(square)
+            if board[n] > 0:
+                continue
+
+
+def apply_initial_targets(square):
+    p = board[square]  # piece type
+    if p == 2 or p == 8:
+        init_knight_targets(square)
+    elif p == 3 or p == 9:
+        init_bishop_targets(square)
+    elif p == 4 or p == 10:
+        init_rook_targets(square)
+    elif p == 5 or p == 11:
+        init_queen_targets(square)
+    elif p == 6 or p == 12:
+        init_king_targets(square)
+
+
+# fill target squares at the start of the game
+def populate_target_squares():
+    for i in range(1, 13):
+        for j in range(8):
+            piece_square = pieces[i][j]
+            if piece_square == -1:
+                continue
+            apply_initial_targets(piece_square)
+    print(target_squares)
+
+
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
 # black: P = 7, N = 8, B = 9, R = 10, Q = 11, K = 12
 def init_board():
     global piece_img
+    global target_squares
     # this is the board section
     # wight powns
     board[get_rank_start(1):get_rank_end(1)] = 1
@@ -104,10 +223,14 @@ def init_board():
     a = np.array(list(range(8, 16)))
     pieces[1] = a
     pieces[7] = a + 48
-    a = np.array([[1, 6], [2, 5], [0, 7], [3, -1], [4, -1]]) #knight on 1 and 6, bishop on 2 and 5, rook on 0 and 7, queen on 3, king on 4
-    pieces[2:7, 0:2] = a # white pieces
-    pieces[8:13, 0:2] = a + 56 # black pieces
-    print(pieces)
+    a = np.array([[1, 6], [2, 5], [0, 7], [3, -1],
+                  [4, -1]])  # knight on 1 and 6, bishop on 2 and 5, rook on 0 and 7, queen on 3, king on 4
+    pieces[2:7, 0:2] = a  # white pieces
+    pieces[8:13, 0:2] = a + 56  # black pieces
+
+    target_squares = [set() for i in range(64)]
+    populate_target_squares()
+
 
 def run_game():
     global screen
@@ -157,7 +280,7 @@ def pawn_move(start, end):
     urdl = board_edge(start)
     n = start
     u, r, d, l = urdl
-    color = 1 # 1 if white, -1 if black
+    color = 1  # 1 if white, -1 if black
     if piece == 7:
         color = -1
     # empty square in front
@@ -238,7 +361,7 @@ def rook_move(start, end):
                     if start == 56:
                         black_a_rook += 1
                     elif start == 63:
-                        black_h_rook +=1
+                        black_h_rook += 1
                 print(wight_a_rook, wight_h_rook, black_a_rook, black_h_rook)
                 return True
             if board[n] > 0:
@@ -287,6 +410,7 @@ def king_move(start, end):
                 continue
     return False
 
+
 # start and end are both integers from 0-63, representing a square on the board
 # returns true if this is a legal move
 def is_legal_move(start, end):
@@ -309,9 +433,11 @@ def is_legal_move(start, end):
         return king_move(start, end)
     return False
 
+
 # this updats the dicshonarys
 def update_charts():
     pass
+
 
 def draw_board():
     BLUE = (18, 201, 192)
