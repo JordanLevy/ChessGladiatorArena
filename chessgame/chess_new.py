@@ -89,16 +89,16 @@ def init_pawn_targets(square):
     if board[n + 8 * color] == 0 and get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
         target_squares[n + 16 * color].add(square)
     if color == 1:
-        if l > 0 and diff == 7:
-            return True
-        if r > 0 and diff == 9:
-            return True
+        if l > 0:
+            target_squares[n + 7].add(square)
+        if r > 0:
+            target_squares[n + 9].add(square)
+        # this is the black
     else:
-        if l > 0 and diff == -9:
-            return True
-        if r > 0 and diff == -7:
-            return True
-    return False
+        if l > 0:
+            target_squares[n - 9].add(square)
+        if r > 0:
+            target_squares[n - 7].add(square)
 
 
 def init_knight_targets(square):
@@ -168,6 +168,8 @@ def init_king_targets(square):
 
 def apply_initial_targets(square):
     p = board[square]  # piece type
+    if p == 1 or p == 7:
+        init_pawn_targets(square)
     if p == 2 or p == 8:
         init_knight_targets(square)
     elif p == 3 or p == 9:
@@ -181,14 +183,23 @@ def apply_initial_targets(square):
 
 
 # fill target squares at the start of the game
+
+
 def populate_target_squares():
+    global target_squares
+    target_squares = [set() for i in range(64)]
     for i in range(1, 13):
         for j in range(8):
             piece_square = pieces[i][j]
-            if piece_square == -1:
+            if piece_square < 0:
                 continue
             apply_initial_targets(piece_square)
-    print(target_squares)
+    for i in range(64):
+        print(chess_notation(i), end=", ")
+        for j in target_squares[i]:
+            print(chess_notation(j), end=" ")
+        print()
+    print("this is the end of this list")
 
 
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
@@ -222,14 +233,21 @@ def init_board():
     # this is where we staart pieces
     a = np.array(list(range(8, 16)))
     pieces[1] = a
-    pieces[7] = a + 48
+    pieces[7] = a + 40
     a = np.array([[1, 6], [2, 5], [0, 7], [3, -1],
                   [4, -1]])  # knight on 1 and 6, bishop on 2 and 5, rook on 0 and 7, queen on 3, king on 4
     pieces[2:7, 0:2] = a  # white pieces
     pieces[8:13, 0:2] = a + 56  # black pieces
 
-    target_squares = [set() for i in range(64)]
     populate_target_squares()
+
+
+def chess_notation(square):
+    file_letter = ["a", "b", "c", "d", "e", "f", "g", "h"]
+    file = file_letter[get_file(square)]
+    rank = get_rank(square) + 1
+
+    return file + str(rank)
 
 
 def run_game():
@@ -258,11 +276,24 @@ def run_game():
                     release = math.floor(release[0] / 50), math.ceil(7 - release[1] / 50)
                     start = coords_to_num(press)
                     end = coords_to_num(release)
+
+                    # a move hase been made
                     if is_legal_move(start, end):
                         print("legal")
+                        # this move was a capter
+                        if board[end] > 0:
+                            captured_piece = np.where(pieces[board[end]] == end)
+                            pieces[board[end]][captured_piece] = -2
+                        # this is the piece that you moved
+                        moved_piece = np.where(pieces[board[start]] == start)
+
+                        pieces[board[start]][moved_piece] = end
+
                         board[end] = board[start]
                         board[start] = 0
+
                         draw_board()
+                        populate_target_squares()
                     else:
                         print("illegal")
         pygame.display.update()
