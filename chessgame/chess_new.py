@@ -1,14 +1,16 @@
+from collections import deque
+
 # TODO
 # separate is_legal_move into functions per piece (wording TBD)(done)
 # turn legal_moves into possible_moves
 # initialize move matrix
-# en-passant
-# castling
-# promotion
-# TODO init_pawn_targets needs to be completed
+# en-passant - legal_moves
+# castling - legal_moves
+# promotion - legal_moves
+# init_pawn_targets needs to be completed (done)
 
-# legel move are the moves that are alowed to me made and take into acount the state of the board
-# posable moves are all moves that are in the "line of sight of a given piece"
+# legal move are the moves that are allowed to me made and take into account the state of the board
+# target squares are all squares that are in the "line of sight of a given piece"
 
 import math
 
@@ -22,9 +24,11 @@ import sys
 board = np.zeros(64, dtype=int)
 # e.g. pieces[1] is a list of locations of all white pawns
 pieces = np.full((13, 8), -1, dtype=int)
-# e.g. target_squares[n]=[p0, p1, p2, ...] means square n is targeted by pieces on squares p0, p1, ...
-# target_squares = np.full((64, 16), -1, dtype=int)
+# e.g. list of sets. target_squares[n]={p0, p1, p2, ...} means square n is targeted by pieces on squares p0, p1, ...
 target_squares = []
+# e.g. list of sets. legal_moves[n]={p0, p1, p2, ...} means the piece on square n can move to p0, p1, ...
+legal_moves = []
+move_list = deque()
 screen = None
 piece_img = []
 
@@ -194,12 +198,35 @@ def populate_target_squares():
             if piece_square < 0:
                 continue
             apply_initial_targets(piece_square)
+    # for i in range(64):
+    #     print(chess_notation(i), end=", ")
+    #     for j in target_squares[i]:
+    #         print(chess_notation(j), end=" ")
+    #     print()
+
+
+# narrows down target_squares to only include legal_moves
+def narrow_legal_moves():
     for i in range(64):
-        print(chess_notation(i), end=", ")
         for j in target_squares[i]:
-            print(chess_notation(j), end=" ")
-        print()
-    print("this is the end of this list")
+            # i is end square
+            # j is start square
+            if board[j] == 0:
+                continue
+            w_start = (1 <= board[j] <= 6)
+            w_end = (1 <= board[i] <= 6)
+            # if w_start == w_end:
+            #     legal_moves[i].remove(j)
+
+
+def populate_legal_moves():
+    global legal_moves
+    legal_moves = [set() for i in range(64)]
+    # setting legal_moves equal to target_squares
+    for i in range(64):
+        for j in target_squares[i]:
+            legal_moves[i].add(j)
+    narrow_legal_moves()
 
 
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
@@ -230,7 +257,7 @@ def init_board():
     for j in range(1, 13):
         piece_img[j] = pygame.image.load(files[j])
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
-    # this is where we staart pieces
+    # this is where we start pieces
     a = np.array(list(range(8, 16)))
     pieces[1] = a
     pieces[7] = a + 40
@@ -240,6 +267,7 @@ def init_board():
     pieces[8:13, 0:2] = a + 56  # black pieces
 
     populate_target_squares()
+    populate_legal_moves()
 
 
 def chess_notation(square):
@@ -279,6 +307,7 @@ def run_game():
 
                     # a move hase been made
                     if is_legal_move(start, end):
+                        move_list.append((start, end))
                         print("legal")
                         # this move was a capter
                         if board[end] > 0:
@@ -294,6 +323,7 @@ def run_game():
 
                         draw_board()
                         populate_target_squares()
+                        populate_legal_moves()
                     else:
                         print("illegal")
         pygame.display.update()
@@ -393,7 +423,6 @@ def rook_move(start, end):
                         black_a_rook += 1
                     elif start == 63:
                         black_h_rook += 1
-                print(wight_a_rook, wight_h_rook, black_a_rook, black_h_rook)
                 return True
             if board[n] > 0:
                 break
@@ -442,6 +471,20 @@ def king_move(start, end):
     return False
 
 
+# returns all legal moves for a piece on a given square
+def get_legal_moves(square):
+    piece = board[square]
+    # this function shouldn't be called on an empty square
+    if piece == 0:
+        raise Exception
+    # white pawns
+    elif piece == 1:
+        pass
+    # king
+    elif piece == 6 or piece == 12:
+        pass
+
+
 # start and end are both integers from 0-63, representing a square on the board
 # returns true if this is a legal move
 def is_legal_move(start, end):
@@ -450,18 +493,24 @@ def is_legal_move(start, end):
         return False
     if piece == 0:
         return False
-    elif piece == 1 or piece == 7:
-        return pawn_move(start, end)
-    elif piece == 2 or piece == 8:
-        return knight_move(start, end)
-    elif piece == 3 or piece == 9:
-        return bishop_move(start, end)
-    elif piece == 4 or piece == 10:
-        return rook_move(start, end)
-    elif piece == 5 or piece == 11:
-        return queen_move(start, end)
-    elif piece == 6 or piece == 12:
-        return king_move(start, end)
+    if start in legal_moves[end]:
+        return True
+    # w_start = (1 <= piece <= 6)
+    # w_end = (1 <= board[end] <= 6)
+    # if w_start == w_end:
+    #     return False
+    # if piece == 1 or piece == 7:
+    #     return pawn_move(start, end)
+    # elif piece == 2 or piece == 8:
+    #     return knight_move(start, end)
+    # elif piece == 3 or piece == 9:
+    #     return bishop_move(start, end)
+    # elif piece == 4 or piece == 10:
+    #     return rook_move(start, end)
+    # elif piece == 5 or piece == 11:
+    #     return queen_move(start, end)
+    # elif piece == 6 or piece == 12:
+    #     return king_move(start, end)
     return False
 
 
