@@ -91,7 +91,7 @@ def init_pawn_targets(square):
 
     target_squares[n + 8 * color].add(square)
     # empty square in front
-    if board[n + 8 * color] == 0 and get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
+    if is_empty(n + 8 * color) and get_rank(n) == (6, 1)[color == 1]:
         target_squares[n + 16 * color].add(square)
     if color == 1:
         if l > 0:
@@ -214,10 +214,50 @@ def narrow_legal_moves():
             # j is start square
             if board[j] == 0:
                 continue
-            w_start = (1 <= board[j] <= 6)
-            w_end = (1 <= board[i] <= 6)
-            # if w_start == w_end:
-            #     legal_moves[i].remove(j)
+            w_start = is_white(j)
+            w_end = is_white(i)
+            b_start = is_black(j)
+            b_end = is_black(i)
+            if w_start and w_end or b_start and b_end:
+                legal_moves[i].remove(j)
+                continue
+            # for white pawns
+            if board[j] == 1 or board[j] == 7:
+                # you are cheking white moving 1 forwered
+                if abs(i-j) == 8:
+                    if not is_empty(i):
+                        legal_moves[i].remove(j)
+                        continue
+                elif abs(i - j) == 16:
+                    if not is_empty(i):
+                        legal_moves[i].remove(j)
+                        continue
+                # this is to check if you can copter diaganaly
+                else:
+                    if move_list:
+                        last_m = move_list[-1]
+                        # if it it white geting captered
+                        if get_rank(last_m[0]) == 1 and get_rank(last_m[1]) == 3:
+                            if i == last_m[1] - 8:
+                                continue
+                        # if it is blacks pwan geting captered
+                        if get_rank(last_m[0]) == 6 and get_rank(last_m[1]) == 4:
+                            if i == last_m[1] + 8:
+                                continue
+                    if is_empty(i):
+                        legal_moves[i].remove(j)
+                        continue
+
+
+
+def is_white(square):
+    return 1 <= board[square] <= 6
+
+def is_black(square):
+    return 7 <= board[square] <= 12
+
+def is_empty(square):
+    return board[square] == 0
 
 
 def populate_legal_moves():
