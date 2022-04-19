@@ -8,6 +8,7 @@ from collections import deque
 # castling - legal_moves
 # promotion - legal_moves
 # init_pawn_targets needs to be completed (done)
+# backspacing
 
 # legal move are the moves that are allowed to me made and take into account the state of the board
 # target squares are all squares that are in the "line of sight of a given piece"
@@ -512,7 +513,6 @@ def is_legal_move(start, end):
     # elif piece == 6 or piece == 12:
     #     return king_move(start, end)
     return False
-
 
 # this updats the dicshonarys
 def update_charts():
