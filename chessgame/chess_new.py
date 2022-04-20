@@ -224,7 +224,7 @@ def narrow_legal_moves():
             # for white pawns
             if board[j] == 1 or board[j] == 7:
                 # you are cheking white moving 1 forwered
-                if abs(i-j) == 8:
+                if abs(i - j) == 8:
                     if not is_empty(i):
                         legal_moves[i].remove(j)
                         continue
@@ -232,29 +232,34 @@ def narrow_legal_moves():
                     if not is_empty(i):
                         legal_moves[i].remove(j)
                         continue
-                # this is to check if you can copter diaganaly
+                # this is to check if you can capture diagonally
                 else:
+                    # if there was a previous move
                     if move_list:
                         last_m = move_list[-1]
-                        # if it it white geting captered
+                        # last move was a double pawn push by white
                         if get_rank(last_m[0]) == 1 and get_rank(last_m[1]) == 3:
+                            # white is in position to capture en passant
                             if i == last_m[1] - 8:
                                 continue
-                        # if it is blacks pwan geting captered
+                        # last move was a double pawn push by black
                         if get_rank(last_m[0]) == 6 and get_rank(last_m[1]) == 4:
+                            # black is in position to capture en passant
                             if i == last_m[1] + 8:
                                 continue
+                    # end square is empty
                     if is_empty(i):
                         legal_moves[i].remove(j)
                         continue
 
 
-
 def is_white(square):
     return 1 <= board[square] <= 6
 
+
 def is_black(square):
     return 7 <= board[square] <= 12
+
 
 def is_empty(square):
     return board[square] == 0
@@ -318,6 +323,33 @@ def chess_notation(square):
 
     return file + str(rank)
 
+def is_en_passant(start, end):
+    last_move = move_list[-1]
+
+
+def apply_move(start, end):
+    print("legal")
+    # moving to an empty square
+    if is_empty(end):
+        # en passant capture
+        if is_en_passant(start, end):
+            pass
+        # regular move
+        else:
+            pass
+    # moving to an occupied square
+    else:
+        captured_piece = np.where(pieces[board[end]] == end)
+        pieces[board[end]][captured_piece] = -2
+        move_list.append((start, end, captured_piece, end))
+    # if pawn was allowed to move diagonally to an empty square, that's an en passant capture
+    # this is the piece that you moved
+
+    moved_piece = np.where(pieces[board[start]] == start)
+    pieces[board[start]][moved_piece] = end
+
+    board[end] = board[start]
+    board[start] = 0
 
 def run_game():
     global screen
@@ -348,20 +380,7 @@ def run_game():
 
                     # a move hase been made
                     if is_legal_move(start, end):
-                        move_list.append((start, end))
-                        print("legal")
-                        # this move was a capter
-                        if board[end] > 0:
-                            captured_piece = np.where(pieces[board[end]] == end)
-                            pieces[board[end]][captured_piece] = -2
-                        # this is the piece that you moved
-                        moved_piece = np.where(pieces[board[start]] == start)
-
-                        pieces[board[start]][moved_piece] = end
-
-                        board[end] = board[start]
-                        board[start] = 0
-
+                        apply_move(start, end)
                         draw_board()
                         populate_target_squares()
                         populate_legal_moves()
@@ -532,7 +551,11 @@ def is_legal_move(start, end):
     piece = board[start]
     if start == end:
         return False
-    if piece == 0:
+    if is_empty(start):
+        return False
+    if is_white(start) and is_white(end):
+        return False
+    if is_black(start) and is_black(end):
         return False
     if start in legal_moves[end]:
         return True
@@ -553,6 +576,7 @@ def is_legal_move(start, end):
     # elif piece == 6 or piece == 12:
     #     return king_move(start, end)
     return False
+
 
 # this updats the dicshonarys
 def update_charts():
