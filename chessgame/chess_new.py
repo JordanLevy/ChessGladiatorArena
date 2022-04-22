@@ -1,17 +1,15 @@
 from collections import deque
 
 # TODO
-# separate is_legal_move into functions per piece (wording TBD)(done)
-# turn legal_moves into possible_moves
-# initialize move matrix
+# reversing bits
+# regular piece movement
 # en-passant - legal_moves
 # castling - legal_moves
 # promotion - legal_moves
-# init_pawn_targets needs to be completed (done)
-# backspacing
-
-# legal move are the moves that are allowed to me made and take into account the state of the board
-# target squares are all squares that are in the "line of sight of a given piece"
+# undo moves
+# make sure everything is good to go
+# run game two-player
+# run game engine
 
 import math
 
@@ -20,31 +18,102 @@ from pygame.locals import *
 import pygame
 import sys
 
-# globle varabuls
-# the board it tels us what is on that square
-board = np.zeros(64, dtype=int)
-# e.g. pieces[1] is a list of locations of all white pawns
-pieces = np.full((13, 8), -1, dtype=int)
-# e.g. list of sets. target_squares[n]={p0, p1, p2, ...} means square n is targeted by pieces on squares p0, p1, ...
-target_squares = []
-# e.g. list of sets. legal_moves[n]={p0, p1, p2, ...} means the piece on square n can move to p0, p1, ...
-legal_moves = []
 move_list = deque()
 screen = None
 piece_img = []
 
-wight_king_move = 0
-black_king_move = 0
-black_a_rook = 0
-black_h_rook = 0
-wight_a_rook = 0
-wight_h_rook = 0
+wP = np.int64(0)
+wN = np.int64(0)
+wB = np.int64(0)
+wR = np.int64(0)
+wQ = np.int64(0)
+wK = np.int64(0)
 
-knight_offset = [17, 15, -6, 10, -17, -15, 6, -10]
-bishop_offset = [9, -7, -9, 7]
-rook_offset = [8, 1, -8, -1]
-queen_offset = rook_offset + bishop_offset
-king_offset = queen_offset
+bP = np.int64(0)
+bN = np.int64(0)
+bB = np.int64(0)
+bR = np.int64(0)
+bQ = np.int64(0)
+bK = np.int64(0)
+
+w_threats = np.int64(0)
+b_threats = np.int64(0)
+
+not_white_pieces = np.int64(0)
+black_pieces = np.int64(0)
+empty = np.int64(0)
+
+file_a = np.int64(0)
+file_h = np.int64(0)
+
+rank_1 = np.int64(0)
+rank_4 = np.int64(0)
+rank_8 = np.int64(0)
+
+BLUE = (18, 201, 192)
+WHITE = (249, 255, 212)
+RED = (255, 0, 0, 50)
+GREEN = (25, 166, 0, 150)
+GREY = (150, 150, 150, 50)
+YELLOW = (255, 255, 0, 50)
+
+white_moves = set()
+black_moves = set()
+
+
+# given a list of squares to place the pieces, returns a numpy 64-bit integer representing the bitboard
+# follows numbering scheme
+# e.g. generate_bitboard([0, 2]) = 0000 0000 ... 0000 0101
+def generate_bitboard(squares):
+    a = np.int64(0)
+    for i in squares:
+        a = np.bitwise_or(a, np.left_shift(np.int64(1), i))
+    return a
+
+
+def init_bitboards():
+    global wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK
+    wP = generate_bitboard(list(range(8, 16)))
+    wN = generate_bitboard([1, 6])
+    wB = generate_bitboard([2, 5])
+    wR = generate_bitboard([0, 7])
+    wQ = generate_bitboard([4])
+    wK = generate_bitboard([3])
+
+    diff = 8 * 5  # 5 ranks between white and black's pawn ranks
+    bP = np.left_shift(wP, diff)
+
+    diff = 8 * 7  # 7 ranks between white and black's back ranks
+    bN = np.left_shift(wN, diff)
+    bB = np.left_shift(wB, diff)
+    bR = np.left_shift(wR, diff)
+    bQ = np.left_shift(wQ, diff)
+    bK = np.left_shift(wK, diff)
+
+def init_masks():
+    global file_a, file_h, rank_1, rank_4, rank_8
+    file_a = generate_bitboard([7, 15, 23, 31, 39, 47, 55, 63])
+    file_h = generate_bitboard([0, 8, 16, 24, 32, 40, 48, 56])
+
+    rank_1 = generate_bitboard([0, 1, 2, 3, 4, 5, 6, 7])
+    rank_4 = generate_bitboard([24, 25, 26, 27, 28, 29, 30, 31])
+    rank_8 = generate_bitboard([56, 57, 58, 59, 60, 61, 62, 63])
+
+# imagine starting at the top left (63), reading left to right, then going to rank below, counting down
+# 0 is h1, 63 is a8
+def print_numbering_scheme():
+    print('Bitboard binary representation:')
+    for i in range(63, -1, -1):
+        print(i, end=' ')
+    print()
+    print('----------------')
+    for i in range(63, -1, -1):
+        e = '    '
+        if i >= 10:
+            e = '   '
+        if i % 8 == 0:
+            e = '\n'
+        print(i, end=e)
 
 
 # get what file you are on given an index 0-63
@@ -77,222 +146,82 @@ def file_dif(s, f):
 
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
-    return n[1] * 8 + n[0]
+    return n[1] * 8 + (7 - n[0])
 
 
-def init_pawn_targets(square):
-    piece = board[square]
-    urdl = board_edge(square)
-    n = square
-    u, r, d, l = urdl
-    color = 1  # 1 if white, -1 if black
-    if piece == 7:
-        color = -1
+def multi_or(args):
+    a = args[0]
+    for i in range(1, len(args)):
+        a = np.bitwise_or(a, args[i])
+    return a
 
-    target_squares[n + 8 * color].add(square)
-    # empty square in front
-    if is_empty(n + 8 * color) and get_rank(n) == (6, 1)[color == 1]:
-        target_squares[n + 16 * color].add(square)
-    if color == 1:
-        if l > 0:
-            target_squares[n + 7].add(square)
-        if r > 0:
-            target_squares[n + 9].add(square)
-        # this is the black
-    else:
-        if l > 0:
-            target_squares[n - 9].add(square)
-        if r > 0:
-            target_squares[n - 7].add(square)
+def multi_and(args):
+    a = args[0]
+    for i in range(1, len(args)):
+        a = np.bitwise_and(a, args[i])
+    return a
 
+def get_reverse_mask(num_ones):
+    a = np.int64(0)
+    base = np.int64(0)
+    for i in range(0, num_ones):
+        base = np.bitwise_or(base, np.left_shift(np.int64(1), i))
+    for i in range(0, 32//num_ones):
+        a = np.bitwise_or(a, np.left_shift(base, i * (2*num_ones)))
+    return a
 
-def init_knight_targets(square):
-    piece = board[square]
-    urdl = board_edge(square)
-    for i in range(4):
-        n = square
-        if urdl[i] < 2:
-            continue
-        if urdl[(i + 1) % 4] > 0:
-            target_squares[n + knight_offset[i * 2]].add(square)
-        if urdl[(i + 3) % 4] > 0:
-            target_squares[n + knight_offset[i * 2 + 1]].add(square)
+def reverse_chunk(x, m):
+    mask = get_reverse_mask(m)
+    return np.bitwise_or(np.right_shift(np.bitwise_and(x, np.bitwise_not(mask)), m), np.left_shift(np.bitwise_and(x, mask), m))
 
+def reverse_bits(x):
+    r = reverse_chunk(x, 1)
+    r = reverse_chunk(r, 2)
+    r = reverse_chunk(r, 4)
+    r = reverse_chunk(r, 8)
+    r = reverse_chunk(r, 16)
+    r = np.bitwise_or(np.right_shift(r, 32), np.left_shift(r, 32))
+    return r
 
-def init_bishop_targets(square):
-    urdl = board_edge(square)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    for i in range(4):
-        n = square
-        for j in range(diag[i]):
-            n += bishop_offset[i]
-            target_squares[n].add(square)
-            if board[n] > 0:
-                break
-
-
-def init_rook_targets(square):
-    urdl = board_edge(square)
-    for i in range(4):
-        n = square
-        for j in range(urdl[i]):
-            n += rook_offset[i]
-            target_squares[n].add(square)
-            if board[n] > 0:
-                break
-
-
-def init_queen_targets(square):
-    urdl = board_edge(square)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    all_dir = urdl + diag
-    for i in range(8):
-        n = square
-        for j in range(all_dir[i]):
-            n += queen_offset[i]
-            target_squares[n].add(square)
-            if board[n] > 0:
-                break
-
-
-def init_king_targets(square):
-    urdl = board_edge(square)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    all_dir = urdl + diag
-    for i in range(8):
-        n = square
-        if all_dir[i]:
-            n += king_offset[i]
-            target_squares[n].add(square)
-            if board[n] > 0:
-                continue
-
-
-def apply_initial_targets(square):
-    p = board[square]  # piece type
-    if p == 1 or p == 7:
-        init_pawn_targets(square)
-    if p == 2 or p == 8:
-        init_knight_targets(square)
-    elif p == 3 or p == 9:
-        init_bishop_targets(square)
-    elif p == 4 or p == 10:
-        init_rook_targets(square)
-    elif p == 5 or p == 11:
-        init_queen_targets(square)
-    elif p == 6 or p == 12:
-        init_king_targets(square)
-
-
-# fill target squares at the start of the game
-
-
-def populate_target_squares():
-    global target_squares
-    target_squares = [set() for i in range(64)]
-    for i in range(1, 13):
-        for j in range(8):
-            piece_square = pieces[i][j]
-            if piece_square < 0:
-                continue
-            apply_initial_targets(piece_square)
-    # for i in range(64):
-    #     print(chess_notation(i), end=", ")
-    #     for j in target_squares[i]:
-    #         print(chess_notation(j), end=" ")
-    #     print()
-
-
-# narrows down target_squares to only include legal_moves
-def narrow_legal_moves():
+def possible_pW():
+    moves = set()
+    # capture right
+    pawnMoves = multi_and([np.left_shift(wP, 7), black_pieces, np.bitwise_not(rank_8), np.bitwise_not(file_a)])
     for i in range(64):
-        for j in target_squares[i]:
-            # i is end square
-            # j is start square
-            if board[j] == 0:
-                continue
-            w_start = is_white(j)
-            w_end = is_white(i)
-            b_start = is_black(j)
-            b_end = is_black(i)
-            if w_start and w_end or b_start and b_end:
-                legal_moves[i].remove(j)
-                continue
-            # for white pawns
-            if board[j] == 1 or board[j] == 7:
-                # you are cheking white moving 1 forwered
-                if abs(i - j) == 8:
-                    if not is_empty(i):
-                        legal_moves[i].remove(j)
-                        continue
-                elif abs(i - j) == 16:
-                    if not is_empty(i):
-                        legal_moves[i].remove(j)
-                        continue
-                # this is to check if you can capture diagonally
-                else:
-                    # if there was a previous move
-                    if move_list:
-                        last_m = move_list[-1]
-                        # last move was a double pawn push by white
-                        if get_rank(last_m[0]) == 1 and get_rank(last_m[1]) == 3:
-                            # white is in position to capture en passant
-                            if i == last_m[1] - 8:
-                                continue
-                        # last move was a double pawn push by black
-                        if get_rank(last_m[0]) == 6 and get_rank(last_m[1]) == 4:
-                            # black is in position to capture en passant
-                            if i == last_m[1] + 8:
-                                continue
-                    # end square is empty
-                    if is_empty(i):
-                        legal_moves[i].remove(j)
-                        continue
-
-
-def is_white(square):
-    return 1 <= board[square] <= 6
-
-
-def is_black(square):
-    return 7 <= board[square] <= 12
-
-
-def is_empty(square):
-    return board[square] == 0
-
-
-def populate_legal_moves():
-    global legal_moves
-    legal_moves = [set() for i in range(64)]
-    # setting legal_moves equal to target_squares
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+            moves.add((i - 7, i))
+    # capture left
+    pawnMoves = multi_and([np.left_shift(wP, 9), black_pieces, np.bitwise_not(rank_8), np.bitwise_not(file_h)])
     for i in range(64):
-        for j in target_squares[i]:
-            legal_moves[i].add(j)
-    narrow_legal_moves()
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+            moves.add((i - 9, i))
+    # one forward
+    pawnMoves = multi_and([np.left_shift(wP, 8), empty, np.bitwise_not(rank_8)])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+            moves.add((i - 8, i))
+    # two forward
+    pawnMoves = multi_and([np.left_shift(wP, 16), empty, np.left_shift(empty, 8), rank_4])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+            moves.add((i - 16, i))
+    return moves
+
+def possible_moves_white():
+    global white_moves, not_white_pieces, black_pieces, empty
+    not_white_pieces = np.bitwise_not(multi_or([wP, wN, wB, wR, wQ, wK, bK]))
+    black_pieces = multi_or([bP, bN, bB, bR, bQ])
+    empty = np.bitwise_not(multi_or([wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]))
+    white_moves = possible_pW()
 
 
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
 # black: P = 7, N = 8, B = 9, R = 10, Q = 11, K = 12
 def init_board():
     global piece_img
-    global target_squares
-    # this is the board section
-    # wight powns
-    board[get_rank_start(1):get_rank_end(1)] = 1
-
-    # black pawns
-    board[get_rank_start(6):get_rank_end(6)] = 7
-    # this wight back rank
-
-    w = np.array([4, 2, 3, 5, 6, 3, 2, 4])
-    board[get_rank_start(0):get_rank_end(0)] = w
-
-    board[get_rank_start(7):get_rank_end(7)] = w + 6
-
+    print_numbering_scheme()
+    init_bitboards()
+    init_masks()
     piece_img = [None] * 13
 
     files = ['', 'Images/WhitePawn.png', 'Images/WhiteKnight.png', 'Images/WhiteBishop.png',
@@ -303,53 +232,18 @@ def init_board():
     for j in range(1, 13):
         piece_img[j] = pygame.image.load(files[j])
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
-    # this is where we start pieces
-    a = np.array(list(range(8, 16)))
-    pieces[1] = a
-    pieces[7] = a + 40
-    a = np.array([[1, 6], [2, 5], [0, 7], [3, -1],
-                  [4, -1]])  # knight on 1 and 6, bishop on 2 and 5, rook on 0 and 7, queen on 3, king on 4
-    pieces[2:7, 0:2] = a  # white pieces
-    pieces[8:13, 0:2] = a + 56  # black pieces
-
-    populate_target_squares()
-    populate_legal_moves()
 
 
-def chess_notation(square):
-    file_letter = ["a", "b", "c", "d", "e", "f", "g", "h"]
-    file = file_letter[get_file(square)]
-    rank = get_rank(square) + 1
-
-    return file + str(rank)
-
-def is_en_passant(start, end):
-    last_move = move_list[-1]
-
+def is_legal_move(start, end):
+    return (start, end) in white_moves
 
 def apply_move(start, end):
-    print("legal")
-    # moving to an empty square
-    if is_empty(end):
-        # en passant capture
-        if is_en_passant(start, end):
-            pass
-        # regular move
-        else:
-            pass
-    # moving to an occupied square
-    else:
-        captured_piece = np.where(pieces[board[end]] == end)
-        pieces[board[end]][captured_piece] = -2
-        move_list.append((start, end, captured_piece, end))
-    # if pawn was allowed to move diagonally to an empty square, that's an en passant capture
-    # this is the piece that you moved
-
-    moved_piece = np.where(pieces[board[start]] == start)
-    pieces[board[start]][moved_piece] = end
-
-    board[end] = board[start]
-    board[start] = 0
+    global wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK
+    remove_mask = np.bitwise_not(np.left_shift(np.int64(1), start))
+    add_mask = np.left_shift(np.int64(1), end)
+    wP = np.bitwise_and(wP, remove_mask)
+    wP = np.bitwise_or(wP, add_mask)
+    print(start, end)
 
 def run_game():
     global screen
@@ -360,6 +254,13 @@ def run_game():
     clicking = False
     init_board()
     draw_board()
+    possible_moves_white()
+    draw_possible_moves(white_moves, GREEN)
+
+    a = np.int64(82374)
+    print(np.binary_repr(a, 64))
+    print(np.binary_repr(reverse_bits(a), 64))
+
     while True:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -377,242 +278,49 @@ def run_game():
                     release = math.floor(release[0] / 50), math.ceil(7 - release[1] / 50)
                     start = coords_to_num(press)
                     end = coords_to_num(release)
-
-                    # a move hase been made
                     if is_legal_move(start, end):
                         apply_move(start, end)
                         draw_board()
-                        populate_target_squares()
-                        populate_legal_moves()
-                    else:
-                        print("illegal")
+                        possible_moves_white()
+                        draw_possible_moves(white_moves, GREEN)
+                    #
+                    # # a move hase been made
+                    # if is_legal_move(start, end):
+                    #     apply_move(start, end)
+                    #     draw_board()
+                    # else:
+                    #     print("illegal")
         pygame.display.update()
         mainClock.tick(100)
 
 
-# redraws the squares affected by a move
-def redraw_squares(start, end):
-    pass
-
-
-def pawn_move(start, end):
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    n = start
-    u, r, d, l = urdl
-    color = 1  # 1 if white, -1 if black
-    if piece == 7:
-        color = -1
-    # empty square in front
-    if board[n + 8 * color] == 0:
-        if diff == 8 * color:
-            return True
-        # 2 empty squares in front
-        if get_rank(n) == (6, 1)[color == 1] and board[n + 16 * color] == 0:
-            if diff == 16 * color:
-                return True
-
-        # check if the last move was a doblel pawn push
-
-    if color == 1:
-        if l > 0 and diff == 7:
-            return True
-        if r > 0 and diff == 9:
-            return True
-    else:
-        if l > 0 and diff == -9:
-            return True
-        if r > 0 and diff == -7:
-            return True
-    return False
-
-
-def knight_move(start, end):
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    for i in range(4):
-        n = start
-        if urdl[i] < 2:
-            continue
-        if urdl[(i + 1) % 4] > 0:
-            if diff == knight_offset[i * 2]:
-                return True
-        if urdl[(i + 3) % 4] > 0:
-            if diff == knight_offset[i * 2 + 1]:
-                return True
-        continue
-    return False
-
-
-def bishop_move(start, end):
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    for i in range(4):
-        n = start
-        for j in range(diag[i]):
-            n += bishop_offset[i]
-            if n == end:
-                return True
-            if board[n] > 0:
-                break
-    return False
-
-
-def rook_move(start, end):
-    global wight_a_rook, wight_h_rook, black_a_rook, black_h_rook
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    for i in range(4):
-        n = start
-        for j in range(urdl[i]):
-            n += rook_offset[i]
-            if n == end:
-                if piece == 4:
-                    if start == 0:
-                        wight_a_rook += 1
-                    elif start == 7:
-                        wight_h_rook += 1
-                elif piece == 10:
-                    if start == 56:
-                        black_a_rook += 1
-                    elif start == 63:
-                        black_h_rook += 1
-                return True
-            if board[n] > 0:
-                break
-    return False
-
-
-def queen_move(start, end):
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    all_dir = urdl + diag
-    for i in range(8):
-        n = start
-        for j in range(all_dir[i]):
-            n += queen_offset[i]
-            if n == end:
-                return True
-            if board[n] > 0:
-                break
-    return False
-
-
-def king_move(start, end):
-    global wight_king_move
-    global black_king_move
-    piece = board[start]
-    diff = end - start
-    urdl = board_edge(start)
-    u, r, d, l = urdl
-    diag = [min(u, r), min(r, d), min(d, l), min(l, u)]
-    all_dir = urdl + diag
-    for i in range(8):
-        n = start
-        if all_dir[i]:
-            n += king_offset[i]
-            if n == end:
-                if piece == 6:
-                    wight_king_move += 1
-                else:
-                    black_king_move += 1
-                return True
-            if board[n] > 0:
-                continue
-    return False
-
-
-# returns all legal moves for a piece on a given square
-def get_legal_moves(square):
-    piece = board[square]
-    # this function shouldn't be called on an empty square
-    if piece == 0:
-        raise Exception
-    # white pawns
-    elif piece == 1:
-        pass
-    # king
-    elif piece == 6 or piece == 12:
-        pass
-
-
-# start and end are both integers from 0-63, representing a square on the board
-# returns true if this is a legal move
-def is_legal_move(start, end):
-    piece = board[start]
-    if start == end:
-        return False
-    if is_empty(start):
-        return False
-    if is_white(start) and is_white(end):
-        return False
-    if is_black(start) and is_black(end):
-        return False
-    if start in legal_moves[end]:
-        return True
-    # w_start = (1 <= piece <= 6)
-    # w_end = (1 <= board[end] <= 6)
-    # if w_start == w_end:
-    #     return False
-    # if piece == 1 or piece == 7:
-    #     return pawn_move(start, end)
-    # elif piece == 2 or piece == 8:
-    #     return knight_move(start, end)
-    # elif piece == 3 or piece == 9:
-    #     return bishop_move(start, end)
-    # elif piece == 4 or piece == 10:
-    #     return rook_move(start, end)
-    # elif piece == 5 or piece == 11:
-    #     return queen_move(start, end)
-    # elif piece == 6 or piece == 12:
-    #     return king_move(start, end)
-    return False
-
-
-# this updats the dicshonarys
-def update_charts():
-    pass
-
-
 def draw_board():
-    BLUE = (18, 201, 192)
-    WHITE = (249, 255, 212)
-    RED = (255, 0, 0)
-    GREEN = (25, 166, 0, 150)
-    GREY = (150, 150, 150, 150)
-    YELLOW = (255, 255, 0)
-
     for i in range(64):
         if (get_file(i) + get_rank(i)) % 2 == 0:
             square_color = BLUE
         else:
             square_color = WHITE
-        pygame.draw.rect(screen, square_color, (get_file(i) * 50, 350 - get_rank(i) * 50, 50, 50))
-        p = board[i]
-        if p > 0:
-            screen.blit(pygame.transform.rotate(piece_img[p], 0), (get_file(i) * 50, 350 - get_rank(i) * 50))
+        pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
 
+        bitboards = [wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]
+        for b in range(len(bitboards)):
+            if np.bitwise_and(np.left_shift(np.int64(1), i), bitboards[b]):
+                screen.blit(pygame.transform.rotate(piece_img[b + 1], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
 
-# this function will retern fore numbers start u,r,d,l (CW) the # of squars to the edg of the board
-def board_edge(square):
-    up = 7 - get_rank(square)
-    right = 7 - get_file(square)
-    down = 7 - up
-    left = 7 - right
-    return [up, right, down, left]
+        draw_bitboard(w_threats, YELLOW)
+        draw_bitboard(b_threats, GREY)
+        # p = board[i]
+        # if p > 0:
+        #     screen.blit(pygame.transform.rotate(piece_img[p], 0), (get_file(i) * 50, 350 - get_rank(i) * 50))
 
+def draw_bitboard(bitboard, color):
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), bitboard):
+            pygame.draw.circle(screen, color, (350 - (i % 8) * 50 + 25, 350 - (i // 8) * 50 + 25), 5)
 
-def board_attack_update(square_start, square_end):
-    pass
-
+def draw_possible_moves(moves, color):
+    for i in moves:
+        pygame.draw.line(screen, color, (350 - (i[0] % 8) * 50 + 25, 350 - (i[0] // 8) * 50 + 25), (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25))
+        pygame.draw.circle(screen, color, (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25), 5)
 
 run_game()
