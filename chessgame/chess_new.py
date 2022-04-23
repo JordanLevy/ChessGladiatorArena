@@ -50,6 +50,12 @@ rank_1 = np.int64(0)
 rank_4 = np.int64(0)
 rank_8 = np.int64(0)
 
+mousePos = None
+press = (-1, -1)
+release = (-1, -1)
+start = -1
+end = -1
+
 BLUE = (18, 201, 192)
 WHITE = (249, 255, 212)
 RED = (255, 0, 0, 50)
@@ -90,6 +96,7 @@ def init_bitboards():
     bQ = np.left_shift(wQ, diff)
     bK = np.left_shift(wK, diff)
 
+
 def init_masks():
     global file_a, file_h, rank_1, rank_4, rank_8
     file_a = generate_bitboard([7, 15, 23, 31, 39, 47, 55, 63])
@@ -98,6 +105,7 @@ def init_masks():
     rank_1 = generate_bitboard([0, 1, 2, 3, 4, 5, 6, 7])
     rank_4 = generate_bitboard([24, 25, 26, 27, 28, 29, 30, 31])
     rank_8 = generate_bitboard([56, 57, 58, 59, 60, 61, 62, 63])
+
 
 # imagine starting at the top left (63), reading left to right, then going to rank below, counting down
 # 0 is h1, 63 is a8
@@ -148,6 +156,27 @@ def file_dif(s, f):
 def coords_to_num(n):
     return n[1] * 8 + (7 - n[0])
 
+# returns the piece type on that square
+# 0  - empty square
+# 1  - wP
+# 2  - wN
+# 3  - wB
+# 4  - wR
+# 5  - wQ
+# 6  - wK
+# 7  - bP
+# 8  - bN
+# 9  - bB
+# 10 - bR
+# 11 - bQ
+# 12 - bK
+def get_piece(square):
+    bitboards = [wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]
+    for b in range(len(bitboards)):
+        if np.bitwise_and(np.left_shift(np.int64(1), square), bitboards[b]):
+            return b + 1
+    return 0
+
 
 def multi_or(args):
     a = args[0]
@@ -155,24 +184,29 @@ def multi_or(args):
         a = np.bitwise_or(a, args[i])
     return a
 
+
 def multi_and(args):
     a = args[0]
     for i in range(1, len(args)):
         a = np.bitwise_and(a, args[i])
     return a
 
+
 def get_reverse_mask(num_ones):
     a = np.int64(0)
     base = np.int64(0)
     for i in range(0, num_ones):
         base = np.bitwise_or(base, np.left_shift(np.int64(1), i))
-    for i in range(0, 32//num_ones):
-        a = np.bitwise_or(a, np.left_shift(base, i * (2*num_ones)))
+    for i in range(0, 32 // num_ones):
+        a = np.bitwise_or(a, np.left_shift(base, i * (2 * num_ones)))
     return a
+
 
 def reverse_chunk(x, m):
     mask = get_reverse_mask(m)
-    return np.bitwise_or(np.right_shift(np.bitwise_and(x, np.bitwise_not(mask)), m), np.left_shift(np.bitwise_and(x, mask), m))
+    return np.bitwise_or(np.right_shift(np.bitwise_and(x, np.bitwise_not(mask)), m),
+                         np.left_shift(np.bitwise_and(x, mask), m))
+
 
 def reverse_bits(x):
     r = reverse_chunk(x, 1)
@@ -182,6 +216,7 @@ def reverse_bits(x):
     r = reverse_chunk(r, 16)
     r = np.bitwise_or(np.right_shift(r, 32), np.left_shift(r, 32))
     return r
+
 
 def possible_pW():
     moves = set()
@@ -206,6 +241,7 @@ def possible_pW():
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             moves.add((i - 16, i))
     return moves
+
 
 def possible_moves_white():
     global white_moves, not_white_pieces, black_pieces, empty
@@ -237,6 +273,7 @@ def init_board():
 def is_legal_move(start, end):
     return (start, end) in white_moves
 
+
 def apply_move(start, end):
     global wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK
     remove_mask = np.bitwise_not(np.left_shift(np.int64(1), start))
@@ -245,8 +282,9 @@ def apply_move(start, end):
     wP = np.bitwise_or(wP, add_mask)
     print(start, end)
 
+
 def run_game():
-    global screen
+    global screen, press, release, start, end, mousePos
     mainClock = pygame.time.Clock()
     pygame.init()
     pygame.display.set_caption('Chess')
@@ -256,12 +294,17 @@ def run_game():
     draw_board()
     possible_moves_white()
     draw_possible_moves(white_moves, GREEN)
+    press = (-1, -1)
+    release = (-1, -1)
+    start = -1
+    end = -1
 
     a = np.int64(82374)
     print(np.binary_repr(a, 64))
     print(np.binary_repr(reverse_bits(a), 64))
 
     while True:
+        mousePos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
@@ -269,20 +312,24 @@ def run_game():
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
-                    press = pygame.mouse.get_pos()
+                    press = mousePos
                     press = math.floor(press[0] / 50), math.ceil(7 - press[1] / 50)
+                    start = coords_to_num(press)
             if event.type == MOUSEBUTTONUP:
                 if event.button == BUTTON_LEFT and clicking:
                     clicking = False
-                    release = pygame.mouse.get_pos()
+                    release = mousePos
                     release = math.floor(release[0] / 50), math.ceil(7 - release[1] / 50)
-                    start = coords_to_num(press)
                     end = coords_to_num(release)
                     if is_legal_move(start, end):
                         apply_move(start, end)
-                        draw_board()
-                        possible_moves_white()
-                        draw_possible_moves(white_moves, GREEN)
+                    press = (-1, -1)
+                    release = (-1, -1)
+                    start = -1
+                    end = -1
+                    draw_board()
+                    possible_moves_white()
+                    draw_possible_moves(white_moves, GREEN)
                     #
                     # # a move hase been made
                     # if is_legal_move(start, end):
@@ -290,37 +337,42 @@ def run_game():
                     #     draw_board()
                     # else:
                     #     print("illegal")
+            if start > -1:
+                draw_board()
+                draw_possible_moves(white_moves, GREEN)
+
         pygame.display.update()
         mainClock.tick(100)
 
 
 def draw_board():
+    bitboards = [wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]
     for i in range(64):
         if (get_file(i) + get_rank(i)) % 2 == 0:
             square_color = BLUE
         else:
             square_color = WHITE
         pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
-
-        bitboards = [wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]
+        if i == start:
+            continue
         for b in range(len(bitboards)):
             if np.bitwise_and(np.left_shift(np.int64(1), i), bitboards[b]):
                 screen.blit(pygame.transform.rotate(piece_img[b + 1], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
+    if start > -1:
+        screen.blit(pygame.transform.rotate(piece_img[get_piece(start)], 0), (mousePos[0] - 25, mousePos[1] - 25))
 
-        draw_bitboard(w_threats, YELLOW)
-        draw_bitboard(b_threats, GREY)
-        # p = board[i]
-        # if p > 0:
-        #     screen.blit(pygame.transform.rotate(piece_img[p], 0), (get_file(i) * 50, 350 - get_rank(i) * 50))
 
 def draw_bitboard(bitboard, color):
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), bitboard):
             pygame.draw.circle(screen, color, (350 - (i % 8) * 50 + 25, 350 - (i // 8) * 50 + 25), 5)
 
+
 def draw_possible_moves(moves, color):
     for i in moves:
-        pygame.draw.line(screen, color, (350 - (i[0] % 8) * 50 + 25, 350 - (i[0] // 8) * 50 + 25), (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25))
+        pygame.draw.line(screen, color, (350 - (i[0] % 8) * 50 + 25, 350 - (i[0] // 8) * 50 + 25),
+                         (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25))
         pygame.draw.circle(screen, color, (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25), 5)
+
 
 run_game()
