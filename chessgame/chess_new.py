@@ -1,7 +1,7 @@
 from collections import deque
 
 # TODO
-# reversing bits
+# reversing bits (done)
 # regular piece movement
 # en-passant - legal_moves
 # castling - legal_moves
