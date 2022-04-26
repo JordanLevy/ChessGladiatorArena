@@ -3,6 +3,7 @@ from collections import deque
 # TODO
 
 # reversing bits (done)
+# captering pice movment
 # regular piece movement
 # en-passant - legal_moves
 # castling - legal_moves
@@ -40,6 +41,11 @@ bK = np.int64(0)
 w_threats = np.int64(0)
 b_threats = np.int64(0)
 
+
+not_black_pieces = np.int64(0)
+white_pieces = np.int64(0)
+
+
 not_white_pieces = np.int64(0)
 black_pieces = np.int64(0)
 empty = np.int64(0)
@@ -49,6 +55,7 @@ file_h = np.int64(0)
 
 rank_1 = np.int64(0)
 rank_4 = np.int64(0)
+rank_5 = np.int64(0)
 rank_8 = np.int64(0)
 
 mousePos = None
@@ -244,6 +251,32 @@ def possible_pW():
     return moves
 
 
+def possible_pB():
+    moves = set()
+    print("black is beingh called")
+    # # capture right
+    # pawnMoves = multi_and([np.left_shift(bP, 7), black_pieces, np.bitwise_not(rank_8), np.bitwise_not(file_a)])
+    # for i in range(64):
+    #     if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+    #         moves.add((i - 7, i))
+    # # capture left
+    # pawnMoves = multi_and([np.left_shift(bP, 9), black_pieces, np.bitwise_not(rank_8), np.bitwise_not(file_h)])
+    # for i in range(64):
+    #     if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+    #         moves.add((i - 9, i))
+    # one forward
+    pawnMoves = multi_and([np.right_shift(bP, 8), empty, np.bitwise_not(rank_1)])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+            moves.add((i + 8, i))
+    # # two forward
+    # pawnMoves = multi_and([np.left_shift(bP, 16), empty, np.left_shift(empty, 8), rank_4])
+    # for i in range(64):
+    #     if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+    #         moves.add((i - 16, i))
+    return moves
+
+
 def possible_moves_white():
     global white_moves, not_white_pieces, black_pieces, empty
     not_white_pieces = np.bitwise_not(multi_or([wP, wN, wB, wR, wQ, wK, bK]))
@@ -251,6 +284,12 @@ def possible_moves_white():
     empty = np.bitwise_not(multi_or([wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]))
     white_moves = possible_pW()
 
+def possible_moves_black():
+    global black_moves, not_black_pieces, white_pieces, empty
+    not_black_pieces = np.bitwise_not(multi_or([bP, bN, bB, bR, bQ, bK, wK]))
+    white_pieces = multi_or([wP, wN, wB, wR, wQ])
+    empty = np.bitwise_not(multi_or([wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]))
+    black_moves = possible_pB()
 
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
 # black: P = 7, N = 8, B = 9, R = 10, Q = 11, K = 12
@@ -272,15 +311,45 @@ def init_board():
 
 
 def is_legal_move(start, end):
-    return (start, end) in white_moves
+    return (start, end) in white_moves or (start, end) in black_moves
 
 
 def apply_move(start, end):
     global wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK
+    bitboards = [wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK]
     remove_mask = np.bitwise_not(np.left_shift(np.int64(1), start))
     add_mask = np.left_shift(np.int64(1), end)
-    wP = np.bitwise_and(wP, remove_mask)
-    wP = np.bitwise_or(wP, add_mask)
+    # black pawns
+
+    for b in range(len(bitboards)):
+        if np.bitwise_and(np.left_shift(np.int64(1), start), bitboards[b]):
+            a = b + 1
+            if a == 1:
+                wP = np.bitwise_and(wP, remove_mask)
+                wP = np.bitwise_or(wP, add_mask)
+            if a == 2:
+                pass
+            if a == 3:
+                pass
+            if a == 4:
+                pass
+            if a == 5:
+                pass
+            if a == 6:
+                pass
+            if a == 7:
+                bP = np.bitwise_and(bP, remove_mask)
+                bP = np.bitwise_or(bP, add_mask)
+            if a == 8:
+                pass
+            if a == 9:
+                pass
+            if a == 10:
+                pass
+            if a == 11:
+                pass
+            if a == 12:
+                pass
     print(start, end)
 
 
@@ -293,16 +362,15 @@ def run_game():
     clicking = False
     init_board()
     draw_board()
+    draw_bitboard(wP, YELLOW)
     possible_moves_white()
-    draw_possible_moves(white_moves, GREEN)
+    draw_possible_moves(white_moves, RED)
+    possible_moves_black()
+    draw_possible_moves(black_moves, GREEN)
     press = (-1, -1)
     release = (-1, -1)
     start = -1
     end = -1
-
-    a = np.int64(82374)
-    print(np.binary_repr(a, 64))
-    print(np.binary_repr(reverse_bits(a), 64))
 
     while True:
         mousePos = pygame.mouse.get_pos()
@@ -329,8 +397,11 @@ def run_game():
                     start = -1
                     end = -1
                     draw_board()
+                    draw_bitboard(wP, YELLOW)
                     possible_moves_white()
-                    draw_possible_moves(white_moves, GREEN)
+                    possible_moves_black()
+                    draw_possible_moves(white_moves, RED)
+                    draw_possible_moves(black_moves, GREEN)
                     #
                     # # a move hase been made
                     # if is_legal_move(start, end):
@@ -340,7 +411,9 @@ def run_game():
                     #     print("illegal")
             if start > -1:
                 draw_board()
-                draw_possible_moves(white_moves, GREEN)
+                draw_bitboard(wP, YELLOW)
+                draw_possible_moves(white_moves, RED)
+                draw_possible_moves(black_moves, GREEN)
 
         pygame.display.update()
         mainClock.tick(100)
@@ -359,7 +432,7 @@ def draw_board():
         for b in range(len(bitboards)):
             if np.bitwise_and(np.left_shift(np.int64(1), i), bitboards[b]):
                 screen.blit(pygame.transform.rotate(piece_img[b + 1], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
-    if start > -1:
+    if start > -1 and get_piece(start) > 0:
         screen.blit(pygame.transform.rotate(piece_img[get_piece(start)], 0), (mousePos[0] - 25, mousePos[1] - 25))
 
 
@@ -370,6 +443,8 @@ def draw_bitboard(bitboard, color):
 
 
 def draw_possible_moves(moves, color):
+    return
+    # this code will not run
     for i in moves:
         pygame.draw.line(screen, color, (350 - (i[0] % 8) * 50 + 25, 350 - (i[0] // 8) * 50 + 25),
                          (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25))
