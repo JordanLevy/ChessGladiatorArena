@@ -112,10 +112,7 @@ def init_masks():
 # 0 is h1, 63 is a8
 def print_numbering_scheme():
     print('Bitboard binary representation:')
-    for i in range(63, -1, -1):
-        print(i, end=' ')
-    print()
-    print('----------------')
+
     for i in range(63, -1, -1):
         e = '    '
         if i >= 10:
@@ -123,7 +120,8 @@ def print_numbering_scheme():
         if i % 8 == 0:
             e = '\n'
         print(i, end=e)
-
+    print()
+    print('----------------')
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -317,6 +315,19 @@ def possible_moves_white():
     white_moves = set().union(*moves)
 
 
+def line_atk(o, m, s):
+    print("this is o", np.binary_repr(o, 64))
+    print("this is m", np.binary_repr(m, 64))
+    print("this is s", np.binary_repr(s, 64))
+    left = np.bitwise_xor(o, o-2*s)
+    rev_o = reverse_bits(np.bitwise_and(o, m))
+    rev_2s = reverse_bits(2*s)
+    right = np.bitwise_xor(o, reverse_bits(reverse_bits(o)-reverse_bits(2*s)))
+    without_m = np.bitwise_xor(left, right)
+    return right
+    return np.bitwise_and(without_m, m)
+
+
 def possible_bP():
     bP = bitboards[7]
     moves = set()
@@ -484,7 +495,12 @@ def run_game():
     screen = pygame.display.set_mode((400, 400), 0, 32)
     clicking = False
     init_board()
+    occupied = generate_bitboard([39, 38, 34, 32])
+    slider = generate_bitboard([34])
+    mask = rank_5
+    final = line_atk(occupied, mask, slider)
     draw_board()
+    draw_bitboard(final, YELLOW)
     possible_moves_white()
     draw_possible_moves(white_moves, RED)
     possible_moves_black()
@@ -535,6 +551,7 @@ def run_game():
                     start = -1
                     end = -1
                     draw_board()
+                    draw_bitboard(final, YELLOW)
                     possible_moves_white()
                     possible_moves_black()
                     draw_possible_moves(white_moves, RED)
@@ -548,6 +565,7 @@ def run_game():
                     #     print("illegal")
             if start > -1:
                 draw_board()
+                draw_bitboard(final, YELLOW)
                 draw_possible_moves(white_moves, RED)
                 draw_possible_moves(black_moves, GREEN)
 
@@ -575,7 +593,6 @@ def draw_bitboard(bitboard, color):
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), bitboard):
             pygame.draw.circle(screen, color, (350 - (i % 8) * 50 + 25, 350 - (i // 8) * 50 + 25), 5)
-
 
 def draw_possible_moves(moves, color):
     return
