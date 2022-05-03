@@ -43,6 +43,8 @@ rank_4 = np.int64(0)
 rank_5 = np.int64(0)
 rank_8 = np.int64(0)
 
+square_a8 = np.int64(0)
+
 mousePos = (0, 0)
 press = (-1, -1)
 release = (-1, -1)
@@ -92,8 +94,12 @@ def init_bitboards():
 
 
 def init_masks():
-    global file_a, file_h, rank_1, rank_4, rank_5, rank_8
+    global file_a, file_h, rank_1, rank_4, rank_5, rank_8, square_a8
+    square_a8 = np.left_shift(np.int64(1), 63)
     file_a = generate_bitboard([7, 15, 23, 31, 39, 47, 55, 63])
+    file_b = r_shift(file_a, 1)
+    file_c = r_shift(file_a, 2)
+    file_d = r_shift(file_a, 3)
     file_h = generate_bitboard([0, 8, 16, 24, 32, 40, 48, 56])
 
     rank_1 = generate_bitboard([0, 1, 2, 3, 4, 5, 6, 7])
@@ -150,6 +156,20 @@ def file_dif(s, f):
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
     return n[1] * 8 + (7 - n[0])
+
+
+def l_shift(x, n):
+    return np.left_shift(x, n)
+
+
+def r_shift(x, n):
+    # if first bit is a 1
+    if np.bitwise_and(x, square_a8):
+        y = np.right_shift(x, 1)
+        y = np.bitwise_and(y, np.bitwise_not(square_a8))
+        y = np.right_shift(y, n - 1)
+        return y
+    return np.right_shift(x, n)
 
 
 # returns the piece type on that square
@@ -212,6 +232,7 @@ def reverse_bits(x):
     r = np.bitwise_or(np.right_shift(r, 32), np.left_shift(r, 32))
     return r
 
+
 def possible_wP():
     wP = bitboards[1]
     moves = set()
@@ -255,30 +276,36 @@ def possible_wP():
                 moves.add((i - 8, i, j))
     return moves
 
+
 def possible_wN():
     wN = bitboards[2]
     moves = set()
     return moves
+
 
 def possible_wB():
     wB = bitboards[3]
     moves = set()
     return moves
 
+
 def possible_wR():
     wR = bitboards[4]
     moves = set()
     return moves
+
 
 def possible_wQ():
     wQ = bitboards[5]
     moves = set()
     return moves
 
+
 def possible_wK():
     wK = bitboards[6]
     moves = set()
     return moves
+
 
 def possible_moves_white():
     global white_moves, not_white_pieces, black_pieces, empty
@@ -288,6 +315,7 @@ def possible_moves_white():
     empty = np.bitwise_not(multi_or(b[1:13]))
     moves = [possible_wP(), possible_wN(), possible_wB(), possible_wR(), possible_wQ(), possible_wK()]
     white_moves = set().union(*moves)
+
 
 def possible_bP():
     bP = bitboards[7]
@@ -332,30 +360,36 @@ def possible_bP():
                 moves.add((i + 8, i, j))
     return moves
 
+
 def possible_bN():
     bN = bitboards[8]
     moves = set()
     return moves
+
 
 def possible_bB():
     bB = bitboards[9]
     moves = set()
     return moves
 
+
 def possible_bR():
     bR = bitboards[10]
     moves = set()
     return moves
+
 
 def possible_bQ():
     bQ = bitboards[11]
     moves = set()
     return moves
 
+
 def possible_bK():
     bK = bitboards[12]
     moves = set()
     return moves
+
 
 def possible_moves_black():
     global black_moves, not_black_pieces, white_pieces, empty
@@ -365,6 +399,7 @@ def possible_moves_black():
     empty = np.bitwise_not(multi_or(b[1:13]))
     moves = [possible_bP(), possible_bN(), possible_bB(), possible_bR(), possible_bQ(), possible_bK()]
     black_moves = set().union(*moves)
+
 
 # white: P = 1, N = 2, B = 3, R = 4, Q = 5, K = 6
 # black: P = 7, N = 8, B = 9, R = 10, Q = 11, K = 12
@@ -388,8 +423,8 @@ def init_board():
 # start - square the move starts on
 # end - square the move ends on
 # promo - piece being promoted to
-    # 0 - no promotion
-    # 1-12 - promoting to that piece type
+# 0 - no promotion
+# 1-12 - promoting to that piece type
 def is_legal_move(start, end, promo):
     return (start, end, promo) in white_moves or (start, end, promo) in black_moves
 
@@ -420,11 +455,14 @@ def apply_move(start, end, promo_num):
         add_piece(moved_piece, end)
     print(start, end, promo_num)
 
+
 def is_white_piece(piece):
     return 1 <= piece <= 6
 
+
 def is_black_piece(piece):
     return 7 <= piece <= 12
+
 
 def get_promo_num(is_white, key):
     if key == 'n':
