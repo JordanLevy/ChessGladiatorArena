@@ -20,25 +20,22 @@ from pygame.locals import *
 import pygame
 import sys
 
-move_list = deque()
-screen = None
+screen = pygame.display.set_mode((400, 400), 0, 32)
 piece_img = []
-bitboards = []
 
-w_threats = np.int64(0)
-b_threats = np.int64(0)
+bitboards = []
+move_list = deque()
 
 not_black_pieces = np.int64(0)
-white_pieces = np.int64(0)
-
 not_white_pieces = np.int64(0)
+
+white_pieces = np.int64(0)
 black_pieces = np.int64(0)
+
 empty = np.int64(0)
 occupied = np.int64(0)
 
-file_a = np.int64(0)
-file_h = np.int64(0)
-
+file = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
 rank = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
 
 square_a8 = np.int64(0)
@@ -90,19 +87,23 @@ def init_bitboards():
     bitboards[11] = np.left_shift(bitboards[5], diff)
     bitboards[12] = np.left_shift(bitboards[6], diff)
 
+    # rook horizontal test setup
     bitboards[1] = np.bitwise_or(bitboards[1], generate_bitboard([39, 38, 32]))
     bitboards[4] = np.bitwise_or(bitboards[4], generate_bitboard([34]))
 
 
 def init_masks():
-    global file_a, file_h, rank, square_a8
+    global file, rank, square_a8
     square_a8 = np.left_shift(np.int64(1), 63)
-    file_a = generate_bitboard([7, 15, 23, 31, 39, 47, 55, 63])
-    file_b = r_shift(file_a, 1)
-    file_c = r_shift(file_a, 2)
-    file_d = r_shift(file_a, 3)
-    file_h = generate_bitboard([0, 8, 16, 24, 32, 40, 48, 56])
 
+    # initialize file masks
+    # file[1] is the a-file
+    file[1] = generate_bitboard([7, 15, 23, 31, 39, 47, 55, 63])
+    for i in range(1, 8):
+        file[i + 1] = r_shift(file[i], 1)
+
+    # initialize rank masks
+    # rank[1] is the 1st rank
     rank[1] = generate_bitboard([0, 1, 2, 3, 4, 5, 6, 7])
     for i in range(1, 8):
         rank[i + 1] = l_shift(rank[i], 8)
@@ -218,41 +219,41 @@ def possible_wP():
     wP = bitboards[1]
     moves = set()
     # capture right
-    pawnMoves = multi_and([np.left_shift(wP, 7), black_pieces, np.bitwise_not(rank[8]), np.bitwise_not(file_a)])
+    pawn_moves = multi_and([np.left_shift(wP, 7), black_pieces, np.bitwise_not(rank[8]), np.bitwise_not(file[1])])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             moves.add((i - 7, i, 0))
     # capture left
-    pawnMoves = multi_and([np.left_shift(wP, 9), black_pieces, np.bitwise_not(rank[8]), np.bitwise_not(file_h)])
+    pawn_moves = multi_and([np.left_shift(wP, 9), black_pieces, np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             moves.add((i - 9, i, 0))
     # one forward
-    pawnMoves = multi_and([np.left_shift(wP, 8), empty, np.bitwise_not(rank[8])])
+    pawn_moves = multi_and([np.left_shift(wP, 8), empty, np.bitwise_not(rank[8])])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             moves.add((i - 8, i, 0))
     # two forward
-    pawnMoves = multi_and([np.left_shift(wP, 16), empty, np.left_shift(empty, 8), rank[4]])
+    pawn_moves = multi_and([np.left_shift(wP, 16), empty, np.left_shift(empty, 8), rank[4]])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             moves.add((i - 16, i, 0))
     # promotion by capture right
-    pawnMoves = multi_and([np.left_shift(wP, 7), black_pieces, rank[8], np.bitwise_not(file_a)])
+    pawn_moves = multi_and([np.left_shift(wP, 7), black_pieces, rank[8], np.bitwise_not(file[1])])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             for j in range(2, 6):
                 moves.add((i - 7, i, j))
     # promotion by capture left
-    pawnMoves = multi_and([np.left_shift(wP, 9), black_pieces, rank[8], np.bitwise_not(file_h)])
+    pawn_moves = multi_and([np.left_shift(wP, 9), black_pieces, rank[8], np.bitwise_not(file[8])])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             for j in range(2, 6):
                 moves.add((i - 9, i, j))
     # promotion by one forward
-    pawnMoves = multi_and([np.left_shift(wP, 8), empty, rank[8]])
+    pawn_moves = multi_and([np.left_shift(wP, 8), empty, rank[8]])
     for i in range(64):
-        if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             for j in range(2, 6):
                 moves.add((i - 8, i, j))
     return moves
@@ -341,12 +342,12 @@ def possible_bP():
     bP = bitboards[7]
     moves = set()
     # capture left
-    pawnMoves = multi_and([np.right_shift(bP, 7), white_pieces, np.bitwise_not(rank[1]), np.bitwise_not(file_h)])
+    pawnMoves = multi_and([np.right_shift(bP, 7), white_pieces, np.bitwise_not(rank[1]), np.bitwise_not(file[8])])
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             moves.add((i + 7, i, 0))
     # capture right
-    pawnMoves = multi_and([np.right_shift(bP, 9), white_pieces, np.bitwise_not(rank[1]), np.bitwise_not(file_a)])
+    pawnMoves = multi_and([np.right_shift(bP, 9), white_pieces, np.bitwise_not(rank[1]), np.bitwise_not(file[1])])
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             moves.add((i + 9, i, 0))
@@ -361,13 +362,13 @@ def possible_bP():
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             moves.add((i + 16, i, 0))
     # promotion by capture left
-    pawnMoves = multi_and([np.right_shift(bP, 7), white_pieces, rank[1], np.bitwise_not(file_h)])
+    pawnMoves = multi_and([np.right_shift(bP, 7), white_pieces, rank[1], np.bitwise_not(file[8])])
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             for j in range(8, 12):
                 moves.add((i + 7, i, j))
     # promotion by capture right
-    pawnMoves = multi_and([np.right_shift(bP, 9), white_pieces, rank[1], np.bitwise_not(file_a)])
+    pawnMoves = multi_and([np.right_shift(bP, 9), white_pieces, rank[1], np.bitwise_not(file[1])])
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             for j in range(8, 12):
@@ -506,11 +507,10 @@ def refresh_graphics():
 
 
 def run_game():
-    global screen, press, release, start, end, mousePos
+    global press, release, start, end, mousePos
     mainClock = pygame.time.Clock()
     pygame.init()
     pygame.display.set_caption('Chess')
-    screen = pygame.display.set_mode((400, 400), 0, 32)
     clicking = False
     init_board()
     refresh_graphics()
