@@ -39,6 +39,10 @@ file = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int6
         np.int64(0)]
 rank = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
         np.int64(0)]
+l_diag = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
+          np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
+r_diag = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
+          np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
 
 square_a8 = np.int64(0)
 
@@ -110,6 +114,12 @@ def init_masks():
     for i in range(1, 8):
         rank[i + 1] = l_shift(rank[i], 8)
 
+    for i in range(64):
+        left = get_l_diag(i)
+        right = get_r_diag(i)
+        l_diag[left] = np.bitwise_or(np.left_shift(np.int64(1), i), l_diag[left])
+        r_diag[right] = np.bitwise_or(np.left_shift(np.int64(1), i), r_diag[right])
+
 
 # imagine starting at the top left (63), reading left to right, then going to rank below, counting down
 # 0=h1=MSB, 63=a8=LSB
@@ -124,6 +134,22 @@ def print_numbering_scheme():
             e = '\n'
         print(i, end=e)
 
+    for i in range(63, -1, -1):
+        e = '    '
+        if get_l_diag(i) >= 10:
+            e = '   '
+        if i % 8 == 0:
+            e = '\n'
+        print(get_l_diag(i), end=e)
+
+    for i in range(63, -1, -1):
+        e = '    '
+        if get_r_diag(i) >= 10:
+            e = '   '
+        if i % 8 == 0:
+            e = '\n'
+        print(get_r_diag(i), end=e)
+
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -133,6 +159,16 @@ def get_file(n):
 # get what rank you are on given an index 0-63
 def get_rank(n):
     return n // 8
+
+
+# get what right diagonal you are on given an index 0-63
+def get_r_diag(n):
+    return get_rank(n) + get_file(n)
+
+
+# get what left diagonal you are on given an index 0-63
+def get_l_diag(n):
+    return get_rank(n) + 7 - get_file(n)
 
 
 def get_rank_start(n):
@@ -296,29 +332,71 @@ def possible_wN():
 def possible_wB():
     wB = bitboards[3]
     moves = set()
+    for i in range(64):
+        # if there's a white rook here
+        if np.bitwise_and(np.left_shift(np.int64(1), i), wB):
+            mask = (l_diag[get_l_diag(i)], r_diag[get_r_diag(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
+                for j in range(64):
+                    # if the rook targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
 def possible_wR():
     wR = bitboards[4]
     moves = set()
+    # b = wR
+    # i = 63
+    # while True:
+    #     leading = leading_zeros(b)
+    #     i -= leading
+    #     if leading == 64:
+    #         break
+    #     # if we found a rook
+    #     if leading == 0:
+    #         mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
+    #         for m in mask:
+    #             slider = np.left_shift(np.int64(1), i)
+    #             rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
+    #             for j in range(64):
+    #                 # if the rook targets this square
+    #                 if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+    #                     moves.add((i, j, 0))
+    #         b = np.left_shift(b, 1)
+    #     else:
+    #         b = np.left_shift(b, leading)
     for i in range(64):
         # if there's a white rook here
         if np.bitwise_and(np.left_shift(np.int64(1), i), wR):
-            # horizontal rook movement
-            mask = rank[get_rank(i) + 1]
-            slider = np.left_shift(np.int64(1), i)
-            horizontal = np.bitwise_and(line_attack(occupied, mask, slider), not_white_pieces)
-            for j in range(64):
-                # if the rook targets this square
-                if np.bitwise_and(np.left_shift(np.int64(1), j), horizontal):
-                    moves.add((i, j, 0))
+            mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
+                for j in range(64):
+                    # if the rook targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
 def possible_wQ():
     wQ = bitboards[5]
     moves = set()
+    for i in range(64):
+        # if there's a white queen here
+        if np.bitwise_and(np.left_shift(np.int64(1), i), wQ):
+            mask = (rank[get_rank(i) + 1], file[8 - get_file(i)], l_diag[get_l_diag(i)], r_diag[get_r_diag(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
+                for j in range(64):
+                    # if the queen targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
@@ -342,7 +420,6 @@ def possible_moves_white():
 
 
 def print_bitboard(x):
-    print('-------')
     b = np.binary_repr(x, 64)
     for i in range(0, len(b), 8):
         print(b[i:i + 8])
@@ -356,11 +433,11 @@ def line_attack(o, m, s):
     o_and_m = np.bitwise_and(o, m)  # o&m
     rev_o_and_m = reverse(o_and_m)  # (o&m)'
 
-    two_s = 2 * s  # 2s
-    rev_two_s = 2 * reverse(s)  # 2s'
+    two_s = np.multiply(np.int64(2), s)  # 2s
+    rev_two_s = np.multiply(np.int64(2), reverse(s))  # 2s'
 
-    left = o_and_m - two_s  # left = (o&m)-2s
-    right = reverse(rev_o_and_m - rev_two_s)  # right = ((o&m)'-2s')'
+    left = np.subtract(o_and_m, two_s)  # left = (o&m)-2s
+    right = reverse(np.subtract(rev_o_and_m, rev_two_s))  # right = ((o&m)'-2s')'
 
     left_xor_right = np.bitwise_xor(left, right)  # left^right = ((o&m)-2s)^((o&m)'-2s')'
     ans = np.bitwise_and(left_xor_right, m)  # (left^right)&m = (((o&m)-2s)^((o&m)'-2s')')&m
@@ -420,18 +497,51 @@ def possible_bN():
 def possible_bB():
     bB = bitboards[9]
     moves = set()
+    for i in range(64):
+        # if there's a black bishop here
+        if np.bitwise_and(np.left_shift(np.int64(1), i), bB):
+            mask = (l_diag[get_l_diag(i)], r_diag[get_r_diag(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_black_pieces)
+                for j in range(64):
+                    # if the bishop targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
 def possible_bR():
     bR = bitboards[10]
     moves = set()
+    for i in range(64):
+        # if there's a black rook here
+        if np.bitwise_and(np.left_shift(np.int64(1), i), bR):
+            mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_black_pieces)
+                for j in range(64):
+                    # if the rook targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
 def possible_bQ():
     bQ = bitboards[11]
     moves = set()
+    for i in range(64):
+        # if there's a black queen here
+        if np.bitwise_and(np.left_shift(np.int64(1), i), bQ):
+            mask = (rank[get_rank(i) + 1], file[8 - get_file(i)], l_diag[get_l_diag(i)], r_diag[get_r_diag(i)])
+            for m in mask:
+                slider = np.left_shift(np.int64(1), i)
+                rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_black_pieces)
+                for j in range(64):
+                    # if the queen targets this square
+                    if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+                        moves.add((i, j, 0))
     return moves
 
 
@@ -549,10 +659,6 @@ def run_game():
     start = -1
     end = -1
     promo_key = ''
-
-    a = np.int64(5)
-    print(np.binary_repr(a, 64))
-    print(leading_zeros(a))
 
     while True:
         mousePos = pygame.mouse.get_pos()
