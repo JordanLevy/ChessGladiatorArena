@@ -35,8 +35,10 @@ black_pieces = np.int64(0)
 empty = np.int64(0)
 occupied = np.int64(0)
 
-file = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
-rank = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
+file = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
+        np.int64(0)]
+rank = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
+        np.int64(0)]
 
 square_a8 = np.int64(0)
 
@@ -215,6 +217,32 @@ def reverse(n):
     return result
 
 
+def leading_zeros(i):
+    if i == 0:
+        return 64
+    if i < 0:
+        return 0
+    n = np.int64(1)
+    x = np.right_shift(i, 32)
+    if x == 0:
+        n += 32
+        x = i
+    if np.right_shift(x, 16) == 0:
+        n += 16
+        x = np.left_shift(x, 16)
+    if np.right_shift(x, 24) == 0:
+        n += 8
+        x = np.left_shift(x, 8)
+    if np.right_shift(x, 28) == 0:
+        n += 4
+        x = np.left_shift(x, 4)
+    if np.right_shift(x, 30) == 0:
+        n += 2
+        x = np.left_shift(x, 2)
+    n -= np.right_shift(x, 31)
+    return n
+
+
 def possible_wP():
     wP = bitboards[1]
     moves = set()
@@ -277,6 +305,7 @@ def possible_wR():
     for i in range(64):
         # if there's a white rook here
         if np.bitwise_and(np.left_shift(np.int64(1), i), wR):
+            # horizontal rook movement
             mask = rank[get_rank(i) + 1]
             slider = np.left_shift(np.int64(1), i)
             horizontal = np.bitwise_and(line_attack(occupied, mask, slider), not_white_pieces)
@@ -450,7 +479,6 @@ def init_board():
 # 0 - no promotion
 # 1-12 - promoting to that piece type
 def is_legal_move(start, end, promo):
-    print(white_moves)
     return (start, end, promo) in white_moves or (start, end, promo) in black_moves
 
 
@@ -522,6 +550,10 @@ def run_game():
     end = -1
     promo_key = ''
 
+    a = np.int64(5)
+    print(np.binary_repr(a, 64))
+    print(leading_zeros(a))
+
     while True:
         mousePos = pygame.mouse.get_pos()
         for event in pygame.event.get():
@@ -566,13 +598,6 @@ def run_game():
                     possible_moves_white()
                     possible_moves_black()
                     refresh_graphics()
-                    #
-                    # # a move hase been made
-                    # if is_legal_move(start, end):
-                    #     apply_move(start, end)
-                    #     draw_board()
-                    # else:
-                    #     print("illegal")
             if start > -1:
                 refresh_graphics()
 
