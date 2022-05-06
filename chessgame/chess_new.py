@@ -93,10 +93,6 @@ def init_bitboards():
     bitboards[11] = np.left_shift(bitboards[5], diff)
     bitboards[12] = np.left_shift(bitboards[6], diff)
 
-    # rook horizontal test setup
-    bitboards[1] = np.bitwise_or(bitboards[1], generate_bitboard([39, 38, 32]))
-    bitboards[4] = np.bitwise_or(bitboards[4], generate_bitboard([34]))
-
 
 def init_masks():
     global file, rank, square_a8
@@ -320,6 +316,18 @@ def possible_wP():
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             for j in range(2, 6):
                 moves.add((i - 8, i, j))
+    # en passant
+    if move_list:
+        start, end, promo = move_list[-1]
+        # last move was a pawn move
+        if np.bitwise_and(np.left_shift(np.int64(1), end), bitboards[7]):
+            # last move was a double pawn push
+            if get_rank(start) - get_rank(end) == 2:
+                #pawn_moves = multi_and([np.left_shift(bitboards[7], 1), black_pieces, rank[5], np.bitwise_not(file[1]), file[8 - get_file(start)]])
+                print_bitboard(pawn_moves)
+                for i in range(64):
+                    if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
+                        moves.add((i - 7, i, 0))
     return moves
 
 
@@ -349,29 +357,15 @@ def possible_wB():
 def possible_wR():
     wR = bitboards[4]
     moves = set()
-    # b = wR
-    # i = 63
-    # while True:
-    #     leading = leading_zeros(b)
-    #     i -= leading
-    #     if leading == 64:
-    #         break
-    #     # if we found a rook
-    #     if leading == 0:
-    #         mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
-    #         for m in mask:
-    #             slider = np.left_shift(np.int64(1), i)
-    #             rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
-    #             for j in range(64):
-    #                 # if the rook targets this square
-    #                 if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
-    #                     moves.add((i, j, 0))
-    #         b = np.left_shift(b, 1)
-    #     else:
-    #         b = np.left_shift(b, leading)
-    for i in range(64):
-        # if there's a white rook here
-        if np.bitwise_and(np.left_shift(np.int64(1), i), wR):
+    b = wR
+    i = 63
+    while True:
+        leading = leading_zeros(b)
+        i -= leading
+        if leading == 64:
+            break
+        # if we found a rook
+        if leading == 0:
             mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
             for m in mask:
                 slider = np.left_shift(np.int64(1), i)
@@ -380,6 +374,20 @@ def possible_wR():
                     # if the rook targets this square
                     if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
                         moves.add((i, j, 0))
+            b = np.left_shift(b, 1)
+        else:
+            b = np.left_shift(b, leading)
+    # for i in range(64):
+    #     # if there's a white rook here
+    #     if np.bitwise_and(np.left_shift(np.int64(1), i), wR):
+    #         mask = (rank[get_rank(i) + 1], file[8 - get_file(i)])
+    #         for m in mask:
+    #             slider = np.left_shift(np.int64(1), i)
+    #             rook_squares = np.bitwise_and(line_attack(occupied, m, slider), not_white_pieces)
+    #             for j in range(64):
+    #                 # if the rook targets this square
+    #                 if np.bitwise_and(np.left_shift(np.int64(1), j), rook_squares):
+    #                     moves.add((i, j, 0))
     return moves
 
 
@@ -617,6 +625,7 @@ def apply_move(start, end, promo_num):
         add_piece(promo_num, end)
     else:
         add_piece(moved_piece, end)
+    move_list.append((start, end, promo_num))
     print(start, end, promo_num)
 
 
