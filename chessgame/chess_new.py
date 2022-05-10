@@ -317,17 +317,19 @@ def possible_wP():
             for j in range(2, 6):
                 moves.add((i - 8, i, j))
     # en passant
-    if move_list:
-        start, end, promo = move_list[-1]
-        # last move was a pawn move
-        if np.bitwise_and(np.left_shift(np.int64(1), end), bitboards[7]):
-            # last move was a double pawn push
-            if get_rank(start) - get_rank(end) == 2:
-                #pawn_moves = multi_and([np.left_shift(bitboards[7], 1), black_pieces, rank[5], np.bitwise_not(file[1]), file[8 - get_file(start)]])
-                print_bitboard(pawn_moves)
-                for i in range(64):
-                    if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
-                        moves.add((i - 7, i, 0))
+    # if move_list:
+    #     start, end, promo = move_list[-1]
+    #     # last move was a pawn move
+    #     #if np.bitwise_and(np.left_shift(np.int64(1), end), bitboards[7]):
+    #     # last move was a double pawn push
+    #     # if get_rank(start) - get_rank(end) == 2:
+    # capter left ep
+    pawn_moves = multi_and([np.left_shift(wP, 1), bitboards[7], np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
+    print_bitboard(pawn_moves)
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
+            moves.add((i - 1, i + 8, 0))
+
     return moves
 
 
@@ -613,21 +615,36 @@ def add_piece(piece, square):
     add_mask = np.left_shift(np.int64(1), square)
     bitboards[piece] = np.bitwise_or(b, add_mask)
 
-
-def apply_move(start, end, promo_num):
+# this is a list of move_id
+# 0 is just a normal move or a capture
+# 1 to 12 is for move promotion
+# 13 is for double pawn push
+# 14 is en_passant
+def apply_move(start, end, move_id):
     print("apply move")
+    print(start, end, move_id)
     moved_piece = get_piece(start)
     captured_piece = get_piece(end)
     remove_piece(moved_piece, start)
     if captured_piece:
         remove_piece(captured_piece, end)
-    if promo_num:
-        add_piece(promo_num, end)
+    if move_id:
+        add_piece(move_id, end)
+
     else:
         add_piece(moved_piece, end)
-    move_list.append((start, end, promo_num))
-    print(start, end, promo_num)
-
+        # this is to check if it is a white p
+    if (moved_piece == 1 or moved_piece == 7) and abs(end - start) == 16:
+        # this is for en_p
+        move_list.append((start, end, 13))
+    else:
+        s, e, m = move_list[-1]
+        if m == 13 and moved_piece == 1 and end - e == 8:
+            # this is a white pawn tring to capter en_p
+            remove_piece(get_piece(e), e)
+            move_list.append((start, end, 14))
+        else:
+            move_list.append((start, end, move_id))
 
 def is_white_piece(piece):
     return 1 <= piece <= 6
