@@ -316,20 +316,20 @@ def possible_wP():
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             for j in range(2, 6):
                 moves.add((i - 8, i, j))
-    # en passant
-    # if move_list:
-    #     start, end, promo = move_list[-1]
-    #     # last move was a pawn move
-    #     #if np.bitwise_and(np.left_shift(np.int64(1), end), bitboards[7]):
-    #     # last move was a double pawn push
-    #     # if get_rank(start) - get_rank(end) == 2:
-    # capter left ep
+    # left en passant
     pawn_moves = multi_and([np.left_shift(wP, 1), bitboards[7], np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
-    print_bitboard(pawn_moves)
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
-            moves.add((i - 1, i + 8, 0))
-
+            s, e, m = move_list[-1]
+            if m == 13 and i + 8 - e == 8:
+                moves.add((i - 1, i + 8, 0))
+    # right en passant
+    pawn_moves = multi_and([r_shift(wP, 1), bitboards[7], np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
+            s, e, m = move_list[-1]
+            if m == 13 and i + 8 - e == 8:
+                moves.add((i + 1, i + 8, 0))
     return moves
 
 
