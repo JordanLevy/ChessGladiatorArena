@@ -1,4 +1,5 @@
 from collections import deque
+import datetime
 
 # TODO
 
@@ -62,6 +63,8 @@ YELLOW = (255, 255, 0, 50)
 white_moves = set()
 black_moves = set()
 
+start_time = datetime.datetime.now()
+
 
 # given a list of squares to place the pieces, returns a numpy 64-bit integer representing the bitboard
 # follows numbering scheme
@@ -121,7 +124,6 @@ def init_masks():
 # 0=h1=MSB, 63=a8=LSB
 def print_numbering_scheme():
     print('Bitboard binary representation:')
-
     for i in range(63, -1, -1):
         e = '    '
         if i >= 10:
@@ -130,6 +132,9 @@ def print_numbering_scheme():
             e = '\n'
         print(i, end=e)
 
+
+def print_l_diag():
+    print("Left diagonal")
     for i in range(63, -1, -1):
         e = '    '
         if get_l_diag(i) >= 10:
@@ -138,6 +143,9 @@ def print_numbering_scheme():
             e = '\n'
         print(get_l_diag(i), end=e)
 
+
+def print_r_diag():
+    print("Right diagonal")
     for i in range(63, -1, -1):
         e = '    '
         if get_r_diag(i) >= 10:
@@ -324,7 +332,7 @@ def possible_wP():
             if m == 13 and i + 8 - e == 8:
                 moves.add((i - 1, i + 8, 0))
     # right en passant
-    pawn_moves = multi_and([r_shift(wP, 1), bitboards[7], np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
+    pawn_moves = multi_and([r_shift(wP, 1), bitboards[7], np.bitwise_not(rank[8]), np.bitwise_not(file[1])])
     for i in range(64):
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
             s, e, m = move_list[-1]
@@ -495,6 +503,20 @@ def possible_bP():
         if np.bitwise_and(np.left_shift(np.int64(1), i), pawnMoves):
             for j in range(8, 12):
                 moves.add((i + 8, i, j))
+    # left en passant
+    pawn_moves = multi_and([np.left_shift(bP, 1), bitboards[1], np.bitwise_not(rank[8]), np.bitwise_not(file[8])])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
+            s, e, m = move_list[-1]
+            if m == 13 and i + 8 - e == 8:
+                moves.add((i - 1, i - 8, 0))
+    # right en passant
+    pawn_moves = multi_and([r_shift(bP, 1), bitboards[1], np.bitwise_not(rank[8]), np.bitwise_not(file[1])])
+    for i in range(64):
+        if np.bitwise_and(np.left_shift(np.int64(1), i), pawn_moves):
+            s, e, m = move_list[-1]
+            if m == 13 and i + 8 - e == 8:
+                moves.add((i + 1, i - 8, 0))
     return moves
 
 
@@ -615,6 +637,7 @@ def add_piece(piece, square):
     add_mask = np.left_shift(np.int64(1), square)
     bitboards[piece] = np.bitwise_or(b, add_mask)
 
+
 # this is a list of move_id
 # 0 is just a normal move or a capture
 # 1 to 12 is for move promotion
@@ -630,21 +653,26 @@ def apply_move(start, end, move_id):
         remove_piece(captured_piece, end)
     if move_id:
         add_piece(move_id, end)
-
     else:
         add_piece(moved_piece, end)
-        # this is to check if it is a white p
+        # is a pawn
     if (moved_piece == 1 or moved_piece == 7) and abs(end - start) == 16:
-        # this is for en_p
+        # double pawn push
         move_list.append((start, end, 13))
     else:
+        # previous move start, end, and move_id
         s, e, m = move_list[-1]
+        # white capturing en passant
         if m == 13 and moved_piece == 1 and end - e == 8:
-            # this is a white pawn tring to capter en_p
+            remove_piece(get_piece(e), e)
+            move_list.append((start, end, 14))
+        # black capturing en passant
+        elif m == 13 and moved_piece == 7 and end - e == -8:
             remove_piece(get_piece(e), e)
             move_list.append((start, end, 14))
         else:
             move_list.append((start, end, move_id))
+
 
 def is_white_piece(piece):
     return 1 <= piece <= 6
@@ -673,7 +701,7 @@ def refresh_graphics():
 def run_game():
     global press, release, start, end, mousePos
     mainClock = pygame.time.Clock()
-    pygame.init()
+    pygame.display.init()
     pygame.display.set_caption('Chess')
     clicking = False
     init_board()
