@@ -3,9 +3,9 @@ from collections import deque
 # TODO
 # reversing bits (done)
 # capturing piece movement (done)
-# regular piece movement
-# en-passant - legal_moves
-# castling - legal_moves
+# regular piece movement (done)
+# en-passant - legal_moves(done)
+# castling - legal_moves (done)
 # promotion - legal_moves (done)
 # undo moves
 # make sure everything is good to go
@@ -70,6 +70,10 @@ black_moves = set()
 white_promo_pieces = list(range(2, 6))
 black_promo_pieces = list(range(8, 12))
 
+rook_pos = [7, 0, 63, 56]
+rook_num_moves = [0, 0, 0, 0]
+
+king_num_moves = [0, 0]
 
 # given a list of squares to place the pieces, returns a numpy 64-bit integer representing the bitboard
 # follows numbering scheme
@@ -448,9 +452,30 @@ def possible_Q(bb, moves, mask):
     bitwise_for(bb, lambda i: sliding_piece(moves, mask, i, rook_moves=True, bishop_moves=True))
 
 
-def possible_K(bb, moves, mask):
+def possible_K(bb, moves, mask, is_white):
     bitwise_for(bb, lambda i: span_piece(moves, mask, i, king_span, 9))
 
+    # BB IS Bit_board
+    # this is for left casle
+    # for white
+    if rook_num_moves[0] == 0 and is_white and king_num_moves[0] == 0:
+        squares = multi_and([l_shift(bb, 2), l_shift(empty, 1), empty, l_shift(empty, -1)])
+        add_moves_offset(moves, squares, -2, 0)
+        #for black
+    if rook_num_moves[2] == 0 and not is_white and king_num_moves[1] == 0:
+        squares = multi_and([l_shift(bb, 2), l_shift(empty, 1), empty, l_shift(empty, -1)])
+        add_moves_offset(moves, squares, -2, 0)
+
+
+    # this is for right casle
+    # for white
+    if rook_num_moves[1] == 0 and is_white and king_num_moves[0] == 0:
+        squares = multi_and([l_shift(bb, -2), l_shift(empty, -1), empty])
+        add_moves_offset(moves, squares, 2, 0)
+    # for black
+    if rook_num_moves[3] == 0 and not is_white and king_num_moves[1] == 0:
+        squares = multi_and([l_shift(bb, -2), l_shift(empty, -1), empty])
+        add_moves_offset(moves, squares, 2, 0)
 
 def possible_moves_white():
     global white_moves, not_white_pieces, black_pieces, empty, occupied
@@ -465,7 +490,7 @@ def possible_moves_white():
     possible_B(bitboards[3], white_moves, not_white_pieces)
     possible_R(bitboards[4], white_moves, not_white_pieces)
     possible_Q(bitboards[5], white_moves, not_white_pieces)
-    possible_K(bitboards[6], white_moves, not_white_pieces)
+    possible_K(bitboards[6], white_moves, not_white_pieces, True)
 
 
 def possible_moves_black():
@@ -481,7 +506,7 @@ def possible_moves_black():
     possible_B(bitboards[9], black_moves, not_black_pieces)
     possible_R(bitboards[10], black_moves, not_black_pieces)
     possible_Q(bitboards[11], black_moves, not_black_pieces)
-    possible_K(bitboards[12], black_moves, not_black_pieces)
+    possible_K(bitboards[12], black_moves, not_black_pieces, False)
 
 
 def print_bitboard(x):
@@ -560,6 +585,32 @@ def apply_move(start, end, move_id):
     moved_piece = get_piece(start)
     captured_piece = get_piece(end)
     remove_piece(moved_piece, start)
+    # is to check if rooks have moved
+    if moved_piece == 4 or moved_piece == 10:
+        for i in range(4):
+            if start == rook_pos[i]:
+                rook_pos[i] = end
+                rook_num_moves[i] += 1
+    # this is to check for casaling rights
+    if moved_piece == 6:
+        # this is casaling king side
+        if end - start == -2:
+            remove_piece(4, rook_pos[1])
+            add_piece(4, 2)
+        if end - start == 2:
+            remove_piece(4, rook_pos[0])
+            add_piece(4, 4)
+        king_num_moves[0] += 1
+
+    elif moved_piece == 12:
+        if end - start == -2:
+            remove_piece(10, rook_pos[3])
+            add_piece(10, 58)
+        if end - start == 2:
+            remove_piece(10, rook_pos[2])
+            add_piece(10, 60)
+        king_num_moves[1] += 1
+
     if captured_piece:
         remove_piece(captured_piece, end)
     if move_id:
