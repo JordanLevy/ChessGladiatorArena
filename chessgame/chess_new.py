@@ -7,8 +7,8 @@ from collections import deque
 # en-passant - legal_moves(done)
 # castling - legal_moves (done)
 # promotion - legal_moves (done)
-# undo moves
-# make sure everything is good to go
+# undo moves (done)
+# automated moves depth testing a.k.a. Perft Testing
 # run game two-player
 # run game engine
 
@@ -74,6 +74,7 @@ rook_pos = [7, 0, 63, 56]
 rook_num_moves = [0, 0, 0, 0]
 
 king_num_moves = [0, 0]
+
 
 # given a list of squares to place the pieces, returns a numpy 64-bit integer representing the bitboard
 # follows numbering scheme
@@ -389,9 +390,9 @@ def possible_bP(bb, moves):
 
 def possible_P(bb, moves, can_capture, promo_rank, enemy_pawns, promo_pieces, double_push_rank, fwd):
     # start square, end square, and move id of the previous move
-    s, e, m = (0, 0, 0)
+    s, e, m, c = (0, 0, 0, 0)
     if move_list:
-        s, e, m = move_list[-1]
+        s, e, m, c = move_list[-1]
 
     not_promo_rank = np.bitwise_not(promo_rank)
 
@@ -461,11 +462,10 @@ def possible_K(bb, moves, mask, is_white):
     if rook_num_moves[0] == 0 and is_white and king_num_moves[0] == 0:
         squares = multi_and([l_shift(bb, 2), l_shift(empty, 1), empty, l_shift(empty, -1)])
         add_moves_offset(moves, squares, -2, 0)
-        #for black
+        # for black
     if rook_num_moves[2] == 0 and not is_white and king_num_moves[1] == 0:
         squares = multi_and([l_shift(bb, 2), l_shift(empty, 1), empty, l_shift(empty, -1)])
         add_moves_offset(moves, squares, -2, 0)
-
 
     # this is for right casle
     # for white
@@ -476,6 +476,7 @@ def possible_K(bb, moves, mask, is_white):
     if rook_num_moves[3] == 0 and not is_white and king_num_moves[1] == 0:
         squares = multi_and([l_shift(bb, -2), l_shift(empty, -1), empty])
         add_moves_offset(moves, squares, 2, 0)
+
 
 def possible_moves_white():
     global white_moves, not_white_pieces, black_pieces, empty, occupied
@@ -579,36 +580,47 @@ def add_piece(piece, square):
 # 1 to 12 is for move promotion
 # 13 is for double pawn push
 # 14 is en_passant
+# 15 is castling
 def apply_move(start, end, move_id):
-    print("apply move")
-    print(start, end, move_id)
     moved_piece = get_piece(start)
     captured_piece = get_piece(end)
     remove_piece(moved_piece, start)
+    # if captured_piece:
+    #     print(start, end, -captured_piece)
+    # else:
+    #     print(start, end, move_id)
     # is to check if rooks have moved
     if moved_piece == 4 or moved_piece == 10:
         for i in range(4):
             if start == rook_pos[i]:
                 rook_pos[i] = end
                 rook_num_moves[i] += 1
-    # this is to check for casaling rights
+    # this is to check for castling rights
     if moved_piece == 6:
-        # this is casaling king side
+        # this is castling king side
         if end - start == -2:
             remove_piece(4, rook_pos[1])
             add_piece(4, 2)
+            rook_pos[1] = 2
+            move_list.append((start, end, 15, 0))
         if end - start == 2:
             remove_piece(4, rook_pos[0])
             add_piece(4, 4)
+            rook_pos[0] = 4
+            move_list.append((start, end, 15, 0))
         king_num_moves[0] += 1
 
     elif moved_piece == 12:
         if end - start == -2:
             remove_piece(10, rook_pos[3])
             add_piece(10, 58)
+            rook_pos[3] = 58
+            move_list.append((start, end, 15, 0))
         if end - start == 2:
             remove_piece(10, rook_pos[2])
             add_piece(10, 60)
+            rook_pos[2] = 60
+            move_list.append((start, end, 15, 0))
         king_num_moves[1] += 1
 
     if captured_piece:
@@ -620,24 +632,90 @@ def apply_move(start, end, move_id):
         # is a pawn
     if (moved_piece == 1 or moved_piece == 7) and abs(end - start) == 16:
         # double pawn push
-        move_list.append((start, end, 13))
+        move_list.append((start, end, 13, 0))
+    # if the move was castling
+    elif (moved_piece == 6 or moved_piece == 12) and abs(end - start) == 2:
+        pass
     else:
         # previous move start, end, and move_id
         if move_list:
-            s, e, m = move_list[-1]
+            s, e, m, c = move_list[-1]
+            ep_pawn = get_piece(e)  # pawn that was captured en passant
             # white capturing en passant
-            if m == 13 and moved_piece == 1 and end - e == 8:
-                remove_piece(get_piece(e), e)
-                move_list.append((start, end, 14))
+            if m == 13 and moved_piece == 1 and ep_pawn == 7 and end - e == 8:
+                remove_piece(ep_pawn, e)
+                move_list.append((start, end, 14, 0))
             # black capturing en passant
-            elif m == 13 and moved_piece == 7 and end - e == -8:
-                remove_piece(get_piece(e), e)
-                move_list.append((start, end, 14))
+            elif m == 13 and moved_piece == 7 and ep_pawn == 1 and end - e == -8:
+                remove_piece(ep_pawn, e)
+                move_list.append((start, end, 14, 0))
             else:
-                move_list.append((start, end, move_id))
+                move_list.append((start, end, move_id, captured_piece))
         else:
-            move_list.append((start, end, move_id))
+            move_list.append((start, end, move_id, captured_piece))
+    print(king_num_moves)
 
+
+def undo_move():
+    if not move_list:
+        return
+    start, end, move_id, capture = move_list.pop()
+    moved_piece = get_piece(end)
+    is_white = is_white_piece(moved_piece)
+    remove_piece(moved_piece, end)
+    add_piece(moved_piece, start)
+    # last move was a capture
+    if capture:
+        add_piece(capture, end)
+    if move_id == 0:
+        pass
+    # last move was pawn promotion
+    elif 1 <= move_id <= 12:
+        remove_piece(move_id, start)
+        if is_white:
+            add_piece(1, start)
+        else:
+            add_piece(7, start)
+    # last move was double pawn push
+    elif move_id == 13:
+        pass
+    # last move was en passant
+    elif move_id == 14:
+        if is_white:
+            add_piece(7, end - 8)
+        else:
+            add_piece(1, end + 8)
+    # last move was castling
+    elif move_id == 15:
+        # white king
+        if moved_piece == 6:
+            if end - start == -2:
+                remove_piece(4, rook_pos[1])
+                add_piece(4, 0)
+                rook_pos[1] = 0
+            if end - start == 2:
+                remove_piece(4, rook_pos[0])
+                add_piece(4, 7)
+                rook_pos[0] = 7
+        # black king
+        elif moved_piece == 12:
+            if end - start == -2:
+                remove_piece(10, rook_pos[3])
+                add_piece(10, 56)
+                rook_pos[3] = 56
+            if end - start == 2:
+                remove_piece(10, rook_pos[2])
+                add_piece(10, 63)
+                rook_pos[2] = 63
+    if moved_piece == 4 or moved_piece == 10:
+        for i in range(4):
+            if end == rook_pos[i]:
+                rook_pos[i] = start
+                rook_num_moves[i] -= 1
+    elif moved_piece == 6:
+        king_num_moves[0] -= 1
+    elif moved_piece == 12:
+        king_num_moves[1] -= 1
 
 def is_white_piece(piece):
     return 1 <= piece <= 6
@@ -688,6 +766,11 @@ def run_game():
                 pygame.quit()
                 sys.exit()
             if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    undo_move()
+                    possible_moves_white()
+                    possible_moves_black()
+                    refresh_graphics()
                 if event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
