@@ -1,7 +1,8 @@
 from collections import deque
 
 # TODO
-# castling bugs w/ into, out of, through check. black works, white queenside seems off
+# castling bugs w/ into, out of, through check. black works
+# , white queenside seems off(done)
 # reversing bits (done)
 # capturing piece movement (done)
 # regular piece movement (done)
@@ -15,6 +16,7 @@ from collections import deque
 
 import math
 
+import numpy
 import numpy as np
 from pygame.locals import *
 import pygame
@@ -361,14 +363,9 @@ def span_piece(mask, i, span, origin):
     squares = multi_and([squares, mask])
     return squares
 
-def span_piece_unsafe(moves, mask, i, span, origin):
 
-    squares = offset_span(span, origin, i)
-    squares = remove_span_warps(squares, i)
-    squares = multi_and([squares, mask])
-    add_moves_position(moves, squares, i)
-
-def sliding_piece(moves, mask, i, is_white, rook_moves=False, bishop_moves=False):
+def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False):
+    squares = np.int64(0)
 
     directions = set()
     if rook_moves:
@@ -379,8 +376,10 @@ def sliding_piece(moves, mask, i, is_white, rook_moves=False, bishop_moves=False
         directions.add(r_diag[get_r_diag(i)])
     for d in directions:
         slider = np.left_shift(np.int64(1), i)
-        squares = np.bitwise_and(line_attack(occupied, d, slider), mask)
-        add_moves_position(moves, squares, i)
+        new_squares = np.bitwise_and(line_attack(blockers, d, slider), mask)
+        squares = np.bitwise_or(new_squares, squares)
+
+    return squares
 
 # calls on_find_one function every time a 1 is found and condition is true for that square
 # TODO leading_zeros optimization so we don't need to iterate through all 64 squares
@@ -450,49 +449,49 @@ def possible_P(bb, moves, can_capture, promo_rank, enemy_pawns, promo_pieces, do
 def possible_N(bb, moves, mask, is_white):
     bitwise_for(bb, lambda i: add_moves_position(moves, span_piece(mask, i, knight_span, 18), i))
 
+
 def possible_B(bb, moves, mask, is_white):
-    bitwise_for(bb, lambda i: sliding_piece(moves, mask, i, is_white, bishop_moves=True))
+    bitwise_for(bb, lambda i: add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=False, bishop_moves=True), i))
 
 
 def possible_R(bb, moves, mask, is_white):
-    bitwise_for(bb, lambda i: sliding_piece(moves, mask, i, is_white, rook_moves=True))
-
+    bitwise_for(bb, lambda i: add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=False), i))
 
 def possible_Q(bb, moves, mask, is_white):
-    bitwise_for(bb, lambda i: sliding_piece(moves, mask, i, is_white, rook_moves=True, bishop_moves=True))
+    bitwise_for(bb, lambda i: add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=True), i))
 
 
 def possible_K(bb, moves, mask, is_white):
-    bitwise_for(bb, lambda i: add_moves_position(moves, span_piece(mask, i, king_span, 9), i))
     safe = np.bitwise_not(unsafe_for_white())
     if not is_white:
         safe = np.bitwise_not(unsafe_for_black())
     empty_and_safe = multi_and([empty, safe])
-
+    bitwise_for(bb, lambda i: add_moves_position(moves, span_piece(np.bitwise_and(mask, safe), i, king_span, 9), i))
     # this is white king, hasn't moved yet, isn't trying to castle out of check
     if is_white and king_num_moves[0] == 0 and multi_and([bb, safe]):
-        # white queenside castle
-        squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
-        # print_bitboard(l_shift(bb, 2))
-        # print_bitboard(l_shift(empty, 1))
-        # print_bitboard(empty)
-        #
-        add_moves_offset(moves, squares, -2, 0)
-
-        # white kingside castle
-        squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
-        add_moves_offset(moves, squares, 2, 0)
+        if rook_num_moves[0] == 0:
+            # white queenside castle
+            squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
+            add_moves_offset(moves, squares, -2, 0)
+        if rook_num_moves[1] == 0:
+            # white kingside castle
+            squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
+            add_moves_offset(moves, squares, 2, 0)
 
     # this is black king, hasn't moved yet, isn't trying to castle out of check
     elif not is_white and king_num_moves[1] == 0 and multi_and([bb, safe]):
-        # black queenside castle
-        squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
 
-        add_moves_offset(moves, squares, -2, 0)
+        if rook_num_moves[2] == 0:
 
-        # black kingside castle
-        squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
-        add_moves_offset(moves, squares, 2, 0)
+            # black queenside castle
+            squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
+
+            add_moves_offset(moves, squares, -2, 0)
+        if rook_num_moves[3] == 0:
+
+            # black kingside castle
+            squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
+            add_moves_offset(moves, squares, 2, 0)
 
 
 def possible_moves_white():
@@ -526,8 +525,11 @@ def possible_moves_black():
     possible_Q(bitboards[11], black_moves, not_black_pieces, False)
     possible_K(bitboards[12], black_moves, not_black_pieces, False)
 # this is for the kings
+# this is where the white king cant go
 def unsafe_for_white():
     unsafe = np.int64(0)
+    # bitboards[12] is the black king
+    occupied_no_king = np.bitwise_and(occupied, np.bitwise_not(bitboards[6]))
     # pawns
     # threaten to capture right
     mask = multi_and([l_shift(bitboards[7], -8 - 1), np.bitwise_not(file[1])])
@@ -542,17 +544,36 @@ def unsafe_for_white():
     for i in range(64):
         if np.bitwise_and(l_shift(np.int64(1), i), bitboards[8]):
             unsafe = np.bitwise_or(unsafe, span_piece(all_squares, i, knight_span, 18))
+
+    # king
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[12]):
+            unsafe = np.bitwise_or(unsafe, span_piece(all_squares, i, king_span, 9))
+
+    #queen
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[11]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king,  rook_moves=True, bishop_moves=True))
+    print_bitboard(occupied)
+    #rook
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[10]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=False))
+    #bishop
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[9]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king, rook_moves=False, bishop_moves=True))
+
     return unsafe
-
-
 
     # # siding pieces
     # a = line_attack(np.bitwise_and(occupied, np.bitwise_not(bitboards[6])), d, slider)
     # unsafe_for_white = multi_or([unsafe_for_white, squares, a])
 
-
+# this is where the black king cant go
 def unsafe_for_black():
     unsafe = np.int64(0)
+    occupied_no_king = np.bitwise_and(occupied, np.bitwise_not(bitboards[12]))
     # pawns
     # threaten to capture right
     mask = multi_and([l_shift(bitboards[1], 8 - 1), np.bitwise_not(file[1])])
@@ -561,8 +582,31 @@ def unsafe_for_black():
 
     # threaten to capture left
     mask = multi_and([l_shift(bitboards[1], 8 + 1), np.bitwise_not(file[8])])
-
     unsafe = np.bitwise_or(unsafe, mask)
+
+    # the knight
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[2]):
+            unsafe = np.bitwise_or(unsafe, span_piece(all_squares, i, knight_span, 18))
+
+    # king
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[6]):
+            unsafe = np.bitwise_or(unsafe, span_piece(all_squares, i, king_span, 9))
+
+    # Queens
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[5]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=True))
+    #rook
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[4]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=False))
+    #bishop
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), bitboards[3]):
+            unsafe = np.bitwise_or(unsafe, sliding_piece(all_squares, i, occupied_no_king, rook_moves=False, bishop_moves=True))
+
 
     return unsafe
 
