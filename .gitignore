@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# idea folder has user project files
+.idea/
+chessgame/.idea/
