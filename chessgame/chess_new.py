@@ -1,13 +1,14 @@
 from collections import deque
 
 # TODO
+# pinned pieces/making moves that put you into check
 # checkmate
 # automated moves depth testing a.k.a. Perft Testing
 # run game two-player
 # run game engine
 
 # DONE
-# pinned pieces/making moves that put you into check (done)
+
 # turns (done)
 # replace bitwise_for() with a generator function (done)
 # color the king square for check (done)
@@ -89,7 +90,8 @@ white_check = False
 black_check = False
 
 blocking_squares = np.int64(0)
-
+# we will start at the top and go cw
+pinning_squares = dict()
 white_promo_pieces = list(range(2, 6))
 black_promo_pieces = list(range(8, 12))
 
@@ -415,7 +417,7 @@ def span_piece(mask, i, span, origin, king_bb=np.int64(0)):
 
 
 def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_bb=np.int64(0)):
-    global blocking_squares
+    global blocking_squares, pinning_squares
     squares = np.int64(0)
     slider = np.left_shift(np.int64(1), i)
     # int representing which square index the king is on
@@ -431,13 +433,29 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
 
     for d in directions:
         new_squares = np.bitwise_and(line_attack(blockers, d, slider), mask)
+        squares = np.bitwise_or(new_squares, squares)
         # if this piece is delivering check in this direction
         if np.bitwise_and(new_squares, king_bb):
             # allow the checking piece to be blocked or captured
             blocking_squares = line_between_pieces(d, i, king_square)
             # slider can also be captured to "block" check
             blocking_squares = np.bitwise_or(blocking_squares, slider)
-        squares = np.bitwise_or(new_squares, squares)
+        # this is for pined pieces
+        elif king_square >= 0:
+            king_line = line_between_pieces(d, i, king_square)
+            if not king_line:
+                continue
+            pos_pin = np.bitwise_and(blockers, king_line)
+            counter = 0
+            pin_loc = 0
+            for i in find_ones(pos_pin):
+                counter += 1
+                if counter > 1:
+                    break
+                pin_loc = i
+            if counter == 1:
+                pos_pin = np.bitwise_or(pos_pin, slider)
+            pinning_squares[pin_loc] = pos_pin
 
     return squares
 
@@ -447,6 +465,10 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
 # piece_2: int representing the location of the 2nd piece
 # returns a bitboard representing squares in a straight line between the two pieces, ignoring other pieces on the board
 def line_between_pieces(direction, piece_1, piece_2):
+    if not np.bitwise_and(direction, l_shift(np.int64(1), piece_1)):
+        return np.int64(0)
+    if not np.bitwise_and(direction, l_shift(np.int64(1), piece_2)):
+        return np.int64(0)
     if piece_1 < piece_2:
         mask = generate_bitboard(list(range(piece_1, piece_2)))
     else:
@@ -641,6 +663,9 @@ def black_in_checkmate():
 # this is for the kings
 # this is where the white king cant go
 def unsafe_for_white():
+    global blocking_squares, pinning_squares
+    blocking_squares = np.int64(0)
+    pinning_squares = dict()
     unsafe = np.int64(0)
 
     king = bitboards[6]
@@ -685,6 +710,10 @@ def unsafe_for_white():
 
 # this is where the black king cant go
 def unsafe_for_black():
+    global blocking_squares, pinning_squares
+    blocking_squares = np.int64(0)
+    pinning_squares = dict()
+
     unsafe = np.int64(0)
 
     king = bitboards[12]
@@ -995,6 +1024,8 @@ def refresh_graphics():
     # draw_possible_moves(white_moves, GREEN, 6)
     # draw_possible_moves(black_moves, RED, 2)
     draw_bitboard(blocking_squares, RED, 2)
+    for i in pinning_squares:
+        draw_bitboard(pinning_squares[i], YELLOW, 7)
     # draw_bitboard(unsafe_black, GREEN, 7)
     # draw_bitboard(unsafe_white, RED, 4)
 
