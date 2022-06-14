@@ -1,14 +1,15 @@
 from collections import deque
 
 # TODO
-# pinned pieces/making moves that put you into check
-# checkmate
+# en-passant capture bug allows self-check
 # automated moves depth testing a.k.a. Perft Testing
+# refactoring
 # run game two-player
 # run game engine
 
 # DONE
-
+# pinned pieces/making moves that put you into check (done)
+# checkmate (done)
 # turns (done)
 # replace bitwise_for() with a generator function (done)
 # color the king square for check (done)
@@ -347,7 +348,11 @@ def leading_zeros(i):
 def resolves_check(start, end, move_id):
     moved_piece = get_piece(start)
     if white_turn:
-        # don't let them move pinned pieces to put self in check
+        # if the piece being moved is pinned, make sure it doesn't reveal a check
+        if start in pinning_squares:
+            pinning_line = pinning_squares[start]
+            if not np.bitwise_and(np.left_shift(np.int64(1), end), pinning_line):
+                return False
         # if it's a king move
         if moved_piece == 6:
             # king cannot move to an unsafe square
@@ -359,6 +364,10 @@ def resolves_check(start, end, move_id):
             if not np.bitwise_and(np.left_shift(np.int64(1), end), blocking_squares):
                 return False
     else:
+        if start in pinning_squares:
+            pinning_line = pinning_squares[start]
+            if not np.bitwise_and(np.left_shift(np.int64(1), end), pinning_line):
+                return False
         if moved_piece == 12:
             if np.bitwise_and(np.left_shift(np.int64(1), end), unsafe_black):
                 return False
@@ -422,6 +431,7 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
     slider = np.left_shift(np.int64(1), i)
     # int representing which square index the king is on
     king_square = 64 - leading_zeros(king_bb) - 1
+    king_color = is_white_piece(get_piece(king_square))
 
     directions = set()
     if rook_moves:
@@ -453,9 +463,14 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
                 if counter > 1:
                     break
                 pin_loc = i
+
             if counter == 1:
-                pos_pin = np.bitwise_or(pos_pin, slider)
-            pinning_squares[pin_loc] = pos_pin
+                pinned_piece_color = is_white_piece(get_piece(pin_loc))
+                print(pinned_piece_color, king_color, pin_loc, king_square)
+                if pinned_piece_color == king_color:
+                    print(pin_loc)
+                    king_line = np.bitwise_or(king_line, slider)
+                    pinning_squares[pin_loc] = king_line
 
     return squares
 
@@ -470,7 +485,7 @@ def line_between_pieces(direction, piece_1, piece_2):
     if not np.bitwise_and(direction, l_shift(np.int64(1), piece_2)):
         return np.int64(0)
     if piece_1 < piece_2:
-        mask = generate_bitboard(list(range(piece_1, piece_2)))
+        mask = generate_bitboard(list(range(piece_1 + 1, piece_2)))
     else:
         mask = generate_bitboard(list(range(piece_2 + 1, piece_1)))
     return np.bitwise_and(direction, mask)
@@ -666,6 +681,7 @@ def unsafe_for_white():
     global blocking_squares, pinning_squares
     blocking_squares = np.int64(0)
     pinning_squares = dict()
+
     unsafe = np.int64(0)
 
     king = bitboards[6]
@@ -711,8 +727,8 @@ def unsafe_for_white():
 # this is where the black king cant go
 def unsafe_for_black():
     global blocking_squares, pinning_squares
-    blocking_squares = np.int64(0)
-    pinning_squares = dict()
+    # blocking_squares = np.int64(0)
+    # pinning_squares = dict()
 
     unsafe = np.int64(0)
 
@@ -1094,6 +1110,7 @@ def run_game():
                     if is_legal_move(press_square, release_square, promo_num):
                         apply_move(press_square, release_square, promo_num)
                         update_possible_moves()
+                        print(white_in_checkmate(), black_in_checkmate())
                     else:
                         print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
