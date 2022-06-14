@@ -1,13 +1,18 @@
 from collections import deque
 
 # TODO
-# en-passant capture bug allows self-check
+# speed optimizations
 # automated moves depth testing a.k.a. Perft Testing
 # refactoring
+# main.py
+# moves.py
+# utils.py
+# FEN
 # run game two-player
 # run game engine
 
 # DONE
+# en-passant capture bug allows self-check (done)
 # pinned pieces/making moves that put you into check (done)
 # checkmate (done)
 # turns (done)
@@ -25,14 +30,12 @@ from collections import deque
 
 import math
 import time
-
-import numpy
 import numpy as np
 from pygame.locals import *
 import pygame
 import sys
 
-screen = pygame.display.set_mode((400, 400), 0, 32)
+screen = None
 piece_img = []
 
 num_moves = 0
@@ -91,8 +94,9 @@ white_check = False
 black_check = False
 
 blocking_squares = np.int64(0)
-# we will start at the top and go cw
 pinning_squares = dict()
+en_passant_pinned = -1
+
 white_promo_pieces = list(range(2, 6))
 black_promo_pieces = list(range(8, 12))
 
@@ -353,6 +357,9 @@ def resolves_check(start, end, move_id):
             pinning_line = pinning_squares[start]
             if not np.bitwise_and(np.left_shift(np.int64(1), end), pinning_line):
                 return False
+        # trying to capture en passant but en passant is pinned
+        if moved_piece == 1 and end == en_passant_pinned:
+            return False
         # if it's a king move
         if moved_piece == 6:
             # king cannot move to an unsafe square
@@ -368,6 +375,9 @@ def resolves_check(start, end, move_id):
             pinning_line = pinning_squares[start]
             if not np.bitwise_and(np.left_shift(np.int64(1), end), pinning_line):
                 return False
+        # trying to capture en passant but en passant is pinned
+        if moved_piece == 7 and end == en_passant_pinned:
+            return False
         if moved_piece == 12:
             if np.bitwise_and(np.left_shift(np.int64(1), end), unsafe_black):
                 return False
@@ -426,7 +436,7 @@ def span_piece(mask, i, span, origin, king_bb=np.int64(0)):
 
 
 def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_bb=np.int64(0)):
-    global blocking_squares, pinning_squares
+    global blocking_squares, pinning_squares, en_passant_pinned
     squares = np.int64(0)
     slider = np.left_shift(np.int64(1), i)
     # int representing which square index the king is on
@@ -457,20 +467,31 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
                 continue
             pos_pin = np.bitwise_and(blockers, king_line)
             counter = 0
-            pin_loc = 0
+            pin_loc = [-1, -1]
             for i in find_ones(pos_pin):
                 counter += 1
-                if counter > 1:
+                if counter > 2:
                     break
-                pin_loc = i
+                pin_loc[counter - 1] = i
 
             if counter == 1:
-                pinned_piece_color = is_white_piece(get_piece(pin_loc))
-                print(pinned_piece_color, king_color, pin_loc, king_square)
+                pinned_piece_color = is_white_piece(get_piece(pin_loc[0]))
+                # print(pinned_piece_color, king_color, pin_loc, king_square)
                 if pinned_piece_color == king_color:
-                    print(pin_loc)
+                    # print(pin_loc)
                     king_line = np.bitwise_or(king_line, slider)
-                    pinning_squares[pin_loc] = king_line
+                    pinning_squares[pin_loc[0]] = king_line
+            elif counter == 2:
+                p1 = get_piece(pin_loc[0])
+                p2 = get_piece(pin_loc[1])
+                if (p1 == 1 and p2 == 7) or (p1 == 7 and p2 == 1):
+                    s, e, m, c = move_list[-1]
+                    # last move was double pawn push
+                    if m == 13:
+                        if is_white_piece(get_piece(e)):
+                            en_passant_pinned = e - 8
+                        else:
+                            en_passant_pinned = e + 8
 
     return squares
 
@@ -618,7 +639,10 @@ def update_unsafe():
 def possible_moves_white():
     global white_moves
     update_piece_masks()
+    st = time.time()
     update_unsafe()
+    print('unsafe', time.time() - st)
+    st = time.time()
     white_moves = set()
     possible_wP(bitboards[1], white_moves)
     possible_N(bitboards[2], white_moves, not_white_pieces, True)
@@ -626,6 +650,7 @@ def possible_moves_white():
     possible_R(bitboards[4], white_moves, not_white_pieces, True)
     possible_Q(bitboards[5], white_moves, not_white_pieces, True)
     possible_K(bitboards[6], white_moves, not_white_pieces, True)
+    print('moves', time.time() - st)
 
 
 def update_piece_masks():
@@ -678,9 +703,10 @@ def black_in_checkmate():
 # this is for the kings
 # this is where the white king cant go
 def unsafe_for_white():
-    global blocking_squares, pinning_squares
+    global blocking_squares, pinning_squares, en_passant_pinned
     blocking_squares = np.int64(0)
     pinning_squares = dict()
+    en_passant_pinned = False
 
     unsafe = np.int64(0)
 
@@ -1053,8 +1079,44 @@ def update_possible_moves():
         possible_moves_black()
 
 
+def get_legal_moves():
+    if white_turn:
+        return white_moves
+    else:
+        return black_moves
+
+
+def perft_test(depth):
+    if depth == 0:
+        return 1
+    st = time.time()
+    update_possible_moves()
+    print('update', time.time() - st)
+    moves = get_legal_moves()
+    num_positions = 0
+
+    for move in moves:
+        s, e, m = move
+        apply_move(s, e, m)
+        num_positions += perft_test(depth - 1)
+        undo_move()
+        decr_num_moves()
+        flip_turns()
+
+    return num_positions
+
+
+def test():
+    init_board()
+    st = time.time()
+    print(perft_test(3))
+    print(time.time() - st)
+
+
+
 def run_game():
-    global press_xy, release_xy, press_square, release_square, mouse_xy
+    global screen, press_xy, release_xy, press_square, release_square, mouse_xy
+    screen = pygame.display.set_mode((400, 400), 0, 32)
     mainClock = pygame.time.Clock()
     pygame.display.init()
     pygame.display.set_caption('Chess')
@@ -1171,4 +1233,5 @@ def draw_possible_moves(moves, color, line_width):
         # pygame.draw.circle(screen, color, (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25), 5)
 
 
-run_game()
+# run_game()
+test()
