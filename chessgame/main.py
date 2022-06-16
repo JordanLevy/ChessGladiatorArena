@@ -1,4 +1,11 @@
-# TODO fix your king check
+# TODO
+# we can calculat things at the same time
+# eg. def squares and pos moves at the same time
+# get legal moves each tern is inafishent
+# get legal moves should only be updated when they are afected
+# (chane the way legal moves is called)
+# (we can updat the way your king check and how often it is called)
+# get_all_legal_moves can be sped up
 
 from pygame.locals import *
 import math
@@ -87,6 +94,7 @@ def run_game():
                             game_state = game_board.is_game_over()
                             if game_state != GameState.IN_PROGRESS:
                                print("white turn", game_state)
+
                             # start_time = time.time()
                             # cpu_eval, cpu_move = engine.search_moves(3, -engine.mate_value, engine.mate_value, False) #engine.depth_one(game_board)
                             # end_time = time.time()
@@ -101,5 +109,25 @@ def run_game():
         pygame.display.update()
         mainClock.tick(100)
 
+game_board = Board()
+game_board.setup_board()
+def perft_test(depth, board):
+    if depth == 0:
+        return 1
+    #st = time.time()
+    board.get_all_legal_moves(board.white_turn)
+    #print('update', time.time() - st)
+    moves = board.get_all_legal_moves(board.white_turn)
+    num_positions = 0
 
-run_game()
+    for move in moves:
+        board.apply_move_by_ref(move)
+        board.next_turn()
+        num_positions += perft_test(depth - 1, board)
+        board.undo_move()
+    return num_positions
+
+st = time.time()
+print(perft_test(3, game_board))
+print(time.time() - st)
+#run_game()

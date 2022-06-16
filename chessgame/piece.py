@@ -94,6 +94,7 @@ class Piece:
         return legal_moves
 
     def is_legal_move(self, move):
+
         legal_moves = self.get_legal_moves()
         for m in legal_moves:
             if m == move:

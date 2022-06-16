@@ -161,12 +161,12 @@ class Board:
         return new_board
 
     def setup_board(self):
-        #self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
+        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') # initial position
         # self.load_fen('k7/7R/2P5/1R1p4/8/8/K7/8 w - - 0 1') # promotion test
         # self.load_fen('rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1') # white mate in one
         # self.load_fen('rnb1k1nr/pppp1ppp/5q2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1') # black mate in one
         # self.load_fen('k7/8/8/8/7r/6r1/8/K7 w - - 0 1')  # black mate in 2
-        self.load_fen('1Q2Q2Q/8/3brq2/1Q1nkp1Q/3NbR2/8/1Q2Q2Q/K7 w - - 0 1')  # pinned piece test
+        # self.load_fen('1Q2Q2Q/8/3brq2/1Q1nkp1Q/3NbR2/8/1Q2Q2Q/K7 w - - 0 1')  # pinned piece test
         self.load_squares_val()
 
     def load_squares_val(self):
