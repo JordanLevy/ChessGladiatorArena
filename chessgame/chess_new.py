@@ -63,6 +63,11 @@ l_diag = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.in
 r_diag = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0),
           np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
 
+rev = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
+not_rev = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
+j_rev = [np.int64(0), np.int64(0), np.int64(0), np.int64(0), np.int64(0)]
+
+
 square_a8 = np.int64(0)
 
 knight_span = np.int64(0)
@@ -84,8 +89,7 @@ GREEN = (25, 166, 0, 50)
 GREY = (150, 150, 150, 50)
 YELLOW = (255, 255, 0, 50)
 
-white_moves = set()
-black_moves = set()
+moves = set()
 
 unsafe_white = np.int64(0)
 unsafe_black = np.int64(0)
@@ -105,6 +109,47 @@ rook_num_moves = [0, 0, 0, 0]
 
 king_num_moves = [0, 0]
 
+rev_byte = [
+    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
+    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
+    0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
+    0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
+    0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4,
+    0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
+    0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec,
+    0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc,
+    0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2,
+    0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2,
+    0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea,
+    0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
+    0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6,
+    0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6,
+    0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee,
+    0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe,
+    0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1,
+    0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
+    0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9,
+    0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9,
+    0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5,
+    0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5,
+    0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed,
+    0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
+    0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3,
+    0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
+    0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb,
+    0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
+    0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7,
+    0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
+    0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
+    0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff]
+
+ff = np.int64(255)
+
+pt = 0
+
+board = np.zeros(64, dtype=int)
+pieces = []
+
 
 # given a list of squares to place the pieces, returns a numpy 64-bit integer representing the bitboard
 # follows numbering scheme
@@ -116,9 +161,31 @@ def generate_bitboard(squares):
     return a
 
 
+# given a list of 64 0 or 1's to place the pieces, returns a numpy 64-bit integer representing the bitboard
+def generate_bitboard_bin(binary):
+    a = np.int64(0)
+    for i in range(len(binary)):
+        if binary[i]:
+            a = np.bitwise_or(a, np.left_shift(np.int64(1), i))
+    return a
+
+
 def init_bitboards():
-    global bitboards
+    global bitboards, board, pieces
+
+    board[0:8] = [4, 2, 3, 6, 5, 3, 2, 4]
+    board[8:16] = [1, 1, 1, 1, 1, 1, 1, 1]
+    board[48:56] = board[8:16] + 6
+    board[56:64] = board[0:8] + 6
+
+    pieces = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), set()]
+    for i in range(64):
+        p = board[i]
+        if p > 0:
+            pieces[p].add(i)
+
     bitboards = [0 for i in range(13)]
+
     bitboards[1] = generate_bitboard(list(range(8, 16)))
     bitboards[2] = generate_bitboard([1, 6])
     bitboards[3] = generate_bitboard([2, 5])
@@ -168,6 +235,24 @@ def init_masks():
 
     file_ab = np.bitwise_or(file[1], file[2])
     file_gh = np.bitwise_or(file[7], file[8])
+
+    rev[0] = generate_bitboard_bin([0, 1] * (64 // 2))
+    rev[1] = generate_bitboard_bin([0, 0, 1, 1] * (64 // 4))
+    rev[2] = generate_bitboard_bin([0, 0, 0, 0, 1, 1, 1, 1] * (64 // 8))
+    rev[3] = generate_bitboard_bin([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1] * (64 // 16))
+    rev[4] = generate_bitboard_bin(
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] * (64 // 32))
+    not_rev[0] = np.bitwise_not(rev[0])
+    not_rev[1] = np.bitwise_not(rev[1])
+    not_rev[2] = np.bitwise_not(rev[2])
+    not_rev[3] = np.bitwise_not(rev[3])
+    not_rev[4] = np.bitwise_not(rev[4])
+
+    j_rev[0] = not_rev[0]
+    j_rev[1] = not_rev[1]
+    j_rev[2] = not_rev[2]
+    j_rev[3] = not_rev[3]
+    j_rev[4] = generate_bitboard_bin([0]*16 + [1]*16 + [0]*32)
 
 
 # imagine starting at the top left (63), reading left to right, then going to rank below, counting down
@@ -288,10 +373,11 @@ def r_shift(x, n):
 # 11 - bQ
 # 12 - bK
 def get_piece(square):
-    for b in range(1, len(bitboards)):
-        if np.bitwise_and(np.left_shift(np.int64(1), square), bitboards[b]):
-            return b
-    return 0
+    return board[square]
+    # for b in range(1, len(bitboards)):
+    #     if np.bitwise_and(np.left_shift(np.int64(1), square), bitboards[b]):
+    #         return b
+    # return 0
 
 
 def multi_or(args):
@@ -308,7 +394,7 @@ def multi_and(args):
     return a
 
 
-def reverse(n):
+def reverse_sequential(n):
     result = np.int64(0)
     p = n
     for i in range(64):
@@ -316,6 +402,38 @@ def reverse(n):
         result = np.bitwise_or(result, np.bitwise_and(p, 1))
         p = np.right_shift(p, 1)
     return result
+
+
+def reverse_shift(x):
+    print(np.binary_repr(x, 64))
+    a = np.bitwise_or(r_shift(np.bitwise_and(x, rev[0]), 1), l_shift(np.bitwise_and(x, not_rev[0]), 1))
+    a = np.bitwise_or(r_shift(np.bitwise_and(a, rev[1]), 2), l_shift(np.bitwise_and(a, not_rev[1]), 2))
+    a = np.bitwise_or(r_shift(np.bitwise_and(a, rev[2]), 4), l_shift(np.bitwise_and(a, not_rev[2]), 4))
+    a = np.bitwise_or(r_shift(np.bitwise_and(a, rev[3]), 8), l_shift(np.bitwise_and(a, not_rev[3]), 8))
+    a = np.bitwise_or(r_shift(np.bitwise_and(a, rev[4]), 16), l_shift(np.bitwise_and(a, not_rev[4]), 16))
+    a = np.bitwise_or(r_shift(a, 32), l_shift(a, 32))
+    return a
+
+
+def reverse_java(x):
+    x = np.bitwise_or(l_shift(np.bitwise_and(x, j_rev[0]), 1), np.bitwise_and(r_shift(x, 1), j_rev[0]))
+    x = np.bitwise_or(l_shift(np.bitwise_and(x, j_rev[1]), 2), np.bitwise_and(r_shift(x, 2), j_rev[1]))
+    x = np.bitwise_or(l_shift(np.bitwise_and(x, j_rev[2]), 4), np.bitwise_and(r_shift(x, 4), j_rev[2]))
+    x = np.bitwise_or(l_shift(np.bitwise_and(x, j_rev[3]), 8), np.bitwise_and(r_shift(x, 8), j_rev[3]))
+    x = np.bitwise_or(l_shift(x, 48), np.bitwise_or(l_shift(np.bitwise_and(x, j_rev[4]), 16), np.bitwise_or(np.bitwise_and(r_shift(x, 16), j_rev[4]), r_shift(x, 48))))
+    return x
+
+
+def reverse(x):
+    global pt
+    st = time.time()
+    x = ((x & j_rev[0]) << 1) | (r_shift(x, 1) & j_rev[0])
+    x = ((x & j_rev[1]) << 2) | (r_shift(x, 2) & j_rev[1])
+    x = ((x & j_rev[2]) << 4) | (r_shift(x, 4) & j_rev[2])
+    x = ((x & j_rev[3]) << 8) | (r_shift(x, 8) & j_rev[3])
+    x = (x << 48) | ((x & j_rev[4]) << 16) | (r_shift(x, 16) & j_rev[4]) | (r_shift(x, 48))
+    pt += time.time() - st
+    return x
 
 
 # returns the number of leading zeros in the 64-bit binary representation of i
@@ -389,17 +507,17 @@ def resolves_check(start, end, move_id):
     return True
 
 
-def add_moves_offset(moves, mask, start_offset, end_offset, move_id=[0], condition=lambda x: True):
-    for i in find_ones(mask):
-        if condition(i):
+def add_moves_offset(mask, start_offset, end_offset, move_id=[0]):
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), mask):
             for j in move_id:
                 if resolves_check(i + start_offset, i + end_offset, j):
                     moves.add((i + start_offset, i + end_offset, j))
 
 
-def add_moves_position(moves, mask, start_position, move_id=[0], condition=lambda x: True):
-    for i in find_ones(mask):
-        if condition(i):
+def add_moves_position(mask, start_position, move_id=[0]):
+    for i in range(64):
+        if np.bitwise_and(l_shift(np.int64(1), i), mask):
             for j in move_id:
                 if resolves_check(start_position, i, j):
                     moves.add((start_position, i, j))
@@ -437,6 +555,7 @@ def span_piece(mask, i, span, origin, king_bb=np.int64(0)):
 
 def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_bb=np.int64(0)):
     global blocking_squares, pinning_squares, en_passant_pinned
+
     squares = np.int64(0)
     slider = np.left_shift(np.int64(1), i)
     # int representing which square index the king is on
@@ -451,6 +570,7 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
         directions.add(l_diag[get_l_diag(i)])
         directions.add(r_diag[get_r_diag(i)])
 
+
     for d in directions:
         new_squares = np.bitwise_and(line_attack(blockers, d, slider), mask)
         squares = np.bitwise_or(new_squares, squares)
@@ -462,17 +582,19 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
             blocking_squares = np.bitwise_or(blocking_squares, slider)
         # this is for pined pieces
         elif king_square >= 0:
+
             king_line = line_between_pieces(d, i, king_square)
             if not king_line:
                 continue
             pos_pin = np.bitwise_and(blockers, king_line)
             counter = 0
             pin_loc = [-1, -1]
-            for i in find_ones(pos_pin):
-                counter += 1
-                if counter > 2:
-                    break
-                pin_loc[counter - 1] = i
+            for i in range(64):
+                if np.bitwise_and(l_shift(np.int64(1), i), pos_pin):
+                    counter += 1
+                    if counter > 2:
+                        break
+                    pin_loc[counter - 1] = i
 
             if counter == 1:
                 pinned_piece_color = is_white_piece(get_piece(pin_loc[0]))
@@ -492,7 +614,6 @@ def sliding_piece(mask, i, blockers, rook_moves=False, bishop_moves=False, king_
                             en_passant_pinned = e - 8
                         else:
                             en_passant_pinned = e + 8
-
     return squares
 
 
@@ -512,22 +633,15 @@ def line_between_pieces(direction, piece_1, piece_2):
     return np.bitwise_and(direction, mask)
 
 
-# generator function that yields the indices of ones in a bitboard bb
-def find_ones(bb):
-    for i in range(64):
-        if np.bitwise_and(l_shift(np.int64(1), i), bb):
-            yield i
+def possible_wP(bb):
+    possible_P(bb, black_pieces, rank[8], bitboards[7], white_promo_pieces, rank[4], 1, True)
 
 
-def possible_wP(bb, moves):
-    possible_P(bb, moves, black_pieces, rank[8], bitboards[7], white_promo_pieces, rank[4], 1, True)
+def possible_bP(bb):
+    possible_P(bb, white_pieces, rank[1], bitboards[1], black_promo_pieces, rank[5], -1, False)
 
 
-def possible_bP(bb, moves):
-    possible_P(bb, moves, white_pieces, rank[1], bitboards[1], black_promo_pieces, rank[5], -1, False)
-
-
-def possible_P(bb, moves, can_capture, promo_rank, enemy_pawns, promo_pieces, double_push_rank, fwd, is_white):
+def possible_P(bb, can_capture, promo_rank, enemy_pawns, promo_pieces, double_push_rank, fwd, is_white):
     # start square, end square, and move id of the previous move
     s, e, m, c = (0, 0, 0, 0)
     if move_list:
@@ -537,72 +651,72 @@ def possible_P(bb, moves, can_capture, promo_rank, enemy_pawns, promo_pieces, do
 
     # capture right
     mask = multi_and([l_shift(bb, fwd * 8 - 1), can_capture, not_promo_rank, np.bitwise_not(file[1])])
-    add_moves_offset(moves, mask, -(fwd * 8 - 1), 0)
+    add_moves_offset(mask, -(fwd * 8 - 1), 0)
 
     # capture left
     mask = multi_and([l_shift(bb, fwd * 8 + 1), can_capture, not_promo_rank, np.bitwise_not(file[8])])
-    add_moves_offset(moves, mask, -(fwd * 8 + 1), 0)
+    add_moves_offset(mask, -(fwd * 8 + 1), 0)
 
     # one forward
     mask = multi_and([l_shift(bb, fwd * 8), empty, not_promo_rank])
-    add_moves_offset(moves, mask, -fwd * 8, 0)
+    add_moves_offset(mask, -fwd * 8, 0)
 
     # two forward
     mask = multi_and([l_shift(bb, 2 * fwd * 8), empty, l_shift(empty, fwd * 8), double_push_rank])
-    add_moves_offset(moves, mask, -(2 * fwd * 8), 0)
+    add_moves_offset(mask, -(2 * fwd * 8), 0)
 
     # promotion by capture right
     mask = multi_and([l_shift(bb, fwd * 8 - 1), can_capture, promo_rank, np.bitwise_not(file[1])])
-    add_moves_offset(moves, mask, -(fwd * 8 - 1), 0, move_id=promo_pieces)
+    add_moves_offset(mask, -(fwd * 8 - 1), 0, move_id=promo_pieces)
 
     # promotion by capture left
     mask = multi_and([l_shift(bb, fwd * 8 + 1), can_capture, promo_rank, np.bitwise_not(file[8])])
-    add_moves_offset(moves, mask, -(fwd * 8 + 1), 0, move_id=promo_pieces)
+    add_moves_offset(mask, -(fwd * 8 + 1), 0, move_id=promo_pieces)
 
     # promotion by one forward
     mask = multi_and([l_shift(bb, fwd * 8), empty, promo_rank])
-    add_moves_offset(moves, mask, -fwd * 8, 0, move_id=promo_pieces)
+    add_moves_offset(mask, -fwd * 8, 0, move_id=promo_pieces)
 
     # if the previous move was a double pawn push, en passant might be possible
     if m == 13:
-        cond = lambda x: x == e
+        pushed_pawn_location = generate_bitboard([e])
 
         # left en passant
-        mask = multi_and([l_shift(bb, 1), enemy_pawns, not_promo_rank, np.bitwise_not(file[8])])
-        add_moves_offset(moves, mask, -1, fwd * 8, condition=cond)
+        mask = multi_and([l_shift(bb, 1), enemy_pawns, not_promo_rank, np.bitwise_not(file[8]), pushed_pawn_location])
+        add_moves_offset(mask, -1, fwd * 8)
 
         # right en passant
-        mask = multi_and([l_shift(bb, -1), enemy_pawns, not_promo_rank, np.bitwise_not(file[1])])
-        add_moves_offset(moves, mask, 1, fwd * 8, condition=cond)
+        mask = multi_and([l_shift(bb, -1), enemy_pawns, not_promo_rank, np.bitwise_not(file[1]), pushed_pawn_location])
+        add_moves_offset(mask, 1, fwd * 8)
 
 
-def possible_N(bb, moves, mask, is_white):
-    for i in find_ones(bb):
-        add_moves_position(moves, span_piece(mask, i, knight_span, 18), i)
+def possible_N(bb, mask, is_white):
+    for i in pieces[(8, 2)[is_white]]:
+        add_moves_position(span_piece(mask, i, knight_span, 18), i)
 
 
-def possible_B(bb, moves, mask, is_white):
-    for i in find_ones(bb):
-        add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=False, bishop_moves=True), i)
+def possible_B(bb, mask, is_white):
+    for i in pieces[(9, 3)[is_white]]:
+        add_moves_position(sliding_piece(mask, i, occupied, rook_moves=False, bishop_moves=True), i)
 
 
-def possible_R(bb, moves, mask, is_white):
-    for i in find_ones(bb):
-        add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=False), i)
+def possible_R(bb, mask, is_white):
+    for i in pieces[(10, 4)[is_white]]:
+        add_moves_position(sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=False), i)
 
 
-def possible_Q(bb, moves, mask, is_white):
-    for i in find_ones(bb):
-        add_moves_position(moves, sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=True), i)
+def possible_Q(bb, mask, is_white):
+    for i in pieces[(11, 5)[is_white]]:
+        add_moves_position(sliding_piece(mask, i, occupied, rook_moves=True, bishop_moves=True), i)
 
 
-def possible_K(bb, moves, mask, is_white):
+def possible_K(bb, mask, is_white):
     safe = np.bitwise_not(unsafe_white)
     if not is_white:
         safe = np.bitwise_not(unsafe_black)
     empty_and_safe = multi_and([empty, safe])
-    for i in find_ones(bb):
-        add_moves_position(moves, span_piece(np.bitwise_and(mask, safe), i, king_span, 9), i)
+    for i in pieces[(12, 6)[is_white]]:
+        add_moves_position(span_piece(np.bitwise_and(mask, safe), i, king_span, 9), i)
     # if the king is in check, king cannot castle
     if not multi_and([bb, safe]):
         return
@@ -611,21 +725,21 @@ def possible_K(bb, moves, mask, is_white):
         # white queenside castle
         if rook_num_moves[0] == 0:
             squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
-            add_moves_offset(moves, squares, -2, 0)
+            add_moves_offset(squares, -2, 0)
         # white kingside castle
         if rook_num_moves[1] == 0:
             squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
-            add_moves_offset(moves, squares, 2, 0)
+            add_moves_offset(squares, 2, 0)
     # this is black king, hasn't moved yet
     elif not is_white and king_num_moves[1] == 0:
         # black queenside castle
         if rook_num_moves[2] == 0:
             squares = multi_and([l_shift(bb, 2), l_shift(empty_and_safe, 1), empty_and_safe, l_shift(empty, -1)])
-            add_moves_offset(moves, squares, -2, 0)
+            add_moves_offset(squares, -2, 0)
         # black kingside castle
         if rook_num_moves[3] == 0:
             squares = multi_and([l_shift(bb, -2), l_shift(empty_and_safe, -1), empty_and_safe])
-            add_moves_offset(moves, squares, 2, 0)
+            add_moves_offset(squares, 2, 0)
 
 
 def update_unsafe():
@@ -637,20 +751,17 @@ def update_unsafe():
 
 
 def possible_moves_white():
-    global white_moves
+    global moves
     update_piece_masks()
-    st = time.time()
     update_unsafe()
-    print('unsafe', time.time() - st)
-    st = time.time()
-    white_moves = set()
-    possible_wP(bitboards[1], white_moves)
-    possible_N(bitboards[2], white_moves, not_white_pieces, True)
-    possible_B(bitboards[3], white_moves, not_white_pieces, True)
-    possible_R(bitboards[4], white_moves, not_white_pieces, True)
-    possible_Q(bitboards[5], white_moves, not_white_pieces, True)
-    possible_K(bitboards[6], white_moves, not_white_pieces, True)
-    print('moves', time.time() - st)
+    moves = set()
+    possible_wP(bitboards[1])
+    possible_N(bitboards[2], not_white_pieces, True)
+    possible_B(bitboards[3], not_white_pieces, True)
+    possible_R(bitboards[4], not_white_pieces, True)
+    possible_Q(bitboards[5], not_white_pieces, True)
+    possible_K(bitboards[6], not_white_pieces, True)
+
 
 
 def update_piece_masks():
@@ -665,16 +776,16 @@ def update_piece_masks():
 
 
 def possible_moves_black():
-    global black_moves
+    global moves
     update_piece_masks()
     update_unsafe()
-    black_moves = set()
-    possible_bP(bitboards[7], black_moves)
-    possible_N(bitboards[8], black_moves, not_black_pieces, False)
-    possible_B(bitboards[9], black_moves, not_black_pieces, False)
-    possible_R(bitboards[10], black_moves, not_black_pieces, False)
-    possible_Q(bitboards[11], black_moves, not_black_pieces, False)
-    possible_K(bitboards[12], black_moves, not_black_pieces, False)
+    moves = set()
+    possible_bP(bitboards[7])
+    possible_N(bitboards[8], not_black_pieces, False)
+    possible_B(bitboards[9], not_black_pieces, False)
+    possible_R(bitboards[10], not_black_pieces, False)
+    possible_Q(bitboards[11], not_black_pieces, False)
+    possible_K(bitboards[12], not_black_pieces, False)
 
 
 def white_in_checkmate():
@@ -685,7 +796,7 @@ def white_in_checkmate():
     if not white_check:
         return False
     # can't be in checkmate if you have legal moves
-    if white_moves:
+    if moves:
         return False
     return True
 
@@ -695,7 +806,7 @@ def black_in_checkmate():
         return False
     if not black_in_check():
         return False
-    if black_moves:
+    if moves:
         return False
     return True
 
@@ -723,27 +834,27 @@ def unsafe_for_white():
     unsafe = np.bitwise_or(unsafe, p_left)
 
     # knight
-    for i in find_ones(bitboards[8]):
+    for i in pieces[8]:
         n = span_piece(all_squares, i, knight_span, 18, king_bb=king)
         unsafe = np.bitwise_or(unsafe, n)
 
     # king
-    for i in find_ones(bitboards[12]):
+    for i in pieces[12]:
         k = span_piece(all_squares, i, king_span, 9)
         unsafe = np.bitwise_or(unsafe, k)
 
     # queen
-    for i in find_ones(bitboards[11]):
+    for i in pieces[11]:
         q = sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=True, king_bb=king)
         unsafe = np.bitwise_or(unsafe, q)
 
     # rook
-    for i in find_ones(bitboards[10]):
+    for i in pieces[10]:
         r = sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=False, king_bb=king)
         unsafe = np.bitwise_or(unsafe, r)
 
     # bishop
-    for i in find_ones(bitboards[9]):
+    for i in pieces[9]:
         b = sliding_piece(all_squares, i, occupied_no_king, rook_moves=False, bishop_moves=True, king_bb=king)
         unsafe = np.bitwise_or(unsafe, b)
 
@@ -770,27 +881,27 @@ def unsafe_for_black():
     unsafe = np.bitwise_or(unsafe, p_left)
 
     # knight
-    for i in find_ones(bitboards[2]):
+    for i in pieces[2]:
         n = span_piece(all_squares, i, knight_span, 18, king_bb=king)
         unsafe = np.bitwise_or(unsafe, n)
 
     # king
-    for i in find_ones(bitboards[6]):
+    for i in pieces[6]:
         k = span_piece(all_squares, i, king_span, 9)
         unsafe = np.bitwise_or(unsafe, k)
 
     # queens
-    for i in find_ones(bitboards[5]):
+    for i in pieces[5]:
         q = sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=True, king_bb=king)
         unsafe = np.bitwise_or(unsafe, q)
 
     # rook
-    for i in find_ones(bitboards[4]):
+    for i in pieces[4]:
         r = sliding_piece(all_squares, i, occupied_no_king, rook_moves=True, bishop_moves=False, king_bb=king)
         unsafe = np.bitwise_or(unsafe, r)
 
     # bishop
-    for i in find_ones(bitboards[3]):
+    for i in pieces[3]:
         b = sliding_piece(all_squares, i, occupied_no_king, rook_moves=False, bishop_moves=True, king_bb=king)
         unsafe = np.bitwise_or(unsafe, b)
 
@@ -809,10 +920,12 @@ def print_bitboard(x):
 # s - slider: the bitboard containing the sliding piece
 def line_attack(o, m, s):
     o_and_m = np.bitwise_and(o, m)  # o&m
+
     rev_o_and_m = reverse(o_and_m)  # (o&m)'
+    rev_s = reverse(s)
 
     two_s = np.multiply(np.int64(2), s)  # 2s
-    rev_two_s = np.multiply(np.int64(2), reverse(s))  # 2s'
+    rev_two_s = np.multiply(np.int64(2), rev_s)  # 2s'
 
     left = np.subtract(o_and_m, two_s)  # left = (o&m)-2s
     right = reverse(np.subtract(rev_o_and_m, rev_two_s))  # right = ((o&m)'-2s')'
@@ -845,11 +958,14 @@ def init_board():
 # 0 - no promotion
 # 1-12 - promoting to that piece type
 def is_legal_move(start, end, promo):
-    return (start, end, promo) in white_moves or (start, end, promo) in black_moves
+    return (start, end, promo) in moves
 
 
 # sets the square to 0 in the corresponding piece's bitboard
 def remove_piece(piece, square):
+    board[square] = 0
+    if square in pieces[piece]:
+        pieces[piece].remove(square)
     b = bitboards[piece]
     remove_mask = np.bitwise_not(np.left_shift(np.int64(1), square))
     bitboards[piece] = np.bitwise_and(b, remove_mask)
@@ -857,6 +973,8 @@ def remove_piece(piece, square):
 
 # sets the square to 1 in the corresponding piece's bitboard
 def add_piece(piece, square):
+    board[square] = piece
+    pieces[piece].add(square)
     b = bitboards[piece]
     add_mask = np.left_shift(np.int64(1), square)
     bitboards[piece] = np.bitwise_or(b, add_mask)
@@ -884,12 +1002,14 @@ def flip_turns():
 # 14 is en_passant
 # 15 is castling
 def apply_move(start, end, move_id):
+
     moved_piece = get_piece(start)
     # not your turn to move
     if white_turn != is_white_piece(moved_piece):
         print("Not your turn")
         return
     captured_piece = get_piece(end)
+    new_s, new_e, new_m, new_c = start, end, move_id, captured_piece
     remove_piece(moved_piece, start)
     if moved_piece == 4 or moved_piece == 10:
         for i in range(4):
@@ -903,12 +1023,14 @@ def apply_move(start, end, move_id):
             remove_piece(4, rook_pos[1])
             add_piece(4, 2)
             rook_pos[1] = 2
-            move_list.append((start, end, 15, 0))
+            new_m = 15
+            # move_list.append((start, end, 15, 0))
         if end - start == 2:
             remove_piece(4, rook_pos[0])
             add_piece(4, 4)
             rook_pos[0] = 4
-            move_list.append((start, end, 15, 0))
+            new_m = 15
+            # move_list.append((start, end, 15, 0))
         king_num_moves[0] += 1
 
     elif moved_piece == 12:
@@ -916,12 +1038,14 @@ def apply_move(start, end, move_id):
             remove_piece(10, rook_pos[3])
             add_piece(10, 58)
             rook_pos[3] = 58
-            move_list.append((start, end, 15, 0))
+            new_m = 15
+            # move_list.append((start, end, 15, 0))
         if end - start == 2:
             remove_piece(10, rook_pos[2])
             add_piece(10, 60)
             rook_pos[2] = 60
-            move_list.append((start, end, 15, 0))
+            new_m = 15
+            # move_list.append((start, end, 15, 0))
         king_num_moves[1] += 1
 
     if captured_piece:
@@ -933,7 +1057,8 @@ def apply_move(start, end, move_id):
         # is a pawn
     if (moved_piece == 1 or moved_piece == 7) and abs(end - start) == 16:
         # double pawn push
-        move_list.append((start, end, 13, 0))
+        new_m = 13
+        # move_list.append((start, end, 13, 0))
     # if the move was castling
     elif (moved_piece == 6 or moved_piece == 12) and abs(end - start) == 2:
         pass
@@ -945,15 +1070,17 @@ def apply_move(start, end, move_id):
             # white capturing en passant
             if m == 13 and moved_piece == 1 and ep_pawn == 7 and end - e == 8:
                 remove_piece(ep_pawn, e)
-                move_list.append((start, end, 14, 0))
+                new_m = 14
+                # move_list.append((start, end, 14, 0))
             # black capturing en passant
             elif m == 13 and moved_piece == 7 and ep_pawn == 1 and end - e == -8:
                 remove_piece(ep_pawn, e)
-                move_list.append((start, end, 14, 0))
-            else:
-                move_list.append((start, end, move_id, captured_piece))
-        else:
-            move_list.append((start, end, move_id, captured_piece))
+                new_m = 14
+                # move_list.append((start, end, 14, 0))
+            # else:
+            #     move_list.append((start, end, move_id, captured_piece))
+        # else:
+        #     move_list.append((start, end, move_id, captured_piece))
     # update_piece_masks()
     # update_unsafe()
     # # white is still in check at the end of their turn
@@ -966,6 +1093,7 @@ def apply_move(start, end, move_id):
     #     print('black put themself in check')
     #     undo_move()
     #     return False
+    move_list.append((new_s, new_e, new_m, new_c))
     incr_num_moves()
     flip_turns()
     # return True
@@ -1080,19 +1208,14 @@ def update_possible_moves():
 
 
 def get_legal_moves():
-    if white_turn:
-        return white_moves
-    else:
-        return black_moves
+    return moves
 
 
 def perft_test(depth):
+    global moves
     if depth == 0:
         return 1
-    st = time.time()
     update_possible_moves()
-    print('update', time.time() - st)
-    moves = get_legal_moves()
     num_positions = 0
 
     for move in moves:
@@ -1111,7 +1234,6 @@ def test():
     st = time.time()
     print(perft_test(3))
     print(time.time() - st)
-
 
 
 def run_game():
@@ -1172,7 +1294,7 @@ def run_game():
                     if is_legal_move(press_square, release_square, promo_num):
                         apply_move(press_square, release_square, promo_num)
                         update_possible_moves()
-                        print(white_in_checkmate(), black_in_checkmate())
+                        # print(white_in_checkmate(), black_in_checkmate())
                     else:
                         print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
@@ -1201,19 +1323,20 @@ def draw_board():
     # draw red square if king is in check
     square_color = RED
     if white_check:
-        for i in find_ones(bitboards[6]):
-            pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
+        for i in range(64):
+            if np.bitwise_and(l_shift(np.int64(1), i), bitboards[6]):
+                pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
     if black_check:
-        for i in find_ones(bitboards[12]):
-            pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
+        for i in range(64):
+            if np.bitwise_and(l_shift(np.int64(1), i), bitboards[12]):
+                pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
 
     for i in range(64):
-        if i == press_square:
+        p = get_piece(i)
+        if i == press_square or p == 0:
             continue
         # draw the pieces on the board
-        for b in range(1, len(bitboards)):
-            if np.bitwise_and(np.left_shift(np.int64(1), i), bitboards[b]):
-                screen.blit(pygame.transform.rotate(piece_img[b], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
+        screen.blit(pygame.transform.rotate(piece_img[p], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
     # if there is a piece being held, draw the held piece at the mouse position
     if press_square > -1 and get_piece(press_square) > 0:
         screen.blit(pygame.transform.rotate(piece_img[get_piece(press_square)], 0),
@@ -1235,3 +1358,7 @@ def draw_possible_moves(moves, color, line_width):
 
 # run_game()
 test()
+# print('pt', pt)
+
+# for i in range(65536):
+#     print(reverse_sequential_16(np.int64(i)), end=', ')
