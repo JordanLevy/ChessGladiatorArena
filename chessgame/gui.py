@@ -74,10 +74,6 @@ def coords_to_num(n):
 # 12 - bK
 def get_piece(square):
     return board[square]
-    # for b in range(1, len(bitboards)):
-    #     if np.bitwise_and(np.left_shift(np.int64(1), square), bitboards[b]):
-    #         return b
-    # return 0
 
 
 def is_white_piece(piece):
@@ -115,40 +111,27 @@ def init_board():
 
 
 def draw_board():
+    w_check = lib.get_white_check()
+    b_check = lib.get_black_check()
+
     for i in range(64):
+        piece = get_piece(i)
         # color the dark squares
         if (get_file(i) + get_rank(i)) % 2 == 1:
             square_color = BLUE
         # color the light squares
         else:
             square_color = WHITE
+        # if a king is in check, color their square red
+        if (w_check and piece == 6) or (b_check and piece == 12):
+            square_color = RED
         # draw the squares on the board
         pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
-
-    # draw red square if king is in check
-    square_color = RED
-    # if white is in check
-    if lib.get_white_check():
-        for i in range(64):
-            # if this is the white king
-            if get_piece(i) == 6:
-                # draw red square
-                pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
-    # if black is in check
-    if lib.get_black_check():
-        for i in range(64):
-            # if this is the black king
-            if get_piece(i) == 12:
-                # draw red square
-                pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
-
-    for i in range(64):
-        p = get_piece(i)
-        if i == press_square or p == 0:
-            continue
-        # draw the pieces on the board
-        screen.blit(pygame.transform.rotate(piece_img[p], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
-    # if there is a piece being held, draw the held piece at the mouse position
+        # if there is a piece on this square and it's not currently being held
+        if piece > 0 and i != press_square:
+            # draw the piece on the board
+            screen.blit(pygame.transform.rotate(piece_img[piece], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
+    # if there is a piece being held, draw it at the mouse position
     if press_square > -1 and get_piece(press_square) > 0:
         screen.blit(pygame.transform.rotate(piece_img[get_piece(press_square)], 0),
                     (mouse_xy[0] - 25, mouse_xy[1] - 25))

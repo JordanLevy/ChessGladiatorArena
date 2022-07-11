@@ -1356,8 +1356,8 @@ def draw_possible_moves(moves, color, line_width):
         # pygame.draw.circle(screen, color, (350 - (i[1] % 8) * 50 + 25, 350 - (i[1] // 8) * 50 + 25), 5)
 
 
-# run_game()
-test()
+run_game()
+# test()
 # print('pt', pt)
 
 # for i in range(65536):
