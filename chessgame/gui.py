@@ -205,6 +205,7 @@ def run_game():
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         a = lib.apply_move(press_square, release_square, promo_num)
                         lib.update_game_possible_moves()
+                        # print(lib.perft_test(1))
                         board = [i for i in lib.get_board_state().contents]
                         # print(white_in_checkmate(), black_in_checkmate())
                     else:

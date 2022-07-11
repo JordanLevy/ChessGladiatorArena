@@ -50,6 +50,7 @@ unsigned long long unsafe_black = 0ULL;
 bool white_check = false;
 bool black_check = false;
 
+int num_pieces_delivering_check = 0;
 unsigned long long blocking_squares = 0ULL;
 unsigned long long pinning_squares[64] = {0ULL};
 int en_passant_pinned = -1;
@@ -64,7 +65,7 @@ int pieces[13][9];
 int num_pieces_of_type[13] = {0};
 int piece_letter_to_num[127] = {0};
 
-char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
+char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
 
 struct Move *game_possible_moves;
 int num_game_moves;
@@ -329,21 +330,38 @@ int leading_zeros(unsigned long long i){
 bool resolves_check(int start, int end, int move_id){
     int moved_piece = get_piece(start);
     if(white_turn){
+        // trying to move a pinned piece
         if(pinning_squares[start]){
             unsigned long long pinning_line = pinning_squares[start];
             if(!((1ULL << end) & pinning_line)){
                 return false;
             }
         }
+        // if white pawn trying to capture en passant but it's en passant pinned
         if((moved_piece == 1) && (end == en_passant_pinned)){
             return false;
         }
+        // if it's a king move
         if(moved_piece == 6){
+            // and the king ends up on an unsafe square
             if((1ULL << end) & unsafe_white){
                 return false;
             }
         }
+        // if white is currently in check
         else if(white_check){
+            // if it's a double check
+            if(num_pieces_delivering_check > 1){
+                // king must move
+                if(moved_piece != 6){
+                    return false;
+                }
+                // moving to an unsafe square
+                if((1ULL << end) & unsafe_white){
+                    return false;
+                }
+            }
+            // and checking piece isn't being blocked or captured
             if(!((1ULL << end) & blocking_squares)){
                 return false;
             }
@@ -365,6 +383,15 @@ bool resolves_check(int start, int end, int move_id){
             }
         }
         else if(black_check){
+            if(num_pieces_delivering_check > 1){
+                if(moved_piece != 12){
+                    return false;
+                }
+                // moving to an unsafe square
+                if((1ULL << end) & unsafe_black){
+                    return false;
+                }
+            }
             if(!((1ULL << end) & blocking_squares)){
                 return false;
             }
@@ -426,6 +453,7 @@ unsigned long long span_piece(unsigned long long mask, int i, unsigned long long
     squares = remove_span_warps(squares, i);
     squares = squares & mask;
     if(squares & king_bb){
+        num_pieces_delivering_check++;
         blocking_squares |= 1ULL << i;
     }
     return squares;
@@ -523,6 +551,7 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
         // if the enemy king is in the line of sight of this piece in this direction
         if(new_squares & king_bb){
             //printf("%d looking at king in direction %d\n", i, k);
+            num_pieces_delivering_check++;
             blocking_squares |= line_between_pieces(d, i, king_square);
             blocking_squares |= slider;
         }
@@ -728,12 +757,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
     // this is white king, hasn't moved yet
     if(is_white && king_num_moves[0] == 0){
         // white queenside castle
-        if(rook_num_moves[0] == 0){
+        if(get_piece(7) == 4 && rook_num_moves[0] == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
         }
         // white kingside castle
-        if(rook_num_moves[1] == 0){
+        if(get_piece(0) == 4 && rook_num_moves[1] == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
         }
@@ -741,12 +770,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
     // this is black king, hasn't moved yet
     else if(!is_white && king_num_moves[1] == 0){
         // black queenside castle
-        if(rook_num_moves[2] == 0){
+        if(get_piece(63) == 10 && rook_num_moves[2] == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
         }
         // black kingside castle
-        if(rook_num_moves[3] == 0){
+        if(get_piece(56) == 10 && rook_num_moves[3] == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
         }
@@ -754,6 +783,7 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
 }
 
 unsigned long long unsafe_for_white(){
+    num_pieces_delivering_check = 0;
     blocking_squares = 0ULL;
     for(int i = 0; i < 64; i++){
         pinning_squares[i] = 0ULL;
@@ -766,16 +796,28 @@ unsigned long long unsafe_for_white(){
     unsigned long long king = bitboards[6];
     unsigned long long occupied_no_king = occupied & ~king;
 
+    unsigned long long checking_pawn = 0ULL;
+
     // pawns
     // threaten to capture right
     mask = l_shift(bitboards[7], -8 - 1) & ~file[1];
     unsafe |= mask;
-    blocking_squares |= r_shift((king & mask), -8 - 1);
+    // the pawn that's delivering check
+    checking_pawn = r_shift((king & mask), -8 - 1);
+    if(checking_pawn != 0ULL){
+        num_pieces_delivering_check++;
+        blocking_squares |= checking_pawn;
+    }
+
 
     // threaten to capture left
     mask = l_shift(bitboards[7], -8 + 1) & ~file[8];
     unsafe |= mask;
-    blocking_squares |= r_shift((king & mask), -8 + 1);
+    checking_pawn = r_shift((king & mask), -8 + 1);
+    if(checking_pawn != 0ULL){
+        num_pieces_delivering_check++;
+        blocking_squares |= checking_pawn;
+    }
 
     // knight
     for(int i = 0; i < num_pieces_of_type[8]; i++){
@@ -1233,9 +1275,9 @@ char file_letter(int n){
     return letter[n];
 }
 
-int perft_test(int depth){
+unsigned long long perft_test(int depth){
     if(depth == 0){
-        return 1;
+        return 1ULL;
     }
 
     struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
@@ -1243,7 +1285,7 @@ int perft_test(int depth){
 
     update_possible_moves(moves, &numElems);
 
-    int num_positions = 0;
+    unsigned long long num_positions = 0ULL;
     struct Move move;
 
     for(int i = 0; i < numElems; i++){
@@ -1412,6 +1454,6 @@ void run_game(){
 int main(){
     init();
     //run_game();
-    printf("Perft: %d\n", perft_test(7));
+    printf("Perft: %llu\n", perft_test(6));
     return 0;
 }
