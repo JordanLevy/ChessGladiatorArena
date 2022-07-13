@@ -11,8 +11,13 @@ struct Move {
     int id;
     int capture;
     int piece;
+    int eval;
 };
 
+struct Move engine_move;
+
+int values[] = {0, 100, 300, 330, 500, 900, 9000, -100, -300, -330, -500, -900, -9000};
+int mat_eval = 0;
 int num_moves = 0;
 bool white_turn = true;
 
@@ -69,6 +74,7 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"
 
 struct Move *game_possible_moves;
 int num_game_moves;
+
 
 unsigned long long generate_bitboard(int squares[], int num_squares){
     unsigned long long a = 0ULL;
@@ -1075,6 +1081,7 @@ void draw_board(){
 
 bool apply_move(int start, int end, int move_id){
     int moved_piece = get_piece(start);
+    //this is the ternd
     if(white_turn != is_white_piece(moved_piece)){
         printf("Not your turn %d %d %d %d\n", white_turn, start, end, move_id);
         draw_board();
@@ -1130,9 +1137,13 @@ bool apply_move(int start, int end, int move_id){
     }
     if(captured_piece > 0){
         remove_piece(captured_piece, end);
+        //check the value of the peace
+        mat_eval = mat_eval - values[captured_piece];
     }
+    // this is for protion
     if((move_id) > 0){
         add_piece(move_id, end);
+        mat_eval = mat_eval + values[move_id] - values[moved_piece];
     }
     else{
         add_piece(moved_piece, end);
@@ -1156,11 +1167,13 @@ bool apply_move(int start, int end, int move_id){
             if(m == 13 && moved_piece == 1 && ep_pawn == 7 && end - e == 8){
                 remove_piece(ep_pawn, e);
                 new_m = 14;
+                mat_eval = mat_eval - values[7];
             }
             // black capturing en passant
             else if(m == 13 && moved_piece == 7 && ep_pawn == 1 && end - e == -8){
                 remove_piece(ep_pawn, e);
                 new_m = 14;
+                mat_eval = mat_eval - values[1];
             }
         }
     }
@@ -1191,6 +1204,7 @@ void undo_move(){
     // last move was a capture
     if(capture > 0){
         add_piece(capture, end);
+        mat_eval = mat_eval + values[capture];
     }
     if(move_id == 0){
     }
@@ -1199,9 +1213,11 @@ void undo_move(){
         remove_piece(move_id, start);
         if(is_white){
             add_piece(1, start);
+            mat_eval = mat_eval - values[move_id] + values[1];
         }
         else{
             add_piece(7, start);
+            mat_eval = mat_eval - values[move_id] + values[7];
         }
     }
     // last move was double pawn push
@@ -1211,9 +1227,11 @@ void undo_move(){
     else if(move_id == 14){
         if(is_white){
             add_piece(7, end - 8);
+            mat_eval = mat_eval + values[7];
         }
         else{
             add_piece(1, end + 8);
+            mat_eval = mat_eval + values[1];
         }
     }
     // last move was castling
@@ -1427,6 +1445,7 @@ void run_game(){
             if(is_legal_move(start, end, promo, game_possible_moves, num_game_moves)){
                 //make the move on the board
                 apply_move(start, end, 0);
+                printf("%d\n" ,mat_eval);
                 update_possible_moves(game_possible_moves, &num_game_moves);
             }
             //otherwise the move is illegal
@@ -1450,10 +1469,77 @@ void run_game(){
         draw_board();
     }
 }
+int static_eval(){
+    return mat_eval;
+}
+
+struct Move seach_moves(int depth){
+    struct Move best_move;
+    // not to be taken as an actual move of -1
+    best_move.start = -1;
+    best_move.end = -1;
+    best_move.eval = -11100000;
+    if (depth == 0){
+        best_move.eval = static_eval();
+        return best_move;
+    }
+    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+    struct Move move;
+    if (numElems == 0){
+        if (white_check || black_check){
+            return best_move;
+        }
+        best_move.eval = 0;
+        return best_move;
+    }
+    else{
+        best_move = moves[0];
+    }
+
+    for(int i = 0; i < numElems; i++){
+        move = moves[i];
+        apply_move(move.start, move.end, move.id);
+        // cerent_eval is the best move at this depth after this(bad nameing)
+        struct Move cerent_move = seach_moves(depth - 1);
+        cerent_move.eval = -cerent_move.eval;
+        if (cerent_move.eval > best_move.eval){
+            best_move = cerent_move;
+        }
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+    }
+
+    free(moves);
+
+    return best_move;
+}
+
+void calc_eng_move(int depth){
+    engine_move = seach_moves(depth);
+}
+int get_eng_move_start(){
+    return engine_move.start;
+}
+int get_eng_move_end(){
+    return engine_move.end;
+}
+int get_eng_move_eval(){
+    return engine_move.eval;
+}
+int get_eng_move_id(){
+    return engine_move.id;
+}
+
 
 int main(){
     init();
     //run_game();
-    printf("Perft: %llu\n", perft_test(6));
+    struct Move test1 = seach_moves(5);
+    printf("%d %d %d", test1.start, test1.end, test1.eval);
+    //printf("Perft: %llu\n", perft_test(6));
     return 0;
 }
