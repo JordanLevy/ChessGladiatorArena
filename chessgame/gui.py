@@ -42,6 +42,12 @@ lib.get_black_check.restype = ctypes.c_bool
 lib.perft_test.restype = ctypes.c_int
 lib.perft_test.argtypes = [ctypes.c_int]
 
+lib.calc_eng_move.argtypes = [ctypes.c_int]
+
+lib.get_eng_move_start.restype = ctypes.c_int
+lib.get_eng_move_end.restype = ctypes.c_int
+lib.get_eng_move_eval.restype = ctypes.c_int
+lib.get_eng_move_id.restype = ctypes.c_int
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -208,6 +214,17 @@ def run_game():
                         # print(lib.perft_test(1))
                         board = [i for i in lib.get_board_state().contents]
                         # print(white_in_checkmate(), black_in_checkmate())
+                        refresh_graphics()
+                        lib.calc_eng_move(4)
+                        s = lib.get_eng_move_start()
+                        e = lib.get_eng_move_end()
+                        id = lib.get_eng_move_id()
+                        eval = lib.get_eng_move_eval()
+                        a = lib.apply_move(s, e, id)
+
+                        lib.update_game_possible_moves()
+                        # print(lib.perft_test(1))
+                        board = [i for i in lib.get_board_state().contents]
                     else:
                         print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
