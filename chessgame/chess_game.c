@@ -76,6 +76,104 @@ struct Move *game_possible_moves;
 int num_game_moves;
 
 
+void print_data(){
+
+    printf("--------------------------\n");
+
+    /*printf("c %d\n", mat_eval);
+    printf("d %d\n", num_moves);
+    printf("e %d\n", white_turn);
+
+    for(int i = 0; i < 13; i++){
+        printf("f %llu \n", bitboards[i]);
+    }
+
+    for(int i = 0; i < num_moves; i++){
+        printf("g %d %d %d\n", move_list[i].start, move_list[i].end, move_list[i].id);
+    }
+
+
+    printf("h %llu\n", not_black_pieces);
+    printf("i %llu\n", not_white_pieces);
+    printf("j %llu\n", all_squares);
+    printf("k %llu\n", white_pieces);
+    printf("l %llu\n", black_pieces);
+    printf("m %llu\n", empty);
+    printf("n %llu\n", occupied);
+
+    for(int i = 0; i < 9; i++){
+        printf("o %llu\n", file[i]);
+    }
+
+    for(int i = 0; i < 9; i++){
+        printf("p %llu\n", rank[i]);
+    }
+
+    for(int i = 0; i < 15; i++){
+        printf("q %llu\n", l_diag[i]);
+    }
+
+    for(int i = 0; i < 15; i++){
+        printf("r %llu\n", r_diag[i]);
+    }
+
+    */
+    printf("s %llu\n", square_a8);
+    printf("t %llu\n", knight_span);
+    printf("u %llu\n", king_span);
+    printf("v %llu\n", file_ab);
+    printf("w %llu\n", file_gh);
+    printf("x %llu\n", unsafe_white);
+    printf("y %llu\n", unsafe_black);
+    printf("z %llu\n", white_check);
+    printf("a %llu\n", black_check);
+    printf("b %d\n", num_pieces_delivering_check);
+    printf("c %llu\n", blocking_squares);
+
+    /*
+    for(int i = 0; i < 64; i++){
+        printf("d %llu\n", pinning_squares[i]);
+    }
+
+    printf("e %d\n", en_passant_pinned);
+
+    for(int i = 0; i < 4; i++){
+        printf("f %d\n", rook_pos[i]);
+    }
+
+    for(int i = 0; i < 4; i++){
+        printf("g %d\n", rook_num_moves[i]);
+    }
+
+    for(int i = 0; i < 2; i++){
+        printf("h %d\n", king_num_moves[i]);
+    }
+
+    for(int i = 0; i < 64; i++){
+        printf("i %d\n", board[i]);
+    }
+
+    for(int i = 0; i < 13; i++){
+        for(int j = 0; j < 9; i++){
+            printf("j %d\n", pieces[i][j]);
+        }
+    }
+
+
+    for(int i = 0; i < 13; i++){
+        printf("k %d\n", num_pieces_of_type[i]);
+    }
+
+    for(int i = 0; i < 127; i++){
+        printf("l %d\n", piece_letter_to_num[i]);
+    }
+    printf("m %s\n", start_position);
+    //printf("n %d\n", game_possible_moves);
+    printf("o %d\n", num_game_moves);*/
+
+}
+
+
 unsigned long long generate_bitboard(int squares[], int num_squares){
     unsigned long long a = 0ULL;
     for(int i = 0; i < num_squares; i++){
@@ -115,7 +213,17 @@ void init_bitboards(){
         int p = board[i];
         if(p > 0){
             pieces[p][num_pieces_of_type[p]] = i;
-            num_pieces_of_type[p]++;
+            num_pieces_of_type[p]++;for(int i = 0; i < 4; i++){
+        printf("f %d\n", rook_pos[i]);
+    }
+
+    for(int i = 0; i < 4; i++){
+        printf("g %d\n", rook_num_moves[i]);
+    }
+
+    for(int i = 0; i < 2; i++){
+        printf("h %d\n", king_num_moves[i]);
+    }
         }
     }
 
@@ -1093,15 +1201,27 @@ bool apply_move(int start, int end, int move_id){
     int new_m = move_id;
     int new_c = captured_piece;
     remove_piece(moved_piece, start);
-    if((moved_piece == 4) || (moved_piece == 10)){
-        for(int i = 0; i < 4; i++){
+    if(moved_piece == 4){
+        for(int i = 0; i < 2; i++){
             if(start == rook_pos[i]){
                 rook_pos[i] = end;
                 rook_num_moves[i]++;
+                break;
             }
         }
     }
+    else if(moved_piece == 10){
+        for(int i = 2; i < 4; i++){
+            if(start == rook_pos[i]){
+                rook_pos[i] = end;
+                rook_num_moves[i]++;
+                break;
+            }
+        }
+    }
+    //white king move
     if(moved_piece == 6){
+        //kingside castling
         if(end - start == -2){
             remove_piece(4, rook_pos[1]);
             add_piece(4, 2);
@@ -1109,6 +1229,7 @@ bool apply_move(int start, int end, int move_id){
             new_m = 15;
             // move_list.append((start, end, 15, 0))
         }
+        //queenside castling
         if(end - start == 2){
             remove_piece(4, rook_pos[0]);
             add_piece(4, 4);
@@ -1118,7 +1239,9 @@ bool apply_move(int start, int end, int move_id){
         }
         king_num_moves[0]++;
     }
+    //black king move
     else if(moved_piece == 12){
+        //kingside castling
         if(end - start == -2){
             remove_piece(10, rook_pos[3]);
             add_piece(10, 58);
@@ -1126,6 +1249,7 @@ bool apply_move(int start, int end, int move_id){
             new_m = 15;
             // move_list.append((start, end, 15, 0))
         }
+        //queenside castling
         if(end - start == 2){
             remove_piece(10, rook_pos[2]);
             add_piece(10, 60);
@@ -1189,14 +1313,17 @@ bool apply_move(int start, int end, int move_id){
 }
 
 void undo_move(){
+    // can't undo if nothing has been played
     if(num_moves == 0){
         return;
     }
+    //previous move (the one we're undoing)
     struct Move mov = move_list[num_moves - 1];
     int start = mov.start;
     int end = mov.end;
     int move_id = mov.id;
     int capture = mov.capture;
+    // the piece that was moved
     int moved_piece = get_piece(end);
     bool is_white = is_white_piece(moved_piece);
     remove_piece(moved_piece, end);
@@ -1238,11 +1365,13 @@ void undo_move(){
     else if(move_id == 15){
         // white king
         if(moved_piece == 6){
+            //kingside
             if(end - start == -2){
                 remove_piece(4, rook_pos[1]);
                 add_piece(4, 0);
                 rook_pos[1] = 0;
             }
+            //queenside
             if(end - start == 2){
                 remove_piece(4, rook_pos[0]);
                 add_piece(4, 7);
@@ -1251,11 +1380,13 @@ void undo_move(){
         }
         // black king
         else if(moved_piece == 12){
+            //kingside
             if(end - start == -2){
                 remove_piece(10, rook_pos[3]);
                 add_piece(10, 56);
                 rook_pos[3] = 56;
             }
+            //queenside
             if(end - start == 2){
                 remove_piece(10, rook_pos[2]);
                 add_piece(10, 63);
@@ -1263,17 +1394,31 @@ void undo_move(){
             }
         }
     }
-    if((moved_piece == 4) || (moved_piece == 10)){
-        for(int i = 0; i < 4; i++){
+    //if we're undoing a white rook move
+    if(moved_piece == 4){
+        for(int i = 0; i < 2; i++){
             if(end == rook_pos[i]){
                 rook_pos[i] = start;
                 rook_num_moves[i] -= 1;
+                break;
             }
         }
     }
-    else if(moved_piece == 6){
+    // if we're undoing a black rook move
+    else if(moved_piece == 10){
+        for(int i = 2; i < 4; i++){
+            if(end == rook_pos[i]){
+                rook_pos[i] = start;
+                rook_num_moves[i] -= 1;
+                break;
+            }
+        }
+    }
+    // if we're undoing a white king move
+    if(moved_piece == 6){
         king_num_moves[0] -= 1;
     }
+    // if we're undoing a black king move
     else if(moved_piece == 12){
         king_num_moves[1] -= 1;
     }
@@ -1292,6 +1437,7 @@ char file_letter(int n){
     char letter[] = "abcdefgh";
     return letter[n];
 }
+
 
 unsigned long long perft_test(int depth){
     if(depth == 0){
@@ -1313,12 +1459,103 @@ unsigned long long perft_test(int depth){
         undo_move();
         decr_num_moves();
         flip_turns();
+        update_piece_masks();
     }
 
     free(moves);
 
     return num_positions;
 }
+
+unsigned long long detailed_perft(int depth){
+    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+
+    unsigned long long num_positions = 0ULL;
+    struct Move move;
+    int n;
+    int s;
+    int e;
+    int m;
+    char file;
+    int rank;
+
+
+
+    for(int i = 0; i < numElems; i++){
+        //print_data();
+        move = moves[i];
+        apply_move(move.start, move.end, move.id);
+        n = perft_test(depth - 1);
+        num_positions += n;
+        s = move.start;
+        e = move.end;
+        m = move.id;
+
+        file = file_letter(7 - get_file(s));
+        rank = get_rank(s) + 1;
+        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
+
+        file = file_letter(7 - get_file(e));
+        rank = get_rank(e) + 1;
+        printf("%c%d\t%d\t%d\n", file, rank, m, n);
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+    }
+
+    free(moves);
+
+    return num_positions;
+}
+
+
+unsigned long long h3_perft(int depth){
+    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+
+    unsigned long long num_positions = 0ULL;
+    struct Move move;
+    int n;
+    int s;
+    int e;
+    int m;
+    char file;
+    int rank;
+
+
+
+    for(int i = 0; i < 1; i++){
+        //print_data();
+        move = moves[i];
+        apply_move(move.start, move.end, move.id);
+        n = perft_test(depth - 1);
+        num_positions += n;
+        s = move.start;
+        e = move.end;
+        m = move.id;
+
+        file = file_letter(7 - get_file(s));
+        rank = get_rank(s) + 1;
+        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
+
+        file = file_letter(7 - get_file(e));
+        rank = get_rank(e) + 1;
+        printf("%c%d\t%d\t%d\n", file, rank, m, n);
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+    }
+
+    free(moves);
+
+    return num_positions;
+}
+
 
 void print_legal_moves(struct Move* moves, int *numElems){
     for(int i = 0; i < (*numElems); i++){
@@ -1534,12 +1771,48 @@ int get_eng_move_id(){
     return engine_move.id;
 }
 
+int* get_king_num_moves(){
+    return king_num_moves;
+}
+
+int* get_rook_pos(){
+    return rook_pos;
+}
+
+int* get_rook_num_moves(){
+    return rook_num_moves;
+}
+
 
 int main(){
     init();
+    //update_game_possible_moves();
+    //apply_move(nota_to_numb('g', 2), nota_to_numb('g', 3), 0);
+    //update_game_possible_moves();
     //run_game();
-    struct Move test1 = seach_moves(5);
-    printf("%d %d %d", test1.start, test1.end, test1.eval);
-    //printf("Perft: %llu\n", perft_test(6));
+    //struct Move test1 = seach_moves(5);
+    //printf("%d %d %d", test1.start, test1.end, test1.eval);
+    //h3_perft(7);
+    //run_game();
+    printf("Perft: %llu\n", detailed_perft(7));
+    /*apply_move(nota_to_numb('g', 2), nota_to_numb('g', 3), 0);
+    apply_move(nota_to_numb('h', 7), nota_to_numb('h', 6), 0);
+    apply_move(nota_to_numb('f', 1), nota_to_numb('g', 2), 0);
+    apply_move(nota_to_numb('h', 8), nota_to_numb('h', 7), 0);
+    apply_move(nota_to_numb('g', 1), nota_to_numb('h', 3), 0);
+    apply_move(nota_to_numb('h', 6), nota_to_numb('h', 5), 0);
+    printf("Perft: %llu\n", detailed_perft(1));
+
+    for(int i = 0; i < 4; i++){
+        printf("f %d\n", rook_pos[i]);
+    }
+
+    for(int i = 0; i < 4; i++){
+        printf("g %d\n", rook_num_moves[i]);
+    }
+
+    for(int i = 0; i < 2; i++){
+        printf("h %d\n", king_num_moves[i]);
+    }*/
     return 0;
 }

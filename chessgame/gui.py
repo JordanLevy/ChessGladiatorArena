@@ -213,18 +213,19 @@ def run_game():
                         lib.update_game_possible_moves()
                         # print(lib.perft_test(1))
                         board = [i for i in lib.get_board_state().contents]
+                        #print(lib.perft_test(6))
                         # print(white_in_checkmate(), black_in_checkmate())
-                        refresh_graphics()
-                        lib.calc_eng_move(4)
-                        s = lib.get_eng_move_start()
-                        e = lib.get_eng_move_end()
-                        id = lib.get_eng_move_id()
-                        eval = lib.get_eng_move_eval()
-                        a = lib.apply_move(s, e, id)
-
-                        lib.update_game_possible_moves()
-                        # print(lib.perft_test(1))
-                        board = [i for i in lib.get_board_state().contents]
+                        # refresh_graphics()
+                        # lib.calc_eng_move(4)
+                        # s = lib.get_eng_move_start()
+                        # e = lib.get_eng_move_end()
+                        # id = lib.get_eng_move_id()
+                        # eval = lib.get_eng_move_eval()
+                        # a = lib.apply_move(s, e, id)
+                        #
+                        # lib.update_game_possible_moves()
+                        # # print(lib.perft_test(1))
+                        # board = [i for i in lib.get_board_state().contents]
                     else:
                         print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
@@ -241,8 +242,9 @@ def run_game():
 def test():
     st = time.time()
     lib.init()
-    print(lib.perft_test(6))
+    print(lib.perft_test(7))
     print(time.time() - st)
 
+test()
 
-run_game()
+#run_game()
