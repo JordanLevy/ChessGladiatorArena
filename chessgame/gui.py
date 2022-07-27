@@ -1,10 +1,18 @@
-import ctypes
+from ctypes import *
 import math
 import sys
 import time
 
 import pygame
 from pygame.locals import *
+
+class Move(Structure):
+    _fields_ = [('start', c_int),
+                ('end', c_int),
+                ('id', c_int),
+                ('capture', c_int),
+                ('piece', c_int),
+                ('eval', c_int)]
 
 screen = None
 piece_img = []
@@ -24,30 +32,38 @@ YELLOW = (255, 255, 0, 50)
 
 board = []
 
-lib = ctypes.CDLL('./chess_game.so')
+lib = CDLL('./chess_game.so')
 
-lib.apply_move.restype = ctypes.c_bool
+lib.apply_move.restype = c_bool
 
-lib.try_undo_move.restype = ctypes.c_bool
+lib.try_undo_move.restype = c_bool
 
-lib.is_game_legal_move.restype = ctypes.c_bool
-lib.is_game_legal_move.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
+lib.is_game_legal_move.restype = c_bool
+lib.is_game_legal_move.argtypes = [c_int, c_int, c_int]
 
-lib.get_board_state.restype = ctypes.POINTER(ctypes.c_int * 64)
+lib.get_board_state.restype = POINTER(c_int * 64)
 
-lib.get_white_check.restype = ctypes.c_bool
+lib.get_white_check.restype = c_bool
 
-lib.get_black_check.restype = ctypes.c_bool
+lib.get_black_check.restype = c_bool
 
-lib.perft_test.restype = ctypes.c_int
-lib.perft_test.argtypes = [ctypes.c_int]
+lib.perft_test.restype = c_int
+lib.perft_test.argtypes = [c_int]
 
-lib.calc_eng_move.argtypes = [ctypes.c_int]
+lib.calc_eng_move.restype = c_int
+lib.calc_eng_move.argtypes = [c_int]
 
-lib.get_eng_move_start.restype = ctypes.c_int
-lib.get_eng_move_end.restype = ctypes.c_int
-lib.get_eng_move_eval.restype = ctypes.c_int
-lib.get_eng_move_id.restype = ctypes.c_int
+lib.get_eng_move_start.restype = c_int
+lib.get_eng_move_end.restype = c_int
+lib.get_eng_move_eval.restype = c_int
+lib.get_eng_move_id.restype = c_int
+
+lib.get_possible_moves.restype = POINTER(Move)
+
+lib.get_num_possible_moves.restype = c_int
+
+lib.get_mat_eval.restype = c_int
+
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -151,6 +167,9 @@ def get_updated_board():
     global board
     board = [i for i in lib.get_board_state().contents]
 
+def print_move(m):
+    print(m.piece, m.start, m.end)
+
 
 def run_game():
     global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy
@@ -211,21 +230,21 @@ def run_game():
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         a = lib.apply_move(press_square, release_square, promo_num)
                         lib.update_game_possible_moves()
-                        # print(lib.perft_test(1))
-                        board = [i for i in lib.get_board_state().contents]
-                        #print(lib.perft_test(6))
-                        # print(white_in_checkmate(), black_in_checkmate())
-                        # refresh_graphics()
-                        # lib.calc_eng_move(4)
-                        # s = lib.get_eng_move_start()
-                        # e = lib.get_eng_move_end()
-                        # id = lib.get_eng_move_id()
-                        # eval = lib.get_eng_move_eval()
-                        # a = lib.apply_move(s, e, id)
-                        #
-                        # lib.update_game_possible_moves()
-                        # # print(lib.perft_test(1))
-                        # board = [i for i in lib.get_board_state().contents]
+                        possible_moves = lib.get_possible_moves()
+                        num_possible_moves = lib.get_num_possible_moves()
+                        # print()
+                        # for i in range(num_possible_moves):
+                        #     print_move(possible_moves[i])
+                        get_updated_board()
+                        refresh_graphics()
+                        eval = lib.calc_eng_move(4)
+                        s = lib.get_eng_move_start()
+                        e = lib.get_eng_move_end()
+                        id = lib.get_eng_move_id()
+                        print("Eval", eval)
+                        a = lib.apply_move(s, e, id)
+                        lib.update_game_possible_moves()
+                        get_updated_board()
                     else:
                         print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
@@ -239,12 +258,12 @@ def run_game():
         pygame.display.update()
         mainClock.tick(100)
 
+
 def test():
     st = time.time()
     lib.init()
     print(lib.perft_test(7))
     print(time.time() - st)
 
-test()
 
-#run_game()
+run_game()
