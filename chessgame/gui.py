@@ -64,6 +64,8 @@ lib.get_num_possible_moves.restype = c_int
 
 lib.get_mat_eval.restype = c_int
 
+lib.get_pos_eval.restype = c_int
+
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -230,18 +232,12 @@ def run_game():
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         a = lib.apply_move(press_square, release_square, promo_num)
                         lib.update_game_possible_moves()
-                        possible_moves = lib.get_possible_moves()
-                        num_possible_moves = lib.get_num_possible_moves()
-                        # print()
-                        # for i in range(num_possible_moves):
-                        #     print_move(possible_moves[i])
                         get_updated_board()
                         refresh_graphics()
                         eval = lib.calc_eng_move(4)
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
-                        print("Eval", eval)
                         a = lib.apply_move(s, e, id)
                         lib.update_game_possible_moves()
                         get_updated_board()
