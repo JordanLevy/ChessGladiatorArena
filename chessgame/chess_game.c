@@ -656,6 +656,24 @@ bool is_black_piece(int piece){
     return (7 <= piece) && (piece <= 12);
 }
 
+int max(int a, int b){
+    if (a>b){
+        return a;
+    }
+    else{
+        return b;
+    }
+}
+
+int min(int a, int b){
+    if (a<b){
+        return a;
+    }
+    else{
+        return b;
+    }
+}
+
 unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
     // squares this piece threatens, as a bitboard
     unsigned long long squares = 0ULL;
@@ -1702,52 +1720,6 @@ int static_eval(){
     return mat_eval + pos_eval;
 }
 
-// version of search_moves that returns a struct Move
-struct Move seach_moves_old(int depth){
-    struct Move best_move;
-    // not to be taken as an actual move of -1
-    best_move.start = -1;
-    best_move.end = -1;
-    best_move.eval = -11100000;
-    if (depth == 0){
-        best_move.eval = static_eval();
-        return best_move;
-    }
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
-    int numElems = 0;
-
-    update_possible_moves(moves, &numElems);
-    struct Move move;
-    if (numElems == 0){
-        if (white_check || black_check){
-            return best_move;
-        }
-        best_move.eval = 0;
-        return best_move;
-    }
-    else{
-        best_move = moves[0];
-    }
-
-    for(int i = 0; i < numElems; i++){
-        move = moves[i];
-        apply_move(move.start, move.end, move.id);
-        // cerent_eval is the best move at this depth after this(bad nameing)
-        struct Move cerent_move = seach_moves_old(depth - 1);
-        cerent_move.eval = -cerent_move.eval;
-        if (cerent_move.eval > best_move.eval){
-            best_move = cerent_move;
-        }
-        undo_move();
-        decr_num_moves();
-        flip_turns();
-    }
-
-    free(moves);
-
-    return best_move;
-}
-
 // this is going to recalulate the legale moves for a given piece
 void update_piece_moves(int square){
     int piece_type = get_piece(square);
@@ -1793,8 +1765,75 @@ int search_moves(int depth, int start_depth){
     return bestEvaluation;
 }
 
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
+    if(depth == 0){
+        return static_eval();
+    }
+    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+    struct Move move;
+
+    if(numElems == 0){
+        if(white_check){
+            return INT_MIN;
+        }
+        else if(black_check){
+            return INT_MAX;
+        }
+        return 0;
+    }
+    // this is refering to the white making a move
+    if (player){
+        int maxEval = INT_MIN;
+        for(int i = 0; i < numElems; i++){
+            move = moves[i];
+            apply_move(move.start, move.end, move.id);
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false);
+            if(evaluation > maxEval){
+                maxEval = evaluation;
+                if(depth == start_depth){
+                    engine_move = move;
+                }
+            }
+            alpha = max(alpha, evaluation);
+            if (beta <= alpha){
+                break;
+            }
+            undo_move();
+            decr_num_moves();
+            flip_turns();
+        }
+        return maxEval;
+    }
+
+    else{
+        int minEval = INT_MAX;
+        for(int i = 0; i < numElems; i++){
+            move = moves[i];
+            apply_move(move.start, move.end, move.id);
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true);
+            if(evaluation < minEval){
+                minEval = evaluation;
+                if(depth == start_depth){
+                    engine_move = move;
+                }
+            }
+            beta = min(beta, evaluation);
+            if (beta <= alpha){
+                break;
+            }
+            undo_move();
+            decr_num_moves();
+            flip_turns();
+        }
+        return minEval;
+    }
+}
+
 int calc_eng_move(int depth){
-    return search_moves(depth, depth);
+    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, true);
 
 }
 int get_eng_move_start(){

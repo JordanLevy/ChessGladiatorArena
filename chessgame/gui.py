@@ -258,8 +258,8 @@ def run_game():
 def test():
     st = time.time()
     lib.init()
-    print(lib.perft_test(7))
+    print(lib.perft_test(6))
     print(time.time() - st)
 
 
-run_game()
+test()
