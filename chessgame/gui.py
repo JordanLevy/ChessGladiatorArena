@@ -262,4 +262,4 @@ def test():
     print(time.time() - st)
 
 
-test()
+run_game()

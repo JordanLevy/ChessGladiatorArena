@@ -1833,7 +1833,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 }
 
 int calc_eng_move(int depth){
-    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, true);
+    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false);
 
 }
 int get_eng_move_start(){
