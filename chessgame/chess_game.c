@@ -1791,6 +1791,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.id);
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false);
+            undo_move();
+            decr_num_moves();
+            flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 if(depth == start_depth){
@@ -1801,9 +1804,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if (beta <= alpha){
                 break;
             }
-            undo_move();
-            decr_num_moves();
-            flip_turns();
         }
         return maxEval;
     }
@@ -1814,6 +1814,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.id);
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true);
+            undo_move();
+            decr_num_moves();
+            flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
                 if(depth == start_depth){
@@ -1824,9 +1827,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if (beta <= alpha){
                 break;
             }
-            undo_move();
-            decr_num_moves();
-            flip_turns();
         }
         return minEval;
     }
