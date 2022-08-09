@@ -208,7 +208,9 @@ int pieces[13][9];
 int num_pieces_of_type[13] = {0};
 int piece_letter_to_num[127] = {0};
 
-char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
+int val = -1;
+
+char *start_position = "2K3k1/7q/8/2n5/8/8/8/8 w - -";//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
 
 struct Move *game_possible_moves;
 int num_game_moves;
@@ -1379,6 +1381,12 @@ void undo_move(){
     }
     //previous move (the one we're undoing)
     struct Move mov = move_list[num_moves - 1];
+    if(white_check){
+        white_check = false;
+    }
+    if(black_check){
+        black_check = false;
+    }
     int start = mov.start;
     int end = mov.end;
     int move_id = mov.id;
@@ -1716,7 +1724,11 @@ void run_game(){
         draw_board();
     }
 }
-int static_eval(){
+
+/*
+
+*/
+int static_eval(int depth, int numElems){
     return mat_eval + pos_eval;
 }
 
@@ -1731,14 +1743,16 @@ void update_piece_moves(int square){
 
 
 int search_moves(int depth, int start_depth){
-    if(depth == 0){
-        return static_eval();
-    }
     struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
     struct Move move;
+
+    if(depth == 0){
+        free(moves);
+        return static_eval(start_depth - depth, numElems);
+    }
 
     if(numElems == 0){
         if(white_check || black_check){
@@ -1766,9 +1780,6 @@ int search_moves(int depth, int start_depth){
 }
 
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
-    if(depth == 0){
-        return static_eval();
-    }
     struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
     int numElems = 0;
 
@@ -1777,13 +1788,21 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     if(numElems == 0){
         if(white_check){
-            return INT_MIN;
+            return INT_MIN + (start_depth - depth);
         }
         else if(black_check){
-            return INT_MAX;
+            return INT_MAX - (start_depth - depth);
         }
         return 0;
     }
+
+    if(depth == 0){
+        free(moves);
+        return mat_eval + pos_eval;//static_eval((start_depth - depth), numElems);
+    }
+
+
+
     // this is refering to the white making a move
     if (player){
         int maxEval = INT_MIN;
@@ -1794,7 +1813,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             undo_move();
             decr_num_moves();
             flip_turns();
-            if(evaluation > maxEval){
+            if(evaluation >= maxEval){
                 maxEval = evaluation;
                 if(depth == start_depth){
                     engine_move = move;
@@ -1805,6 +1824,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 break;
             }
         }
+        free(moves);
         return maxEval;
     }
 
@@ -1817,10 +1837,14 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             undo_move();
             decr_num_moves();
             flip_turns();
-            if(evaluation < minEval){
+
+            if(evaluation <= minEval){
                 minEval = evaluation;
                 if(depth == start_depth){
                     engine_move = move;
+                    if(evaluation == INT_MIN){
+                        val = evaluation;
+                    }
                 }
             }
             beta = min(beta, evaluation);
@@ -1828,6 +1852,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 break;
             }
         }
+        free(moves);
         return minEval;
     }
 }
@@ -1875,6 +1900,10 @@ int get_mat_eval(){
 
 int get_pos_eval(){
     return pos_eval;
+}
+
+int get_val(){
+    return val;
 }
 
 

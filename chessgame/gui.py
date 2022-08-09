@@ -66,6 +66,8 @@ lib.get_mat_eval.restype = c_int
 
 lib.get_pos_eval.restype = c_int
 
+lib.get_val.restype = c_int
+
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -234,7 +236,14 @@ def run_game():
                         lib.update_game_possible_moves()
                         get_updated_board()
                         refresh_graphics()
-                        eval = lib.calc_eng_move(4)
+                        st = time.time()
+                        eval = lib.calc_eng_move(6)
+                        print("time to engine move", time.time() - st)
+                        val = lib.get_val()
+                        print('val', val)
+                        print('eval', eval)
+                        print('wc', lib.get_white_check())
+                        print('bc', lib.get_black_check())
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
