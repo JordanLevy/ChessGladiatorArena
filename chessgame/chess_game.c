@@ -210,7 +210,7 @@ int piece_letter_to_num[127] = {0};
 
 int val = -1;
 
-char *start_position = "2K3k1/7q/8/2n5/8/8/8/8 w - -";//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
+char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"2K3k1/7q/8/2n5/8/8/8/8 w - -";//"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
 
 struct Move *game_possible_moves;
 int num_game_moves;
@@ -1780,7 +1780,7 @@ int search_moves(int depth, int start_depth){
 }
 
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)calloc(70, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
