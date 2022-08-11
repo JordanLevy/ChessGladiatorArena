@@ -235,7 +235,7 @@ def run_game():
                         get_updated_board()
                         refresh_graphics()
                         st = time.time()
-                        eval = lib.calc_eng_move(6)
+                        eval = lib.calc_eng_move(8)
                         print("time to engine move", time.time() - st)
                         print('eval', eval)
                         print('wc', lib.get_white_check())
