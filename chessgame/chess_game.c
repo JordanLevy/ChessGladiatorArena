@@ -1499,7 +1499,7 @@ unsigned long long perft_test(int depth){
         return 1ULL;
     }
 
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)calloc(70, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1523,7 +1523,7 @@ unsigned long long perft_test(int depth){
 }
 
 unsigned long long detailed_perft(int depth){
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)calloc(70, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1633,7 +1633,7 @@ int* get_board_state(){
 }
 
 void init(){
-    game_possible_moves = (struct Move*)calloc(256, sizeof(struct Move));
+    game_possible_moves = (struct Move*)calloc(70, sizeof(struct Move));
     num_game_moves = 0;
     init_board();
 }
@@ -1734,7 +1734,7 @@ int search_moves(int depth, int start_depth){
     if(depth == 0){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)calloc(70, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1769,7 +1769,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(depth == 0){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)calloc(70, sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
