@@ -208,7 +208,7 @@ int pieces[13][9];
 int num_pieces_of_type[13] = {0};
 int piece_letter_to_num[127] = {0};
 
-char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"; //"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ";
+char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
 struct Move *game_possible_moves;
 int num_game_moves;
@@ -284,6 +284,7 @@ void init_bitboards(){
 
 
 void init_fen(char *fen, size_t fen_length){
+    mat_eval = 0;
     piece_letter_to_num['P'] = 1;
     piece_letter_to_num['N'] = 2;
     piece_letter_to_num['B'] = 3;
@@ -317,6 +318,7 @@ void init_fen(char *fen, size_t fen_length){
         //placing a piece
         else{
             p = piece_letter_to_num[(int)current];
+            mat_eval += values[p];
             board[square] = p;
             bitboards[p] |= (1ULL << square);
             pieces[p][num_pieces_of_type[p]] = square;
@@ -1167,10 +1169,8 @@ void print_bitboard(unsigned long long bitboard){
     printf("\n");
 }
 
-void init_board(){
-    //init_bitboards();
-    int a = strlen(start_position);
-    init_fen(start_position, a);
+void init_board(char* fen, size_t len){
+    init_fen(fen, len);
     init_masks();
 }
 
@@ -1499,7 +1499,7 @@ unsigned long long perft_test(int depth){
         return 1ULL;
     }
 
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1523,7 +1523,7 @@ unsigned long long perft_test(int depth){
 }
 
 unsigned long long detailed_perft(int depth){
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1632,10 +1632,10 @@ int* get_board_state(){
     return board;
 }
 
-void init(){
-    game_possible_moves = (struct Move*)calloc(256, sizeof(struct Move));
+void init(char* fen, int len){
+    game_possible_moves = (struct Move*)malloc(80 * sizeof(struct Move));
     num_game_moves = 0;
-    init_board();
+    init_board(fen, len);
 }
 
 void run_game(){
@@ -1734,7 +1734,7 @@ int search_moves(int depth, int start_depth){
     if(depth == 0){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1766,10 +1766,18 @@ int search_moves(int depth, int start_depth){
 }
 
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
+    update_unsafe();
     if(depth == 0){
+        if(white_check){
+            printf("Depth 0, static eval: %d\n", static_eval());
+            draw_board();
+            print_bitboard(unsafe_white);
+            print_bitboard(unsafe_for_white());
+            printf("\n");
+        }
         return static_eval();
     }
-    struct Move* moves = (struct Move*)calloc(256, sizeof(struct Move));
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
@@ -1778,11 +1786,20 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
+            printf("White in checkmate at depth %d\n", start_depth - depth);
+            draw_board();
+            printf("\n");
             return INT_MIN;
         }
         else if(black_check){
+            printf("Black in checkmate at depth %d\n", start_depth - depth);
+            draw_board();
+            printf("\n");
             return INT_MAX;
         }
+        printf("Stalemate at depth %d\n", start_depth - depth);
+        draw_board();
+        printf("\n");
         return 0;
     }
     // this is refering to the white making a move
@@ -1882,7 +1899,8 @@ int get_pos_eval(){
 
 
 int main(){
-    init();
+    char* fen = start_position;
+    init(fen, strlen(fen));
     //update_game_possible_moves();
     //apply_move(nota_to_numb('g', 2), nota_to_numb('g', 3), 0);
     //update_game_possible_moves();

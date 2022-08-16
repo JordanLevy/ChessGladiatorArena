@@ -34,6 +34,8 @@ board = []
 
 lib = CDLL('./chess_game.so')
 
+lib.init.argtypes = [c_char_p, c_int]
+
 lib.apply_move.restype = c_bool
 
 lib.try_undo_move.restype = c_bool
@@ -182,7 +184,10 @@ def run_game():
     pygame.display.set_caption('Chess')
     clicking = False
     init_board()
-    lib.init()
+
+    fen = b"5K2/q7/8/5n2/2k5/8/8/8 w - -"
+    lib.init(c_char_p(fen), len(fen))
+
     lib.update_game_possible_moves()
     get_updated_board()
     refresh_graphics()
@@ -240,9 +245,9 @@ def run_game():
                             move_count += 1
                             eval = lib.calc_eng_move(6)
                             print(move_count)
-                        elif move_count >= 30:
+                        else:
                             move_count += 1
-                            eval = lib.calc_eng_move(10)
+                            eval = lib.calc_eng_move(6)
                             print(move_count)
                         print("time to engine move", time.time() - st)
                         print('eval', eval)
