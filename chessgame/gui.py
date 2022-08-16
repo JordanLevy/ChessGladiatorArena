@@ -65,6 +65,7 @@ lib.get_num_possible_moves.restype = c_int
 lib.get_mat_eval.restype = c_int
 
 lib.get_pos_eval.restype = c_int
+move_count = 0
 
 
 # get what file you are on given an index 0-63
@@ -174,7 +175,7 @@ def print_move(m):
 
 
 def run_game():
-    global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy
+    global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy, move_count
     screen = pygame.display.set_mode((400, 400), 0, 32)
     mainClock = pygame.time.Clock()
     pygame.display.init()
@@ -235,7 +236,14 @@ def run_game():
                         get_updated_board()
                         refresh_graphics()
                         st = time.time()
-                        eval = lib.calc_eng_move(8)
+                        if move_count < 30:
+                            move_count += 1
+                            eval = lib.calc_eng_move(6)
+                            print(move_count)
+                        elif move_count >= 30:
+                            move_count += 1
+                            eval = lib.calc_eng_move(10)
+                            print(move_count)
                         print("time to engine move", time.time() - st)
                         print('eval', eval)
                         print('wc', lib.get_white_check())
@@ -263,7 +271,7 @@ def run_game():
 def test():
     st = time.time()
     lib.init()
-    print(lib.perft_test(6))
+    print(lib.perft_test(5))
     print(time.time() - st)
 
 
