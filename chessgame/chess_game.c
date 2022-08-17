@@ -1781,17 +1781,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             printf("White in checkmate at depth %d\n", start_depth - depth);
             draw_board();
             printf("\n");
-            return INT_MIN;
+            return INT_MIN + start_depth - depth;
         }
         else if(black_check){
             printf("Black in checkmate at depth %d\n", start_depth - depth);
             draw_board();
             printf("\n");
-            return INT_MAX;
+            return INT_MAX - start_depth + depth;
         }
         printf("Stalemate at depth %d\n", start_depth - depth);
-        draw_board();
-        printf("\n");
         return 0;
     }
 
