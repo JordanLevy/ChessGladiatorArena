@@ -16,6 +16,9 @@ only recalculating the legal moves that actually are affected
 store the legal moves per piece indexed by square as a board
 
 list of 64 move list
+
+
+Engine debugging tool
 */
 
 struct Move {
@@ -1766,17 +1769,6 @@ int search_moves(int depth, int start_depth){
 }
 
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
-    update_unsafe();
-    if(depth == 0){
-        if(white_check){
-            printf("Depth 0, static eval: %d\n", static_eval());
-            draw_board();
-            print_bitboard(unsafe_white);
-            print_bitboard(unsafe_for_white());
-            printf("\n");
-        }
-        return static_eval();
-    }
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -1801,6 +1793,10 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         draw_board();
         printf("\n");
         return 0;
+    }
+
+    if(depth == 0){
+        return static_eval();
     }
     // this is refering to the white making a move
     if (player){
