@@ -1732,6 +1732,21 @@ void update_piece_moves(int square){
 
 }
 
+void print_move(struct Move move){
+        int s = move.start;
+        int e = move.end;
+        //int m = move.id;
+
+        char file = file_letter(7 - get_file(s));
+        int rank = get_rank(s) + 1;
+        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
+
+        file = file_letter(7 - get_file(e));
+        rank = get_rank(e) + 1;
+        printf("%c%d\n", file, rank);
+
+}
+
 
 int search_moves(int depth, int start_depth){
     if(depth == 0){
@@ -1778,15 +1793,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
-            printf("White in checkmate at depth %d\n", start_depth - depth);
-            draw_board();
-            printf("\n");
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
-            printf("Black in checkmate at depth %d\n", start_depth - depth);
-            draw_board();
-            printf("\n");
             return INT_MAX - start_depth + depth;
         }
         printf("Stalemate at depth %d\n", start_depth - depth);
@@ -1801,6 +1810,11 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int maxEval = INT_MIN;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
+            for (int j = 0; j < depth; j++){
+                printf("\t");
+            }
+            printf("%d", depth);
+            print_move(move);
             apply_move(move.start, move.end, move.id);
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false);
             undo_move();
@@ -1825,6 +1839,11 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int minEval = INT_MAX;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
+            for (int j = 0; j < depth; j++){
+                printf("\t");
+            }
+            printf("%d", depth);
+            print_move(move);
             apply_move(move.start, move.end, move.id);
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true);
             undo_move();

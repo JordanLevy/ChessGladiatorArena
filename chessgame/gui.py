@@ -244,15 +244,15 @@ def run_game():
                         if move_count < 30:
                             move_count += 1
                             eval = lib.calc_eng_move(6)
-                            print(move_count)
+                            #print(move_count)
                         else:
                             move_count += 1
                             eval = lib.calc_eng_move(6)
-                            print(move_count)
-                        print("time to engine move", time.time() - st)
-                        print('eval', eval)
-                        print('wc', lib.get_white_check())
-                        print('bc', lib.get_black_check())
+                            #print(move_count)
+                        # print("time to engine move", time.time() - st)
+                        # print('eval', eval)
+                        # print('wc', lib.get_white_check())
+                        # print('bc', lib.get_black_check())
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
