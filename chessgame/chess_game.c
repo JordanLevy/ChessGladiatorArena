@@ -1743,7 +1743,7 @@ void print_move(struct Move move){
 
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
-        printf("%c%d\n", file, rank);
+        printf("%c%d", file, rank);
 
 }
 
@@ -1793,14 +1793,17 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
+            printf("#\n");
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
+            printf("#\n");
             return INT_MAX - start_depth + depth;
         }
         printf("Stalemate at depth %d\n", start_depth - depth);
         return 0;
     }
+    printf("\n");
 
     if(depth == 0){
         return static_eval();
