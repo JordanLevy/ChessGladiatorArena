@@ -1783,24 +1783,7 @@ int search_moves(int depth, int start_depth){
     return bestEvaluation;
 }
 
-char* move_to_notation(struct Move move){
-    char *str = (char*)malloc(100 * sizeof(char));
-    int s = move.start;
-    int e = move.end;
-    //int m = move.id;
-
-    char file = file_letter(7 - get_file(s));
-    int rank = get_rank(s) + 1;
-
-    char f = file_letter(7 - get_file(e));
-    int r = get_rank(e) + 1;
-
-    //sprintf(str, "%c%c%d%c%d", 100, piece_letter(get_piece(s), true), file, rank, f, r);
-
-    return str;
-}
-
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, char* line){
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -1810,19 +1793,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
-            //printf("#\n");
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
-            //printf("#\n");
             return INT_MAX - start_depth + depth;
         }
-        //printf("Stalemate at depth %d\n", start_depth - depth);
         return 0;
     }
-    //printf("\n");
-
     if(depth == 0){
+        free(moves);
         return static_eval();
     }
     // this is refering to the white making a move
@@ -1830,13 +1809,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int maxEval = INT_MIN;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
-            /*for (int j = 0; j < depth; j++){
-                printf("\t");
-            }
-            printf("%d", depth);
-            print_move(move);*/
             apply_move(move.start, move.end, move.id);
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, strcat(line, ""));
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1844,7 +1818,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 maxEval = evaluation;
                 if(depth == start_depth){
                     engine_move = move;
-                    printf(line);
                 }
             }
             alpha = max(alpha, evaluation);
@@ -1860,13 +1833,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int minEval = INT_MAX;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
-            /*for (int j = 0; j < depth; j++){
-                printf("\t");
-            }
-            printf("%d", depth);
-            print_move(move);*/
             apply_move(move.start, move.end, move.id);
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, strcat(line, ""));
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1874,7 +1842,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 minEval = evaluation;
                 if(depth == start_depth){
                     engine_move = move;
-                    printf(line);
                 }
             }
             beta = min(beta, evaluation);
@@ -1888,7 +1855,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 }
 
 int calc_eng_move(int depth){
-    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, "");
+    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false);
 
 }
 int get_eng_move_start(){
