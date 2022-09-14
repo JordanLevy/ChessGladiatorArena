@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 #define len(x)  (sizeof(x) / sizeof((x)[0]))
 
@@ -216,6 +217,26 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 struct Move *game_possible_moves;
 int num_game_moves;
 
+unsigned long long r_shift(unsigned long long x, int n){
+    if(n <= 0){
+        return x << abs(n);
+    }
+    if(x > 0){
+        return x >> n;
+    }
+    unsigned long long y = x >> 1;
+    y &= ~square_a8;
+    y = (y >> (n - 1));
+    return y;
+}
+
+unsigned long long l_shift(unsigned long long x, int n){
+    if(n <= 0){
+        return r_shift(x, abs(n));
+    }
+    return x << n;
+}
+
 unsigned long long generate_bitboard(int squares[], int num_squares){
     unsigned long long a = 0ULL;
     for(int i = 0; i < num_squares; i++){
@@ -224,12 +245,18 @@ unsigned long long generate_bitboard(int squares[], int num_squares){
     return a;
 }
 
-unsigned long long generate_bitboard_from_range(int min_r, int max_r){
+unsigned long long generate_bitboard_from_range_old(int min_r, int max_r){
     unsigned long long a = 0ULL;
     for(int i = min_r; i <= max_r; i++){
         a |= 1ULL << i;
     }
     return a;
+}
+
+unsigned long long generate_bitboard_from_range(int a, int b){
+    unsigned long long ans = ~(0ULL);
+    ans = r_shift(ans, 64 - b + a - 1) << a;
+    return ans;
 }
 
 void init_bitboards(){
@@ -419,26 +446,6 @@ void init_masks(){
     file_gh = file[7] | file[8];
 }
 
-unsigned long long r_shift(unsigned long long x, int n){
-    if(n <= 0){
-        return x << abs(n);
-    }
-    if(x > 0){
-        return x >> n;
-    }
-    unsigned long long y = x >> 1;
-    y &= ~square_a8;
-    y = (y >> (n - 1));
-    return y;
-}
-
-unsigned long long l_shift(unsigned long long x, int n){
-    if(n <= 0){
-        return r_shift(x, abs(n));
-    }
-    return x << n;
-}
-
 int get_piece(int square){
     return board[square];
 }
@@ -619,6 +626,8 @@ unsigned long long span_piece(unsigned long long mask, int i, unsigned long long
     return squares;
 }
 
+//TODO: generate_bitboard_from_range is slow, it loops 64 times
+//Replace with bitwise math
 unsigned long long line_between_pieces(unsigned long long direction, int piece_1, int piece_2){
     unsigned long long mask = 0ULL;
     if(!((1ULL << piece_1) & direction)){
@@ -1496,7 +1505,6 @@ char file_letter(int n){
     return letter[n];
 }
 
-
 unsigned long long perft_test(int depth){
     if(depth == 0){
         return 1ULL;
@@ -1539,8 +1547,6 @@ unsigned long long detailed_perft(int depth){
     int m;
     char file;
     int rank;
-
-
 
     for(int i = 0; i < numElems; i++){
 
@@ -1615,7 +1621,6 @@ void update_game_possible_moves(){
     update_possible_moves(game_possible_moves, &num_game_moves);
 }
 
-
 bool try_undo_move(){
     if(num_moves > 0){
         undo_move();
@@ -1625,7 +1630,6 @@ bool try_undo_move(){
     }
     return false;
 }
-
 
 bool is_game_legal_move(int start, int end, int promo){
     return is_legal_move(start, end, promo, game_possible_moves, num_game_moves);
@@ -1719,6 +1723,7 @@ void run_game(){
         draw_board();
     }
 }
+
 int static_eval(){
     return mat_eval + pos_eval;
 }
@@ -1734,19 +1739,21 @@ void update_piece_moves(int square){
 
 void print_move(struct Move move){
         int s = move.start;
+        if(s == -1){
+            return;
+        }
         int e = move.end;
         //int m = move.id;
 
         char file = file_letter(7 - get_file(s));
         int rank = get_rank(s) + 1;
-        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
+        printf("%c%c%d", piece_letter(move.piece, true), file, rank);
 
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
         printf("%c%d", file, rank);
 
 }
-
 
 int search_moves(int depth, int start_depth){
     if(depth == 0){
@@ -1783,7 +1790,27 @@ int search_moves(int depth, int start_depth){
     return bestEvaluation;
 }
 
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player){
+void print_line(struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
+    print_move(m6);
+    printf(" ");
+    print_move(m5);
+    printf(" ");
+    print_move(m4);
+    printf(" ");
+    print_move(m3);
+    printf(" ");
+    print_move(m2);
+    printf(" ");
+    print_move(m1);
+    printf(" ");
+    print_move(m0);
+    printf("\n");
+}
+
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
+    if(depth == 0 && !white_check && !black_check){
+        return static_eval();
+    }
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -1793,6 +1820,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
+            print_line(m6, m5, m4, m3, m2, m1, m0);
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
@@ -1810,7 +1838,28 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false);
+            if(depth == 6){
+                m6 = move;
+            }
+            else if(depth == 5){
+                m5 = move;
+            }
+            else if(depth == 4){
+                m4 = move;
+            }
+            else if(depth == 3){
+                m3 = move;
+            }
+            else if(depth == 2){
+                m2 = move;
+            }
+            else if(depth == 1){
+                m1 = move;
+            }
+            else if(depth == 0){
+                m0 = move;
+            }
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1834,7 +1883,28 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true);
+            if(depth == 6){
+                m6 = move;
+            }
+            else if(depth == 5){
+                m5 = move;
+            }
+            else if(depth == 4){
+                m4 = move;
+            }
+            else if(depth == 3){
+                m3 = move;
+            }
+            else if(depth == 2){
+                m2 = move;
+            }
+            else if(depth == 1){
+                m1 = move;
+            }
+            else if(depth == 0){
+                m0 = move;
+            }
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1855,8 +1925,14 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 }
 
 int calc_eng_move(int depth){
-    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false);
-
+    struct Move nm;
+    nm.capture = -1;
+    nm.end = -1;
+    nm.eval = -1;
+    nm.id = -1;
+    nm.piece = -1;
+    nm.start = -1;
+    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
 }
 int get_eng_move_start(){
     return engine_move.start;
@@ -1899,39 +1975,11 @@ int get_pos_eval(){
     return pos_eval;
 }
 
-
 int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
-    //update_game_possible_moves();
-    //apply_move(nota_to_numb('g', 2), nota_to_numb('g', 3), 0);
-    //update_game_possible_moves();
-    run_game();
-    //struct Move test1 = seach_moves(5);
-    //printf("%d %d %d", test1.start, test1.end, test1.eval);
-    //h3_perft(7);
     //run_game();
-    //printf("Perft: %llu\n", detailed_perft(7));
-    //printf("%llu", perft_test(5));
-    /*apply_move(nota_to_numb('g', 2), nota_to_numb('g', 3), 0);
-    apply_move(nota_to_numb('h', 7), nota_to_numb('h', 6), 0);
-    apply_move(nota_to_numb('f', 1), nota_to_numb('g', 2), 0);
-    apply_move(nota_to_numb('h', 8), nota_to_numb('h', 7), 0);
-    apply_move(nota_to_numb('g', 1), nota_to_numb('h', 3), 0);
-    apply_move(nota_to_numb('h', 6), nota_to_numb('h', 5), 0);
-    printf("Perft: %llu\n", detailed_perft(1));
+    printf("Perft: %llu\n", perft_test(6));
 
-    for(int i = 0; i < 4; i++){
-        printf("f %d\n", rook_pos[i]);
-    }
-
-    for(int i = 0; i < 4; i++){
-        printf("g %d\n", rook_num_moves[i]);
-    }
-
-    for(int i = 0; i < 2; i++){
-        printf("h %d\n", king_num_moves[i]);
-    }*/
-    printf("Perft: %llu\n", detailed_perft(5));
     return 0;
 }

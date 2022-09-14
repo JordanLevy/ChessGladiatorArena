@@ -185,7 +185,7 @@ def run_game():
     clicking = False
     init_board()
 
-    fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+    fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"#b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     lib.init(c_char_p(fen), len(fen))
 
     lib.update_game_possible_moves()
@@ -249,7 +249,7 @@ def run_game():
                             move_count += 1
                             eval = lib.calc_eng_move(6)
                             #print(move_count)
-                        # print("time to engine move", time.time() - st)
+                        print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
                         # print('bc', lib.get_black_check())
