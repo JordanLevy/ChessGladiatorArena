@@ -6,6 +6,7 @@ import time
 import pygame
 from pygame.locals import *
 
+
 class Move(Structure):
     _fields_ = [('start', c_int),
                 ('end', c_int),
@@ -13,6 +14,7 @@ class Move(Structure):
                 ('capture', c_int),
                 ('piece', c_int),
                 ('eval', c_int)]
+
 
 screen = None
 piece_img = []
@@ -32,7 +34,7 @@ YELLOW = (255, 255, 0, 50)
 
 board = []
 
-lib = CDLL('./chess_game.so')
+lib = CDLL('./ChessEngine/chess_game.so')
 
 lib.init.argtypes = [c_char_p, c_int]
 
@@ -172,6 +174,7 @@ def get_updated_board():
     global board
     board = [i for i in lib.get_board_state().contents]
 
+
 def print_move(m):
     print(m.piece, m.start, m.end)
 
@@ -185,7 +188,8 @@ def run_game():
     clicking = False
     init_board()
 
-    fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"#b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+    fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
+    # fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     lib.init(c_char_p(fen), len(fen))
 
     lib.update_game_possible_moves()
@@ -244,11 +248,11 @@ def run_game():
                         if move_count < 30:
                             move_count += 1
                             eval = lib.calc_eng_move(6)
-                            #print(move_count)
+                            # print(move_count)
                         else:
                             move_count += 1
                             eval = lib.calc_eng_move(6)
-                            #print(move_count)
+                            # print(move_count)
                         print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
