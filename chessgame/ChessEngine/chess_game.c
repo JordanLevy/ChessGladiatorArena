@@ -166,6 +166,8 @@ bool white_turn = true;
 unsigned long long bitboards[13] = {0ULL};
 struct Move move_list[256];
 
+int threaten_square_to_pieces[64][12];
+bool threaten_piece_to_squares[64][64];
 unsigned long long not_black_pieces = 0ULL;
 unsigned long long not_white_pieces = 0ULL;
 unsigned long long all_squares = 0ULL;
@@ -1732,7 +1734,7 @@ int static_eval(){
 void update_piece_moves(int square){
     int piece_type = get_piece(square);
     if (piece_type == 4){
-        return;
+        add_moves_position(sliding_piece(not_white_pieces, square, occupied, true, false, 0ULL), square, 0, 0, moves, numElems, piece_type);
     }
 
 }
