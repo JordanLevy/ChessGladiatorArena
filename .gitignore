@@ -128,3 +128,7 @@ dmypy.json
 # idea folder has user project files
 .idea/
 chessgame/.idea/
+
+# codeblocks files
+.depend
+.layout
