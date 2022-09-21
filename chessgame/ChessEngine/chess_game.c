@@ -460,7 +460,8 @@ unsigned long long reverse(unsigned long long i){
 }
 
 int leading_zeros(unsigned long long i){
-    if(i == 0){
+    return __builtin_clzll(i);
+    /*if(i == 0){
         return 64;
     }
     if(i < 0){
@@ -489,7 +490,11 @@ int leading_zeros(unsigned long long i){
         x = x << 2;
     }
     n -= x >> 31;
-    return n;
+    return n;*/
+}
+
+int trailing_zeros(unsigned long long i){
+    return __builtin_ctzll(i);
 }
 
 bool resolves_check(int start, int end, int move_id){
@@ -568,16 +573,19 @@ bool resolves_check(int start, int end, int move_id){
 
 void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
     struct Move mov;
-    for(int i = 0; i < 64; i++){
-        if((1ULL << i) & mask){
-            for(int j = min_id; j <= max_id; j++){
-                if(resolves_check(i + start_offset, i + end_offset, j)){
-                    mov.start = i + start_offset;
-                    mov.end = i + end_offset;
-                    mov.id = j;
-                    mov.piece = piece_type;
-                    append_move(moves, mov, numElems);
-                }
+    int i;
+    unsigned long long possibility = mask&~(mask-1);
+    while(possibility != 0){
+        i = trailing_zeros(possibility);
+        mask &=~(possibility);
+        possibility=mask&~(mask-1);
+        for(int j = min_id; j <= max_id; j++){
+            if(resolves_check(i + start_offset, i + end_offset, j)){
+                mov.start = i + start_offset;
+                mov.end = i + end_offset;
+                mov.id = j;
+                mov.piece = piece_type;
+                append_move(moves, mov, numElems);
             }
         }
     }
@@ -586,16 +594,19 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
 
 void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
     struct Move mov;
-    for(int i = 0; i < 64; i++){
-        if((1ULL << i) & mask){
-            for(int j = min_id; j <= max_id; j++){
-                if(resolves_check(start_position, i, j)){
-                    mov.start = start_position;
-                    mov.end = i;
-                    mov.id = j;
-                    mov.piece = piece_type;
-                    append_move(moves, mov, numElems);
-                }
+    int i;
+    unsigned long long possibility = mask&~(mask-1);
+    while(possibility != 0){
+        i = trailing_zeros(possibility);
+        mask &=~(possibility);
+        possibility=mask&~(mask-1);
+        for(int j = min_id; j <= max_id; j++){
+            if(resolves_check(start_position, i, j)){
+                mov.start = start_position;
+                mov.end = i;
+                mov.id = j;
+                mov.piece = piece_type;
+                append_move(moves, mov, numElems);
             }
         }
     }
@@ -757,14 +768,17 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
             counter = 0;
             pin_loc[0] = -1;
             pin_loc[1] = -1;
-            for(int i = 0; i < 64; i++){
-                if((1ULL << i) & pos_pin){
-                    counter += 1;
-                    if(counter > 2){
-                        break;
-                    }
-                    pin_loc[counter - 1] = i;
+            int i;
+            unsigned long long possibility = pos_pin&~(pos_pin-1);
+            while(possibility != 0){
+                i = trailing_zeros(possibility);
+                pos_pin &=~(possibility);
+                possibility=pos_pin&~(pos_pin-1);
+                counter += 1;
+                if(counter > 2){
+                    break;
                 }
+                pin_loc[counter - 1] = i;
             }
             // if there is only one piece on the pinning line
             if(counter == 1){
@@ -976,9 +990,7 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
 unsigned long long unsafe_for_white(){
     num_pieces_delivering_check = 0;
     blocking_squares = 0ULL;
-    for(int i = 0; i < 64; i++){
-        pinning_squares[i] = 0ULL;
-    }
+    memset(pinning_squares, 0ULL, 512);
     en_passant_pinned = -1;
 
     unsigned long long unsafe = 0ULL;
