@@ -4,6 +4,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <sys/time.h>
 
 #define len(x)  (sizeof(x) / sizeof((x)[0]))
 
@@ -216,6 +217,8 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
 struct Move *game_possible_moves;
 int num_game_moves;
+
+double totalTime = 0.0d;
 
 unsigned long long r_shift(unsigned long long x, int n){
     if(n <= 0){
@@ -572,6 +575,9 @@ bool resolves_check(int start, int end, int move_id){
 
 
 void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
+    struct timeval start, stop;
+    double secs = 0;
+
     struct Move mov;
     int i;
     unsigned long long possibility = mask&~(mask-1);
@@ -585,10 +591,16 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
                 mov.end = i + end_offset;
                 mov.id = j;
                 mov.piece = piece_type;
+                gettimeofday(&start, NULL);
                 append_move(moves, mov, numElems);
+                gettimeofday(&stop, NULL);
+                secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
+                totalTime += secs;
             }
         }
     }
+
+
 }
 
 
@@ -1991,7 +2003,8 @@ int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    printf("Perft: %llu\n", perft_test(6));
-
+    printf("Perft: %llu\n", perft_test(5));
+    printf("Total time: %lf\n", totalTime);
+    //.1577
     return 0;
 }
