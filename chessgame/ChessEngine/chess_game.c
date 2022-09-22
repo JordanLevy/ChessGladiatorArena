@@ -1402,7 +1402,8 @@ bool apply_move(int start, int end, int move_id){
     mov.end = new_e;
     mov.id = new_m;
     mov.capture = new_c;
-    move_list[num_moves] = mov;
+    move_list[num_moves] = mov;secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
+    totalTime += secs;
     incr_num_moves();
     flip_turns();
     return true;
