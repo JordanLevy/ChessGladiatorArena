@@ -188,8 +188,8 @@ def run_game():
     clicking = False
     init_board()
 
-    fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
-    # fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+    # fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
+    fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     lib.init(c_char_p(fen), len(fen))
 
     lib.update_game_possible_moves()

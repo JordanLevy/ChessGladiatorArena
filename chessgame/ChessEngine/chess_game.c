@@ -4,7 +4,6 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <sys/time.h>
 
 #define len(x)  (sizeof(x) / sizeof((x)[0]))
 
@@ -33,6 +32,20 @@ struct Move {
 };
 
 struct Move engine_move;
+
+
+// this will be for spead up
+struct Move best1[4];
+struct Move best2[4];
+struct Move best3[4];
+struct Move best4[4];
+
+int score1 = INT_MAX;
+int score2 = INT_MAX;
+int score3 = INT_MAX;
+int score4 = INT_MAX;
+
+
 
 // this is the pos_eval gride
 
@@ -217,8 +230,6 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
 struct Move *game_possible_moves;
 int num_game_moves;
-
-double totalTime = 0.0d;
 
 unsigned long long r_shift(unsigned long long x, int n){
     if(n <= 0){
@@ -463,8 +474,7 @@ unsigned long long reverse(unsigned long long i){
 }
 
 int leading_zeros(unsigned long long i){
-    return __builtin_clzll(i);
-    /*if(i == 0){
+    if(i == 0){
         return 64;
     }
     if(i < 0){
@@ -493,11 +503,7 @@ int leading_zeros(unsigned long long i){
         x = x << 2;
     }
     n -= x >> 31;
-    return n;*/
-}
-
-int trailing_zeros(unsigned long long i){
-    return __builtin_ctzll(i);
+    return n;
 }
 
 bool resolves_check(int start, int end, int move_id){
@@ -575,50 +581,35 @@ bool resolves_check(int start, int end, int move_id){
 
 
 void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
-    struct timeval start, stop;
-    double secs = 0;
-
     struct Move mov;
-    int i;
-    unsigned long long possibility = mask&~(mask-1);
-    while(possibility != 0){
-        i = trailing_zeros(possibility);
-        mask &=~(possibility);
-        possibility=mask&~(mask-1);
-        for(int j = min_id; j <= max_id; j++){
-            if(resolves_check(i + start_offset, i + end_offset, j)){
-                mov.start = i + start_offset;
-                mov.end = i + end_offset;
-                mov.id = j;
-                mov.piece = piece_type;
-                gettimeofday(&start, NULL);
-                append_move(moves, mov, numElems);
-                gettimeofday(&stop, NULL);
-                secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
-                totalTime += secs;
+    for(int i = 0; i < 64; i++){
+        if((1ULL << i) & mask){
+            for(int j = min_id; j <= max_id; j++){
+                if(resolves_check(i + start_offset, i + end_offset, j)){
+                    mov.start = i + start_offset;
+                    mov.end = i + end_offset;
+                    mov.id = j;
+                    mov.piece = piece_type;
+                    append_move(moves, mov, numElems);
+                }
             }
         }
     }
-
-
 }
 
 
 void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
     struct Move mov;
-    int i;
-    unsigned long long possibility = mask&~(mask-1);
-    while(possibility != 0){
-        i = trailing_zeros(possibility);
-        mask &=~(possibility);
-        possibility=mask&~(mask-1);
-        for(int j = min_id; j <= max_id; j++){
-            if(resolves_check(start_position, i, j)){
-                mov.start = start_position;
-                mov.end = i;
-                mov.id = j;
-                mov.piece = piece_type;
-                append_move(moves, mov, numElems);
+    for(int i = 0; i < 64; i++){
+        if((1ULL << i) & mask){
+            for(int j = min_id; j <= max_id; j++){
+                if(resolves_check(start_position, i, j)){
+                    mov.start = start_position;
+                    mov.end = i;
+                    mov.id = j;
+                    mov.piece = piece_type;
+                    append_move(moves, mov, numElems);
+                }
             }
         }
     }
@@ -780,17 +771,14 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
             counter = 0;
             pin_loc[0] = -1;
             pin_loc[1] = -1;
-            int i;
-            unsigned long long possibility = pos_pin&~(pos_pin-1);
-            while(possibility != 0){
-                i = trailing_zeros(possibility);
-                pos_pin &=~(possibility);
-                possibility=pos_pin&~(pos_pin-1);
-                counter += 1;
-                if(counter > 2){
-                    break;
+            for(int i = 0; i < 64; i++){
+                if((1ULL << i) & pos_pin){
+                    counter += 1;
+                    if(counter > 2){
+                        break;
+                    }
+                    pin_loc[counter - 1] = i;
                 }
-                pin_loc[counter - 1] = i;
             }
             // if there is only one piece on the pinning line
             if(counter == 1){
@@ -1002,7 +990,9 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
 unsigned long long unsafe_for_white(){
     num_pieces_delivering_check = 0;
     blocking_squares = 0ULL;
-    memset(pinning_squares, 0ULL, 512);
+    for(int i = 0; i < 64; i++){
+        pinning_squares[i] = 0ULL;
+    }
     en_passant_pinned = -1;
 
     unsigned long long unsafe = 0ULL;
@@ -1402,8 +1392,7 @@ bool apply_move(int start, int end, int move_id){
     mov.end = new_e;
     mov.id = new_m;
     mov.capture = new_c;
-    move_list[num_moves] = mov;secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
-    totalTime += secs;
+    move_list[num_moves] = mov;
     incr_num_moves();
     flip_turns();
     return true;
@@ -1832,7 +1821,12 @@ void print_line(struct Move m6, struct Move m5, struct Move m4, struct Move m3, 
     printf("\n");
 }
 
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
+
+// this is what does the pruning
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0, bool Test_depth){
+    if(Test_depth == true){
+
+    }
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
@@ -1884,6 +1878,142 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             else if(depth == 0){
                 m0 = move;
             }
+            if(Test_depth == true){
+
+            }
+
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
+            undo_move();
+            decr_num_moves();
+            flip_turns();
+            if(evaluation > maxEval){
+                maxEval = evaluation;
+                if(depth == start_depth){
+                    engine_move = move;
+                }
+            }
+            alpha = max(alpha, evaluation);
+            if (beta <= alpha){
+                break;
+            }
+        }
+        free(moves);
+        return maxEval;
+    }
+
+    else{
+        int minEval = INT_MAX;
+        for(int i = 0; i < numElems; i++){
+            move = moves[i];
+            apply_move(move.start, move.end, move.id);
+            if(depth == 6){
+                m6 = move;
+            }
+            else if(depth == 5){
+                m5 = move;
+            }
+            else if(depth == 4){
+                m4 = move;
+            }
+            else if(depth == 3){
+                m3 = move;
+            }
+            else if(depth == 2){
+                m2 = move;
+            }
+            else if(depth == 1){
+                m1 = move;
+            }
+            else if(depth == 0){
+                m0 = move;
+            }
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
+            undo_move();
+            decr_num_moves();
+            flip_turns();
+            if(evaluation < minEval){
+                minEval = evaluation;
+                if(depth == start_depth){
+                    engine_move = move;
+                }
+            }
+            beta = min(beta, evaluation);
+            if (beta <= alpha){
+                break;
+            }
+        }
+        free(moves);
+        return minEval;
+    }
+}
+
+
+// this is the test for the depth 4
+int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
+    if(depth == 0 && !white_check && !black_check){
+        int eval = static_eval();
+        if (eval <= score1){
+            score1 = eval;
+            // this is storing witch move we will start with
+            best1[0] = m0
+            best1[1] = m1
+            best1[2] = m2
+            best1[3] = m3
+        }
+        return eval;
+    }
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+    struct Move move;
+
+    if(numElems == 0){
+        free(moves);
+        if(white_check){
+            print_line(m6, m5, m4, m3, m2, m1, m0);
+            return INT_MIN + start_depth - depth;
+        }
+        else if(black_check){
+            return INT_MAX - start_depth + depth;
+        }
+        return 0;
+    }
+    if(depth == 0){
+        free(moves);
+        return static_eval();
+    }
+    // this is refering to the white making a move
+    if (player){
+        int maxEval = INT_MIN;
+        for(int i = 0; i < numElems; i++){
+            move = moves[i];
+            apply_move(move.start, move.end, move.id);
+            if(depth == 6){
+                m6 = move;
+            }
+            else if(depth == 5){
+                m5 = move;
+            }
+            else if(depth == 4){
+                m4 = move;
+            }
+            else if(depth == 3){
+                m3 = move;
+            }
+            else if(depth == 2){
+                m2 = move;
+            }
+            else if(depth == 1){
+                m1 = move;
+            }
+            else if(depth == 0){
+                m0 = move;
+            }
+            if(Test_depth == true){
+
+            }
+
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
             decr_num_moves();
@@ -2004,8 +2134,7 @@ int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    printf("Perft: %llu\n", perft_test(5));
-    printf("Total time: %lf\n", totalTime);
-    //.1577
+    printf("Perft: %llu\n", perft_test(4));
+
     return 0;
 }
