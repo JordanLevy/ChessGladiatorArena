@@ -33,7 +33,7 @@ GREY = (150, 150, 150, 50)
 YELLOW = (255, 255, 0, 50)
 
 board = []
-
+#test
 lib = CDLL('./chess_game.so')
 
 lib.init.argtypes = [c_char_p, c_int]
