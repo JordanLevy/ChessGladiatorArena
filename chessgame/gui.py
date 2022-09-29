@@ -34,7 +34,7 @@ YELLOW = (255, 255, 0, 50)
 
 board = []
 
-lib = CDLL('./ChessEngine/chess_game.so')
+lib = CDLL('./chess_game.so')
 
 lib.init.argtypes = [c_char_p, c_int]
 
@@ -55,7 +55,7 @@ lib.perft_test.restype = c_int
 lib.perft_test.argtypes = [c_int]
 
 lib.calc_eng_move.restype = c_int
-lib.calc_eng_move.argtypes = [c_int]
+lib.calc_eng_move.argtypes = [c_int, c_int]
 
 lib.get_eng_move_start.restype = c_int
 lib.get_eng_move_end.restype = c_int
@@ -247,11 +247,11 @@ def run_game():
                         st = time.time()
                         if move_count < 30:
                             move_count += 1
-                            eval = lib.calc_eng_move(6)
+                            eval = lib.calc_eng_move(4, 6)
                             # print(move_count)
                         else:
                             move_count += 1
-                            eval = lib.calc_eng_move(6)
+                            eval = lib.calc_eng_move(4, 6)
                             # print(move_count)
                         print("time to engine move", time.time() - st)
                         # print('eval', eval)

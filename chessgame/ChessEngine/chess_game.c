@@ -45,7 +45,9 @@ int score2 = INT_MAX;
 int score3 = INT_MAX;
 int score4 = INT_MAX;
 
-
+// this best test alfa and bata
+int best_alpha = INT_MIN;
+int best_beta = INT_MAX;
 
 // this is the pos_eval gride
 
@@ -1823,13 +1825,14 @@ void print_line(struct Move m6, struct Move m5, struct Move m4, struct Move m3, 
 
 
 // this is what does the pruning
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0, bool Test_depth){
-    if(Test_depth == true){
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
 
-    }
+
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
+
+
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -1878,9 +1881,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             else if(depth == 0){
                 m0 = move;
             }
-            if(Test_depth == true){
-
-            }
 
             int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
@@ -1893,6 +1893,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 }
             }
             alpha = max(alpha, evaluation);
+            best_alpha = max(best_alpha, alpha);
             if (beta <= alpha){
                 break;
             }
@@ -1938,6 +1939,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 }
             }
             beta = min(beta, evaluation);
+            best_beta = min(best_beta, beta);
             if (beta <= alpha){
                 break;
             }
@@ -1955,10 +1957,10 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
         if (eval <= score1){
             score1 = eval;
             // this is storing witch move we will start with
-            best1[0] = m0
-            best1[1] = m1
-            best1[2] = m2
-            best1[3] = m3
+            best1[0] = m4;
+            best1[1] = m3;
+            best1[2] = m2;
+            best1[3] = m1;
         }
         return eval;
     }
@@ -1972,12 +1974,40 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
         free(moves);
         if(white_check){
             print_line(m6, m5, m4, m3, m2, m1, m0);
-            return INT_MIN + start_depth - depth;
+            int eval = INT_MIN + start_depth - depth;
+            if (eval <= score1){
+                score1 = eval;
+                // this is storing witch move we will start with
+                best1[0] = m4;
+                best1[1] = m3;
+                best1[2] = m2;
+                best1[3] = m1;
+            }
+            return eval;
         }
         else if(black_check){
-            return INT_MAX - start_depth + depth;
+            int eval = INT_MAX - start_depth + depth;
+            if (eval <= score1){
+                score1 = eval;
+                // this is storing witch move we will start with
+                best1[0] = m4;
+                best1[1] = m3;
+                best1[2] = m2;
+                best1[3] = m1;
+            }
+            return eval;
         }
-        return 0;
+        int eval = 0;
+        if (eval <= score1){
+            score1 = eval;
+            // this is storing witch move we will start with
+            // the first move is the hiest
+            best1[0] = m4;
+            best1[1] = m3;
+            best1[2] = m2;
+            best1[3] = m1;
+        }
+        return eval;
     }
     if(depth == 0){
         free(moves);
@@ -2010,11 +2040,8 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             else if(depth == 0){
                 m0 = move;
             }
-            if(Test_depth == true){
 
-            }
-
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
+            int evaluation = test_depth_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2059,7 +2086,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             else if(depth == 0){
                 m0 = move;
             }
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
+            int evaluation = test_depth_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2079,7 +2106,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
     }
 }
 
-int calc_eng_move(int depth){
+int calc_eng_move(int test_depth, int total_depth){
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2087,7 +2114,25 @@ int calc_eng_move(int depth){
     nm.id = -1;
     nm.piece = -1;
     nm.start = -1;
-    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
+
+    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
+    struct Move move;
+    // apply 4 moves
+    for(int i = 0; i<4; i++){
+        move = best1[i];
+        apply_move(move.start, move.end, move.id);
+    }
+
+    search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
+
+
+    // undo 4 moves
+    for(int i = 0; i<4; i++){
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+    }
+    return search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, nm, nm, nm, nm, nm, nm, nm);
 }
 int get_eng_move_start(){
     return engine_move.start;
@@ -2134,7 +2179,7 @@ int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    printf("Perft: %llu\n", perft_test(4));
+    printf("Perft: %llu\n", perft_test(6));
 
     return 0;
 }
