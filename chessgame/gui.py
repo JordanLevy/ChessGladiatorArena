@@ -55,7 +55,10 @@ lib.perft_test.restype = c_int
 lib.perft_test.argtypes = [c_int]
 
 lib.calc_eng_move.restype = c_int
-lib.calc_eng_move.argtypes = [c_int, c_int]
+lib.calc_eng_move.argtypes = [c_int]
+
+lib.calc_eng_move_with_test.restype = c_int
+lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
 
 lib.get_eng_move_start.restype = c_int
 lib.get_eng_move_end.restype = c_int
@@ -245,14 +248,9 @@ def run_game():
                         get_updated_board()
                         refresh_graphics()
                         st = time.time()
-                        if move_count < 30:
-                            move_count += 1
-                            eval = lib.calc_eng_move(4, 6)
-                            # print(move_count)
-                        else:
-                            move_count += 1
-                            eval = lib.calc_eng_move(4, 6)
-                            # print(move_count)
+                        move_count += 1
+                        #eval = lib.calc_eng_move(6)
+                        eval = lib.calc_eng_move_with_test(4, 6)
                         print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())

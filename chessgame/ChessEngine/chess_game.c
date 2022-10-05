@@ -35,10 +35,10 @@ struct Move engine_move;
 
 
 // this will be for spead up
-struct Move best1[4];
-struct Move best2[4];
-struct Move best3[4];
-struct Move best4[4];
+struct Move* best1;
+struct Move* best2;
+struct Move* best3;
+struct Move* best4;
 
 int score1 = INT_MAX;
 int score2 = INT_MAX;
@@ -583,16 +583,17 @@ bool resolves_check(int start, int end, int move_id){
 
 
 void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
-    struct Move mov;
+    struct Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
                 if(resolves_check(i + start_offset, i + end_offset, j)){
-                    mov.start = i + start_offset;
-                    mov.end = i + end_offset;
-                    mov.id = j;
-                    mov.piece = piece_type;
-                    append_move(moves, mov, numElems);
+                    move.start = i + start_offset;
+                    move.end = i + end_offset;
+                    move.id = j;
+                    move.piece = piece_type;
+                    move.capture = get_piece(move.end);
+                    append_move(moves, move, numElems);
                 }
             }
         }
@@ -601,16 +602,17 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
 
 
 void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move* moves, int *numElems, int piece_type){
-    struct Move mov;
+    struct Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
                 if(resolves_check(start_position, i, j)){
-                    mov.start = start_position;
-                    mov.end = i;
-                    mov.id = j;
-                    mov.piece = piece_type;
-                    append_move(moves, mov, numElems);
+                    move.start = start_position;
+                    move.end = i;
+                    move.id = j;
+                    move.piece = piece_type;
+                    move.capture = get_piece(move.end);
+                    append_move(moves, move, numElems);
                 }
             }
         }
@@ -802,20 +804,20 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
                     // and this isn't the first move of the game
                     if(num_moves > 0){
                         // get the previous move
-                        struct Move mov = move_list[num_moves - 1];
+                        struct Move move = move_list[num_moves - 1];
                         // and the previous move was a double pawn push
-                        if(mov.id == 13){
+                        if(move.id == 13){
                             // we only care about this en passant pinning situation horizontally
                             // everything else is handled via regular pins
                             if(get_rank(pin_loc[0]) == get_rank(pin_loc[1])){
                                 // if it's a white pawn
-                                if(is_white_piece(get_piece(mov.end))){
+                                if(is_white_piece(get_piece(move.end))){
                                     // mark that it is illegal for white to capture en passant on that square
-                                    en_passant_pinned = mov.end - 8;
+                                    en_passant_pinned = move.end - 8;
                                 }
                                 else{
                                     // mark that it is illegal for black to capture en passant on that square
-                                    en_passant_pinned = mov.end + 8;
+                                    en_passant_pinned = move.end + 8;
                                 }
                             }
                         }
@@ -1203,10 +1205,10 @@ void init_board(char* fen, size_t len){
 }
 
 bool is_legal_move(int start, int end, int promo, struct Move* moves, size_t n){
-    struct Move mov;
+    struct Move move;
     for(int i = 0; i < n; i++){
-        mov = moves[i];
-        if(mov.start == start && mov.end == end && mov.id == promo){
+        move = moves[i];
+        if(move.start == start && move.end == end && move.id == promo){
             return true;
         }
     }
@@ -1389,12 +1391,12 @@ bool apply_move(int start, int end, int move_id){
             }
         }
     }
-    struct Move mov;
-    mov.start = new_s;
-    mov.end = new_e;
-    mov.id = new_m;
-    mov.capture = new_c;
-    move_list[num_moves] = mov;
+    struct Move move;
+    move.start = new_s;
+    move.end = new_e;
+    move.id = new_m;
+    move.capture = new_c;
+    move_list[num_moves] = move;
     incr_num_moves();
     flip_turns();
     return true;
@@ -1406,11 +1408,116 @@ void undo_move(){
         return;
     }
     //previous move (the one we're undoing)
-    struct Move mov = move_list[num_moves - 1];
-    int start = mov.start;
-    int end = mov.end;
-    int move_id = mov.id;
-    int capture = mov.capture;
+    struct Move move = move_list[num_moves - 1];
+    int start = move.start;
+    int end = move.end;
+    int move_id = move.id;
+    int capture = move.capture;
+    // the piece that was moved
+    int moved_piece = get_piece(end);
+    bool is_white = is_white_piece(moved_piece);
+    remove_piece(moved_piece, end);
+    add_piece(moved_piece, start);
+    // last move was a capture
+    if(capture > 0){
+        add_piece(capture, end);
+    }
+    if(move_id == 0){
+    }
+    // last move was pawn promotion
+    else if(1 <= move_id && move_id <= 12){
+        remove_piece(move_id, start);
+        if(is_white){
+            add_piece(1, start);
+        }
+        else{
+            add_piece(7, start);
+        }
+    }
+    // last move was double pawn push
+    else if(move_id == 13){
+    }
+    // last move was en passant
+    else if(move_id == 14){
+        if(is_white){
+            add_piece(7, end - 8);
+        }
+        else{
+            add_piece(1, end + 8);
+        }
+    }
+    // last move was castling
+    else if(move_id == 15){
+        // white king
+        if(moved_piece == 6){
+            //kingside
+            if(end - start == -2){
+                remove_piece(4, rook_pos[1]);
+                add_piece(4, 0);
+                rook_pos[1] = 0;
+            }
+            //queenside
+            if(end - start == 2){
+                remove_piece(4, rook_pos[0]);
+                add_piece(4, 7);
+                rook_pos[0] = 7;
+            }
+        }
+        // black king
+        else if(moved_piece == 12){
+            //kingside
+            if(end - start == -2){
+                remove_piece(10, rook_pos[3]);
+                add_piece(10, 56);
+                rook_pos[3] = 56;
+            }
+            //queenside
+            if(end - start == 2){
+                remove_piece(10, rook_pos[2]);
+                add_piece(10, 63);
+                rook_pos[2] = 63;
+            }
+        }
+    }
+    //if we're undoing a white rook move
+    if(moved_piece == 4){
+        for(int i = 0; i < 2; i++){
+            if(end == rook_pos[i]){
+                rook_pos[i] = start;
+                rook_num_moves[i] -= 1;
+                break;
+            }
+        }
+    }
+    // if we're undoing a black rook move
+    else if(moved_piece == 10){
+        for(int i = 2; i < 4; i++){
+            if(end == rook_pos[i]){
+                rook_pos[i] = start;
+                rook_num_moves[i] -= 1;
+                break;
+            }
+        }
+    }
+    // if we're undoing a white king move
+    if(moved_piece == 6){
+        king_num_moves[0] -= 1;
+    }
+    // if we're undoing a black king move
+    else if(moved_piece == 12){
+        king_num_moves[1] -= 1;
+    }
+}
+
+void undo_specific_move(struct Move move){
+    // can't undo if nothing has been played
+    if(num_moves == 0){
+        return;
+    }
+    int start = move.start;
+    int end = move.end;
+    int move_id = move.id;
+    int capture = move.capture;
     // the piece that was moved
     int moved_piece = get_piece(end);
     bool is_white = is_white_piece(moved_piece);
@@ -1755,9 +1862,9 @@ void update_piece_moves(int square){
 
 void print_move(struct Move move){
         int s = move.start;
-        if(s == -1){
+        /*if(s == -1){
             return;
-        }
+        }*/
         int e = move.end;
         //int m = move.id;
 
@@ -1796,6 +1903,7 @@ int search_moves(int depth, int start_depth){
         if(evaluation < bestEvaluation){
             bestEvaluation = evaluation;
             if(depth == start_depth){
+
                 engine_move = move;
             }
         }
@@ -1806,32 +1914,20 @@ int search_moves(int depth, int start_depth){
     return bestEvaluation;
 }
 
-void print_line(struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
-    print_move(m6);
-    printf(" ");
-    print_move(m5);
-    printf(" ");
-    print_move(m4);
-    printf(" ");
-    print_move(m3);
-    printf(" ");
-    print_move(m2);
-    printf(" ");
-    print_move(m1);
-    printf(" ");
-    print_move(m0);
+void print_line(struct Move* line, size_t n){
+    for(int i = 1; i <= n; i++){
+        print_move(line[i]);
+        printf(" ");
+    }
     printf("\n");
 }
 
 
 // this is what does the pruning
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
-
-
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-
 
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
@@ -1842,7 +1938,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
-            print_line(m6, m5, m4, m3, m2, m1, m0);
+            print_line(line, start_depth);
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
@@ -1860,29 +1956,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            if(depth == 6){
-                m6 = move;
-            }
-            else if(depth == 5){
-                m5 = move;
-            }
-            else if(depth == 4){
-                m4 = move;
-            }
-            else if(depth == 3){
-                m3 = move;
-            }
-            else if(depth == 2){
-                m2 = move;
-            }
-            else if(depth == 1){
-                m1 = move;
-            }
-            else if(depth == 0){
-                m0 = move;
-            }
-
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
+            line[depth] = move;
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, line);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1907,28 +1982,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            if(depth == 6){
-                m6 = move;
-            }
-            else if(depth == 5){
-                m5 = move;
-            }
-            else if(depth == 4){
-                m4 = move;
-            }
-            else if(depth == 3){
-                m3 = move;
-            }
-            else if(depth == 2){
-                m2 = move;
-            }
-            else if(depth == 1){
-                m1 = move;
-            }
-            else if(depth == 0){
-                m0 = move;
-            }
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
+            line[depth] = move;
+            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, line);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -1951,16 +2006,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
 
 // this is the test for the depth 4
-int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move m6, struct Move m5, struct Move m4, struct Move m3, struct Move m2, struct Move m1, struct Move m0){
+int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move* line){
     if(depth == 0 && !white_check && !black_check){
         int eval = static_eval();
         if (eval <= score1){
             score1 = eval;
             // this is storing witch move we will start with
-            best1[0] = m4;
-            best1[1] = m3;
-            best1[2] = m2;
-            best1[3] = m1;
+            for(int i = 1; i <= start_depth; i++){
+                best1[i] = line[i];
+            }
+
         }
         return eval;
     }
@@ -1973,15 +2028,13 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
     if(numElems == 0){
         free(moves);
         if(white_check){
-            print_line(m6, m5, m4, m3, m2, m1, m0);
             int eval = INT_MIN + start_depth - depth;
             if (eval <= score1){
                 score1 = eval;
                 // this is storing witch move we will start with
-                best1[0] = m4;
-                best1[1] = m3;
-                best1[2] = m2;
-                best1[3] = m1;
+                for(int i = 1; i <= start_depth; i++){
+                    best1[i] = line[i];
+                }
             }
             return eval;
         }
@@ -1990,10 +2043,9 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             if (eval <= score1){
                 score1 = eval;
                 // this is storing witch move we will start with
-                best1[0] = m4;
-                best1[1] = m3;
-                best1[2] = m2;
-                best1[3] = m1;
+                for(int i = 1; i <= start_depth; i++){
+                    best1[i] = line[i];
+                }
             }
             return eval;
         }
@@ -2002,10 +2054,9 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             score1 = eval;
             // this is storing witch move we will start with
             // the first move is the hiest
-            best1[0] = m4;
-            best1[1] = m3;
-            best1[2] = m2;
-            best1[3] = m1;
+            for(int i = 1; i <= start_depth; i++){
+                best1[i] = line[i];
+            }
         }
         return eval;
     }
@@ -2019,29 +2070,8 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            if(depth == 6){
-                m6 = move;
-            }
-            else if(depth == 5){
-                m5 = move;
-            }
-            else if(depth == 4){
-                m4 = move;
-            }
-            else if(depth == 3){
-                m3 = move;
-            }
-            else if(depth == 2){
-                m2 = move;
-            }
-            else if(depth == 1){
-                m1 = move;
-            }
-            else if(depth == 0){
-                m0 = move;
-            }
-
-            int evaluation = test_depth_pruning(depth - 1, depth, alpha, beta, false, m6, m5, m4, m3, m2, m1, m0);
+            line[depth] = move;
+            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, false, line);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2065,28 +2095,8 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
         for(int i = 0; i < numElems; i++){
             move = moves[i];
             apply_move(move.start, move.end, move.id);
-            if(depth == 6){
-                m6 = move;
-            }
-            else if(depth == 5){
-                m5 = move;
-            }
-            else if(depth == 4){
-                m4 = move;
-            }
-            else if(depth == 3){
-                m3 = move;
-            }
-            else if(depth == 2){
-                m2 = move;
-            }
-            else if(depth == 1){
-                m1 = move;
-            }
-            else if(depth == 0){
-                m0 = move;
-            }
-            int evaluation = test_depth_pruning(depth - 1, depth, alpha, beta, true, m6, m5, m4, m3, m2, m1, m0);
+            line[depth] = move;
+            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, true, line);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2106,7 +2116,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
     }
 }
 
-int calc_eng_move(int test_depth, int total_depth){
+int calc_eng_move(int depth){
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2115,24 +2125,58 @@ int calc_eng_move(int test_depth, int total_depth){
     nm.piece = -1;
     nm.start = -1;
 
-    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
+    struct Move* line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    for(int i = 0; i <= depth; i++){
+        line[i] = nm;
+    }
+
+    return search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line);
+}
+
+int calc_eng_move_with_test(int test_depth, int total_depth){
+    struct Move nm;
+    nm.capture = -1;
+    nm.end = -1;
+    nm.eval = -1;
+    nm.id = -1;
+    nm.piece = -1;
+    nm.start = -1;
+
+    struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    for(int i = 1; i <= total_depth; i++){
+        line[i] = nm;
+    }
+
+    best1 = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+    for(int i = 1; i <= test_depth; i++){
+        best1[i] = nm;
+    }
+
+    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
+
     struct Move move;
-    // apply 4 moves
-    for(int i = 0; i<4; i++){
+    // apply test_depth moves
+    for(int i = test_depth; i >= 1; i--){
         move = best1[i];
         apply_move(move.start, move.end, move.id);
     }
 
-    search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, nm, nm, nm, nm, nm, nm, nm);
+    search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, line);
 
-
-    // undo 4 moves
-    for(int i = 0; i<4; i++){
-        undo_move();
+    // undo test_depth moves
+    for(int i = 1; i <= test_depth; i++){
+        print_move(best1[i]);
+        printf("\n");
+        draw_board();
+        printf("\n");
+        undo_specific_move(best1[i]);
         decr_num_moves();
         flip_turns();
     }
-    return search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, nm, nm, nm, nm, nm, nm, nm);
+
+
+
+    return search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 }
 int get_eng_move_start(){
     return engine_move.start;
