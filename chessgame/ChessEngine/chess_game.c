@@ -1963,10 +1963,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
-                /*if(depth == start_depth){
-                    engine_move = move;
-                }*/
-                best1[depth] = move;
+                best_line[depth] = move;
             }
             alpha = max(alpha, evaluation);
             best_alpha = max(best_alpha, alpha);
@@ -1990,10 +1987,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
-                /*if(depth == start_depth){
-                    engine_move = move;
-                }*/
-                best1[depth] = move;
+                best_line[depth] = move;
             }
             beta = min(beta, evaluation);
             best_beta = min(best_beta, beta);
@@ -2045,9 +2039,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
-                if(depth == start_depth){
-                    engine_move = move;
-                }
+                best1[depth] = move;
             }
             alpha = max(alpha, evaluation);
             if (beta <= alpha){
@@ -2070,14 +2062,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
-                if(depth == start_depth){
-                    //engine_move = move;
-                }
-                score1 = evaluation;
-                // this is storing witch move we will start with
-                for(int i = 1; i <= depth; i++){
-                    best1[i] = line[i];
-                }
+                best1[depth] = move;
             }
             beta = min(beta, evaluation);
             if (beta <= alpha){
@@ -2163,11 +2148,10 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
 
     int eval = search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 
+    engine_move = best1[test_depth];
     print_line(best1, test_depth);
-    print_move(best1[test_depth]);
+    print_move(engine_move);
     printf("\n");
-    print_move(first_move);
-    engine_move = best1[test_depth];//first_move;
 
     return eval;
 
