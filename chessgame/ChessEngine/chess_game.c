@@ -38,7 +38,7 @@ struct Move engine_move;
 struct Move* best1;
 struct Move* best2;
 struct Move* best3;
-struct Move* best4;
+struct Move* best_line;
 
 int score1 = INT_MAX;
 int score2 = INT_MAX;
@@ -2103,6 +2103,7 @@ int calc_eng_move(int depth){
     return eval;
 }
 
+//this is the same as calc eng move but it has a good first gess
 int calc_eng_move_with_test(int test_depth, int total_depth){
     struct Move nm;
     nm.capture = -1;
@@ -2113,14 +2114,23 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     nm.start = -1;
 
     struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+
     for(int i = 1; i <= total_depth; i++){
         line[i] = nm;
     }
 
+    best_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    for(int i = 1; i <= total_depth; i++){
+        best_line[i] = nm;
+    }
+
     best1 = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+
     for(int i = 1; i <= test_depth; i++){
         best1[i] = nm;
     }
+    print_line(line, total_depth + 1);
+    print_line(best1, total_depth + 1);
 
     test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
 
