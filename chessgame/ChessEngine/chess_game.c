@@ -2127,32 +2127,39 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     nm.piece = -1;
     nm.start = -1;
 
+    // inishalising to a empty list
     struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
     for(int i = 1; i <= total_depth; i++){
         line[i] = nm;
     }
-
+    // inichalisting to a empty list
     best1 = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
     for(int i = 1; i <= test_depth; i++){
         best1[i] = nm;
     }
 
+    // gets best line at test depth and a sings it to best1
     test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
 
-    struct Move first_move = engine_move;
-
+    // for loop varabule
     struct Move move;
 
-    //print_line(best1, test_depth);
-    //draw_board();
+    print_line(best1, test_depth);
+    draw_board();
 
     // apply test_depth moves
     for(int i = test_depth; i >= 1; i--){
         move = best1[i];
         apply_move(move.start, move.end, move.id);
     }
+    printf("this is after it makes the 4 moves best line\n");
+    draw_board();
 
+    //finishing apliing the final moves
     search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, line);
+
+    printf("this is after the rest of the searth is exacutid\n");
+    draw_board();
 
     // undo test_depth moves
     for(int i = 1; i <= test_depth; i++){
@@ -2161,12 +2168,15 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
         flip_turns();
     }
 
+    printf("this is after the moves have been re-undone\n");
+    draw_board();
+
     int eval = search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 
+    printf("this is the print_line and print_move\n");
     print_line(best1, test_depth);
     print_move(best1[test_depth]);
     printf("\n");
-    print_move(first_move);
     engine_move = best1[test_depth];//first_move;
 
     return eval;
