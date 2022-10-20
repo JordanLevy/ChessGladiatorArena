@@ -6,7 +6,6 @@ import time
 import pygame
 from pygame.locals import *
 
-
 class Move(Structure):
     _fields_ = [('start', c_int),
                 ('end', c_int),
@@ -249,12 +248,13 @@ def run_game():
                         refresh_graphics()
                         st = time.time()
                         move_count += 1
-                        eval = lib.calc_eng_move(6)
-                        #eval = lib.calc_eng_move_with_test(4, 6)
-                        print("time to engine move", time.time() - st)
+                        #eval = lib.calc_eng_move(6)
+                        eval = lib.calc_eng_move_with_test(4, 6)
+                        #print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
                         # print('bc', lib.get_black_check())
+
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
@@ -262,7 +262,8 @@ def run_game():
                         lib.update_game_possible_moves()
                         get_updated_board()
                     else:
-                        print('illegal', press_square, release_square, promo_num)
+                        pass
+                        #print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
