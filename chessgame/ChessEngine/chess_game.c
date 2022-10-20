@@ -38,7 +38,7 @@ struct Move engine_move;
 struct Move* best1;
 struct Move* best2;
 struct Move* best3;
-struct Move* best_line;
+struct Move* best4;
 
 int score1 = INT_MAX;
 int score2 = INT_MAX;
@@ -1963,7 +1963,10 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
-                best_line[depth] = move;
+                /*if(depth == start_depth){
+                    engine_move = move;
+                }*/
+                best1[depth] = move;
             }
             alpha = max(alpha, evaluation);
             best_alpha = max(best_alpha, alpha);
@@ -1987,7 +1990,10 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
-                best_line[depth] = move;
+                /*if(depth == start_depth){
+                    engine_move = move;
+                }*/
+                best1[depth] = move;
             }
             beta = min(beta, evaluation);
             best_beta = min(best_beta, beta);
@@ -2039,7 +2045,9 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
-                best1[depth] = move;
+                if(depth == start_depth){
+                    engine_move = move;
+                }
             }
             alpha = max(alpha, evaluation);
             if (beta <= alpha){
@@ -2062,7 +2070,14 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
-                best1[depth] = move;
+                if(depth == start_depth){
+                    //engine_move = move;
+                }
+                score1 = evaluation;
+                // this is storing witch move we will start with
+                for(int i = 1; i <= depth; i++){
+                    best1[i] = line[i];
+                }
             }
             beta = min(beta, evaluation);
             if (beta <= alpha){
@@ -2103,7 +2118,6 @@ int calc_eng_move(int depth){
     return eval;
 }
 
-//this is the same as calc eng move but it has a good first gess
 int calc_eng_move_with_test(int test_depth, int total_depth){
     struct Move nm;
     nm.capture = -1;
@@ -2114,23 +2128,14 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     nm.start = -1;
 
     struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
-
     for(int i = 1; i <= total_depth; i++){
         line[i] = nm;
     }
 
-    best_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
-    for(int i = 1; i <= total_depth; i++){
-        best_line[i] = nm;
-    }
-
     best1 = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
-
     for(int i = 1; i <= test_depth; i++){
         best1[i] = nm;
     }
-    print_line(line, total_depth + 1);
-    print_line(best1, total_depth + 1);
 
     test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
 
@@ -2158,10 +2163,11 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
 
     int eval = search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 
-    engine_move = best1[test_depth];
     print_line(best1, test_depth);
-    print_move(engine_move);
+    print_move(best1[test_depth]);
     printf("\n");
+    print_move(first_move);
+    engine_move = best1[test_depth];//first_move;
 
     return eval;
 
