@@ -6,6 +6,7 @@ import time
 import pygame
 from pygame.locals import *
 
+
 class Move(Structure):
     _fields_ = [('start', c_int),
                 ('end', c_int),
@@ -32,7 +33,7 @@ GREY = (150, 150, 150, 50)
 YELLOW = (255, 255, 0, 50)
 
 board = []
-#test
+# test
 lib = CDLL('./chess_game.so')
 
 lib.init.argtypes = [c_char_p, c_int]
@@ -53,6 +54,9 @@ lib.get_black_check.restype = c_bool
 lib.perft_test.restype = c_int
 lib.perft_test.argtypes = [c_int]
 
+lib.detailed_perft.restype = c_int
+lib.detailed_perft.argtypes = [c_int]
+
 lib.calc_eng_move.restype = c_int
 lib.calc_eng_move.argtypes = [c_int]
 
@@ -71,7 +75,39 @@ lib.get_num_possible_moves.restype = c_int
 lib.get_mat_eval.restype = c_int
 
 lib.get_pos_eval.restype = c_int
+
+lib.get_rook_pos.restype = POINTER(c_int * 4)
+
 move_count = 0
+
+# fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
+start_pos = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+crash_fen = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NbPP1/2RQK2R w Kkq -'
+ke2_fen = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NKPP1/2RQ3R b kq -'
+g5g4_fen = b'r3k2r/ppp2p2/2n2q1p/3p4/P2P2p1/2P1P1P1/3NKPP1/2RQ3R w kq -'
+e3e4_fen = b'r3k2r/ppp2p2/2n2q1p/3p4/P2PP1p1/2P3P1/3NKPP1/2RQ3R b kq -'
+Qf6f2_fen = b'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/2RQ3R w kq - 0 3'
+
+Qf6f2_fen_w_rook_on_b1 = b'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/1R1Q3R w kq - 0 3'
+Qf6f2_fen_w_rook_on_b1_and_knight_b4 = b'r3k2r/ppp2p2/2n4p/3p4/PN1PP1p1/2P3P1/2N1KqP1/1R1Q3R w kq - 0 3'
+minimal = b'4k3/8/8/8/8/8/4Kq2/1R1Q4 w - - 0 3'
+minimal_not_touching = b'4k3/8/8/8/8/8/4K1q1/1R4Q w - - 0 3'
+minimal_diagonal = b'4k3/8/8/8/8/8/4K3/1R1Q1q2 w - - 0 3'
+minimal_flipped = b'3k4/8/8/8/8/8/2qK4/1Q4R1 w - - 0 3'
+minimal_3rd_rank = b'4k3/8/8/8/8/4Kq2/8/1R1Q4 w - - 0 3'
+minimal_rook = b'4k3/8/8/8/8/4Kr2/8/1R1Q4 w - - 0 3'
+
+start_e2e3 = b'rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+start_h7h6 = b'rnbqkbnr/ppppppp1/7p/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
+start_d1h5 = b'rnbqkbnr/ppppppp1/7p/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2'  # f7f6 is pinned, but still counted
+
+crash_after_Qxe2 = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R b Kkq - 0 1'
+after_castles = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R w K - 0 1'
+after_f2f3 = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R b K - 0 1'
+after_Rf8c8 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
+after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
+
+fen = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 
 
 # get what file you are on given an index 0-63
@@ -190,8 +226,6 @@ def run_game():
     clicking = False
     init_board()
 
-    # fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
-    fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     lib.init(c_char_p(fen), len(fen))
 
     lib.update_game_possible_moves()
@@ -202,6 +236,8 @@ def run_game():
     press_square = -1
     release_square = -1
     promo_key = ''
+
+    print([i for i in lib.get_rook_pos().contents])
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -248,9 +284,9 @@ def run_game():
                         refresh_graphics()
                         st = time.time()
                         move_count += 1
-                        #eval = lib.calc_eng_move(6)
-                        eval = lib.calc_eng_move_with_test(4, 6)
-                        #print("time to engine move", time.time() - st)
+                        # eval = lib.calc_eng_move(6)
+                        # eval = lib.calc_eng_move_with_test(4, 6)
+                        # print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
                         # print('bc', lib.get_black_check())
@@ -258,12 +294,12 @@ def run_game():
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
-                        a = lib.apply_move(s, e, id)
+                        # a = lib.apply_move(s, e, id)
                         lib.update_game_possible_moves()
                         get_updated_board()
                     else:
                         pass
-                        #print('illegal', press_square, release_square, promo_num)
+                        # print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -278,9 +314,12 @@ def run_game():
 
 def test():
     st = time.time()
-    lib.init()
-    print(lib.perft_test(5))
+    lib.init(c_char_p(fen), len(fen))
+    print(lib.detailed_perft(1))
     print(time.time() - st)
 
 
 run_game()
+# test()
+
+# cash_fen depth 4: 1350847 vs stockfish: 1350762

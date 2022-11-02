@@ -33,17 +33,8 @@ struct Move {
 
 struct Move engine_move;
 
-
-// this will be for spead up
-struct Move* best1;
-struct Move* best2;
-struct Move* best3;
-struct Move* best4;
-
-int score1 = INT_MAX;
-int score2 = INT_MAX;
-int score3 = INT_MAX;
-int score4 = INT_MAX;
+struct Move* best_test_line;
+struct Move* best_line;
 
 // this best test alfa and bata
 int best_alpha = INT_MIN;
@@ -298,17 +289,7 @@ void init_bitboards(){
         int p = board[i];
         if(p > 0){
             pieces[p][num_pieces_of_type[p]] = i;
-            num_pieces_of_type[p]++;for(int i = 0; i < 4; i++){
-        printf("f %d\n", rook_pos[i]);
-    }
-
-    for(int i = 0; i < 4; i++){
-        printf("g %d\n", rook_num_moves[i]);
-    }
-
-    for(int i = 0; i < 2; i++){
-        printf("h %d\n", king_num_moves[i]);
-    }
+            num_pieces_of_type[p]++;
         }
     }
 
@@ -646,7 +627,7 @@ unsigned long long span_piece(unsigned long long mask, int i, unsigned long long
 
 //TODO: generate_bitboard_from_range is slow, it loops 64 times
 //Replace with bitwise math
-unsigned long long line_between_pieces(unsigned long long direction, int piece_1, int piece_2){
+unsigned long long line_between_pieces_old(unsigned long long direction, int piece_1, int piece_2){
     unsigned long long mask = 0ULL;
     if(!((1ULL << piece_1) & direction)){
         return 0ULL;
@@ -660,6 +641,29 @@ unsigned long long line_between_pieces(unsigned long long direction, int piece_1
     else{
         mask = generate_bitboard_from_range(piece_2 + 1, piece_1-1);
     }
+    return direction & mask;
+}
+
+unsigned long long line_between_pieces(unsigned long long direction, int piece_1, int piece_2){
+    unsigned long long mask_1;
+    unsigned long long mask_2;
+    if(!((1ULL << piece_1) & direction)){
+        return 0ULL;
+    }
+    if(!((1ULL << piece_2) & direction)){
+        return 0ULL;
+    }
+    if(piece_1 < piece_2){
+        mask_1 = (all_squares >> (piece_1 + 1) << (piece_1 + 1));
+        mask_2 = (all_squares << (64 - piece_2) >> (64 - piece_2));
+    }
+    else{
+        mask_1 = (all_squares << (64 - piece_1) >> (64 - piece_1));
+        mask_2 = (all_squares >> (piece_2 + 1) << (piece_2 + 1));
+    }
+
+    unsigned long long mask = mask_1 & mask_2;
+
     return direction & mask;
 }
 
@@ -1683,7 +1687,7 @@ unsigned long long detailed_perft(int depth){
 
         file = file_letter(7 - get_file(s));
         rank = get_rank(s) + 1;
-        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
+        printf("%c%c%d", piece_letter(move.piece, true), file, rank);
 
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
@@ -1963,6 +1967,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
+                best_line[depth] = move;
             }
             alpha = max(alpha, evaluation);
             best_alpha = max(best_alpha, alpha);
@@ -1986,6 +1991,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
+                best_line[depth] = move;
             }
             beta = min(beta, evaluation);
             best_beta = min(best_beta, beta);
@@ -2037,7 +2043,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
-                best1[depth] = move;
+                best_test_line[depth] = move;
             }
             alpha = max(alpha, evaluation);
             if (beta <= alpha){
@@ -2060,7 +2066,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
-                best1[depth] = move;
+                best_test_line[depth] = move;
             }
             beta = min(beta, evaluation);
             if (beta <= alpha){
@@ -2086,24 +2092,19 @@ int calc_eng_move(int depth){
         line[i] = nm;
     }
 
-    best1 = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    best_line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
     for(int i = 1; i <= depth; i++){
-        best1[i] = nm;
+        best_line[i] = nm;
     }
 
     int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line);
 
-    engine_move = best1[depth];
-    print_line(best1, depth);
-    print_move(engine_move);
-    printf("\n");
+    engine_move = best_line[depth];
 
     return eval;
 }
 
 int calc_eng_move_with_test(int test_depth, int total_depth){
-    printf("askjdhfuiasheufihfuwie\n");
-    printf("start of calc_eng_move_with_test\n");
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2112,57 +2113,56 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     nm.piece = -1;
     nm.start = -1;
 
-    // inishalising to a empty list
+    // initializing to a empty list
     struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
     for(int i = 1; i <= total_depth; i++){
         line[i] = nm;
     }
-    // inichalisting to a empty list
-    best1 = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
-    for(int i = 1; i <= test_depth; i++){
-        best1[i] = nm;
+
+    // initializing to a empty list
+    best_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    for(int i = 1; i <= total_depth; i++){
+        best_line[i] = nm;
     }
 
-    // gets best line at test depth and a sings it to best1
+    // initializing to a empty list
+    best_test_line = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+    for(int i = 1; i <= test_depth; i++){
+        best_test_line[i] = nm;
+    }
+
+    // gets best line at test depth and assigns it to best_test_line
     test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
 
-    // for loop varabule
+    // for loop variable
     struct Move move;
 
-    print_line(best1, test_depth);
+    print_line(best_test_line, test_depth);
     draw_board();
 
     // apply test_depth moves
     for(int i = test_depth; i >= 1; i--){
-        move = best1[i];
+        move = best_test_line[i];
         apply_move(move.start, move.end, move.id);
     }
-    printf("this is after it makes the 4 moves best line\n");
     draw_board();
 
     //finishing apliing the final moves
     search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, line);
 
-    printf("this is after the rest of the searth is exacutid\n");
     draw_board();
 
     // undo test_depth moves
     for(int i = 1; i <= test_depth; i++){
-        undo_specific_move(best1[i]);
+        undo_specific_move(best_test_line[i]);
         decr_num_moves();
         flip_turns();
     }
-
-    printf("this is after the moves have been re-undone\n");
     draw_board();
 
     int eval = search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 
-    printf("this is the print_line and print_move\n");
-    print_line(best1, test_depth);
-    print_move(best1[test_depth]);
-    printf("\n");
-    engine_move = best1[test_depth];
+    engine_move = best_test_line[test_depth];
 
     return eval;
 }
@@ -2211,7 +2211,20 @@ int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    printf("Perft: %llu\n", perft_test(6));
+    //printf("Perft: %llu\n", perft_test(6));*/
+
+    int dir = 0;
+    int queen = 11;
+    int king = 12;
+
+    unsigned long long directions[4] = { 0ULL };
+    directions[0] = rank[get_rank(queen) + 1];
+    directions[1] = file[8 - get_file(queen)];
+    directions[2] = l_diag[get_l_diag(queen)];
+    directions[3] = r_diag[get_r_diag(queen)];
+
+    //print_bitboard(line_between_pieces(directions[dir], queen, king));
+    //print_bitboard(line_between_pieces_old(directions[dir], queen, king));
 
     return 0;
 }
