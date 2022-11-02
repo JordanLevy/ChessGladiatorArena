@@ -106,8 +106,9 @@ after_castles = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R w K - 0 1
 after_f2f3 = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R b K - 0 1'
 after_Rf8c8 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
 after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
-
-fen = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
+black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
+dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
+fen = start_pos
 
 
 # get what file you are on given an index 0-63
@@ -237,7 +238,6 @@ def run_game():
     release_square = -1
     promo_key = ''
 
-    print([i for i in lib.get_rook_pos().contents])
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -297,6 +297,7 @@ def run_game():
                         # a = lib.apply_move(s, e, id)
                         lib.update_game_possible_moves()
                         get_updated_board()
+                        print([i for i in lib.get_rook_pos().contents])
                     else:
                         pass
                         # print('illegal', press_square, release_square, promo_num)

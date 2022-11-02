@@ -1299,6 +1299,7 @@ bool apply_move(int start, int end, int move_id){
     int new_m = move_id;
     int new_c = captured_piece;
     remove_piece(moved_piece, start);
+    // this is for wight rook
     if(moved_piece == 4){
         for(int i = 0; i < 2; i++){
             if(start == rook_pos[i]){
@@ -1308,6 +1309,7 @@ bool apply_move(int start, int end, int move_id){
             }
         }
     }
+    // this is for black rook have moved
     else if(moved_piece == 10){
         for(int i = 2; i < 4; i++){
             if(start == rook_pos[i]){
@@ -1358,6 +1360,23 @@ bool apply_move(int start, int end, int move_id){
         king_num_moves[1]++;
     }
     if(captured_piece > 0){
+        if(captured_piece == 4){
+            for(int i = 0; i < 2; i++){
+                if(end == rook_pos[i]){
+                    rook_pos[i] = -num_moves;
+                    break;
+                }
+            }
+        }
+        // this is for black rook have moved
+        else if(captured_piece == 10){
+            for(int i = 2; i < 4; i++){
+                if(end == rook_pos[i]){
+                    rook_pos[i] = -num_moves;
+                    break;
+                }
+            }
+        }
         remove_piece(captured_piece, end);
         //check the value of the peace
     }
@@ -1425,6 +1444,24 @@ void undo_move(){
     // last move was a capture
     if(capture > 0){
         add_piece(capture, end);
+        if(capture == 4){
+            for(int i = 0; i < 2; i++){
+                // -rook_pos reperesents the move num it was captered on
+                if(num_moves - 1 == -rook_pos[i]){
+                    rook_pos[i] = end;
+                    break;
+                }
+            }
+        }
+        // this is for black rook have moved
+        else if(capture == 10){
+            for(int i = 2; i < 4; i++){
+                if(num_moves - 1 == -rook_pos[i]){
+                    rook_pos[i] = end;
+                    break;
+                }
+            }
+        }
     }
     if(move_id == 0){
     }
