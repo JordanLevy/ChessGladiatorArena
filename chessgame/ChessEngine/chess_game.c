@@ -330,7 +330,7 @@ void init_fen(char *fen, size_t fen_length){
     int i = 0;
     for(; i < fen_length; i++){
         current = fen[i];
-        //this is a number
+        //this is a empty square
         if(current >= 48 && current <= 57){
             square -= (current - 48);
         }
@@ -970,12 +970,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
     // this is white king, hasn't moved yet
     if(is_white && king_num_moves[0] == 0){
         // white queenside castle
-        if(get_piece(7) == 4 && rook_num_moves[0] == 0){
+        if(get_piece(7) == 4 && rook_num_moves[0] == 0 && rook_pos[0] == 7){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, moves, numElems, p);
         }
         // white kingside castle
-        if(get_piece(0) == 4 && rook_num_moves[1] == 0){
+        if(get_piece(0) == 4 && rook_num_moves[1] == 0 && rook_pos[1] == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, moves, numElems, p);
         }
@@ -983,12 +983,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, bool is_white, s
     // this is black king, hasn't moved yet
     else if(!is_white && king_num_moves[1] == 0){
         // black queenside castle
-        if(get_piece(63) == 10 && rook_num_moves[2] == 0){
+        if(get_piece(63) == 10 && rook_num_moves[2] == 0 && rook_pos[2] == 63){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, moves, numElems, p);
         }
         // black kingside castle
-        if(get_piece(56) == 10 && rook_num_moves[3] == 0){
+        if(get_piece(56) == 10 && rook_num_moves[3] == 0 && rook_pos[3] == 56){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, moves, numElems, p);
         }
