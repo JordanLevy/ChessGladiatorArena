@@ -2142,6 +2142,9 @@ int calc_eng_move(int depth){
 }
 
 int calc_eng_move_with_test(int test_depth, int total_depth){
+    // for loop variable
+    struct Move move;
+
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2171,9 +2174,7 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     // gets best line at test depth and assigns it to best_test_line
     test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line);
 
-    // for loop variable
-    struct Move move;
-
+    //just priniting
     print_line(best_test_line, test_depth);
     draw_board();
 
@@ -2184,7 +2185,13 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     }
     draw_board();
 
-    //finishing apliing the final moves
+    // initializing to a empty list
+    // this is done again basd on a hunch
+    for(int i = 1; i <= total_depth; i++){
+        line[i] = nm;
+    }
+
+    //finishing apliing the final moves for the staring best line
     search_moves_pruning(total_depth - test_depth, total_depth - test_depth, INT_MIN, INT_MAX, false, line);
 
     draw_board();
@@ -2199,7 +2206,7 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
 
     int eval = search_moves_pruning(total_depth, total_depth, best_alpha, best_beta, false, line);
 
-    engine_move = best_test_line[test_depth];
+    engine_move = best_line[total_depth];
 
     return eval;
 }
