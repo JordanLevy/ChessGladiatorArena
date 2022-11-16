@@ -284,9 +284,9 @@ def run_game():
                         refresh_graphics()
                         st = time.time()
                         move_count += 1
-                        # eval = lib.calc_eng_move(6)
+                        #eval = lib.calc_eng_move(6)
                         eval = lib.calc_eng_move_with_test(4, 6)
-                        # print("time to engine move", time.time() - st)
+                        print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
                         # print('bc', lib.get_black_check())
