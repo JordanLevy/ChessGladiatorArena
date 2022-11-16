@@ -285,7 +285,7 @@ def run_game():
                         st = time.time()
                         move_count += 1
                         # eval = lib.calc_eng_move(6)
-                        # eval = lib.calc_eng_move_with_test(4, 6)
+                        eval = lib.calc_eng_move_with_test(4, 6)
                         # print("time to engine move", time.time() - st)
                         # print('eval', eval)
                         # print('wc', lib.get_white_check())
@@ -294,7 +294,7 @@ def run_game():
                         s = lib.get_eng_move_start()
                         e = lib.get_eng_move_end()
                         id = lib.get_eng_move_id()
-                        # a = lib.apply_move(s, e, id)
+                        a = lib.apply_move(s, e, id)
                         lib.update_game_possible_moves()
                         get_updated_board()
                         print([i for i in lib.get_rook_pos().contents])
