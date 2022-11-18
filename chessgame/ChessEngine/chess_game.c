@@ -1976,7 +1976,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
-            print_line(line, start_depth);
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
@@ -2043,12 +2042,10 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 }
 // thsi is the cope of search moves pruning
 // this is what does the pruning
-int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line, int* hint_line,int hint_depth, bool applying_hint){
+int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-
-    int current_hint = depth - (start_depth - hint_depth);
 
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
@@ -2059,7 +2056,6 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
     if(numElems == 0){
         free(moves);
         if(white_check){
-            print_line(line, start_depth);
             return INT_MIN + start_depth - depth;
         }
         else if(black_check){
@@ -2073,10 +2069,15 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
     }
     // this is refering to the white making a move
     int hint_location = -1;
-    if (applying_hint){
+    if (*applying_hint){
+        int current_hint = depth - (start_depth - hint_depth);
+        printf("%d = %d - (%d - %d)\n", current_hint, depth, start_depth, hint_depth);
         hint_location = hint_line[current_hint];
-        if (current_hint == 0){
-            applying_hint = false;
+        if (current_hint == 1){
+            *applying_hint = false;
+            printf("smwh_legal_moves:\n");
+            draw_board();
+            printf("\n");
         }
     }
     if (player){
@@ -2085,17 +2086,23 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
         for(int i = 0; i < numElems; i++){
             if (i == 0 && hint_location >= 0){
                 move = moves[hint_location];
+                printf("white swapping %d to %d: \n", hint_location, i);
+                print_move(move);
+                printf("\n");
             }
             // this is to spwap the location later in the list
             else if(hint_location == i){
                 move = moves[0];
+                printf("white swapping back %d to 0: \n", hint_location);
+                print_move(move);
+                printf("\n");
             }
             else{
                 move = moves[i];
             }
             apply_move(move.start, move.end, move.id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, line, best_line);
+            int evaluation = search_moves_with_hint(depth - 1, start_depth, alpha, beta, false, line, best_line, hint_line, hint_depth, applying_hint);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2120,17 +2127,23 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
         for(int i = 0; i < numElems; i++){
             if (i == 0 && hint_location >= 0){
                 move = moves[hint_location];
+                printf("black swapping %d to %d: \n", hint_location, i);
+                print_move(move);
+                printf("\n");
             }
             // this is to spwap the location later in the list
             else if(hint_location == i){
                 move = moves[0];
+                printf("black swapping back %d to 0: \n", hint_location);
+                print_move(move);
+                printf("\n");
             }
             else{
                 move = moves[i];
             }
             apply_move(move.start, move.end, move.id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, line, best_line);
+            int evaluation = search_moves_with_hint(depth - 1, start_depth, alpha, beta, true, line, best_line, hint_line, hint_depth, applying_hint);
             undo_move();
             decr_num_moves();
             flip_turns();
@@ -2152,7 +2165,7 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
 }
 
 // this is the test for the depth 4
-int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move* line, int* best_line){
+int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move* line, int* best_line, struct Move* best_line_actual_moves){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
@@ -2183,13 +2196,19 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             move = moves[i];
             apply_move(move.start, move.end, move.id);
             line[depth] = move;
-            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
+            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line, best_line_actual_moves);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = i;
+                best_line_actual_moves[depth] = move;
+                if(depth == 1 && i == 15){
+                    printf("tdp_legal_moves:\n");
+                    draw_board();
+                    printf("\n");
+                }
             }
             alpha = max(alpha, evaluation);
             if (beta <= alpha){
@@ -2206,13 +2225,19 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             move = moves[i];
             apply_move(move.start, move.end, move.id);
             line[depth] = move;
-            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
+            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line, best_line_actual_moves);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
                 best_line[depth] = i;
+                best_line_actual_moves[depth] = move;
+                if(depth == 1 && i == 15){
+                    printf("tdp_legal_moves:\n");
+                    print_line(moves, numElems - 1);
+                    printf("\n");
+                }
             }
             beta = min(beta, evaluation);
             if (beta <= alpha){
@@ -2260,9 +2285,6 @@ bool move_equal(struct Move a, struct Move b){
 }
 
 int calc_eng_move_with_test(int test_depth, int total_depth){
-    // for loop variable
-    struct Move move;
-
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2293,15 +2315,29 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     }
 
     // initializing to a empty list
+    struct Move* best_test_line_actual = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+    for(int i = 0; i <= test_depth; i++){
+        best_test_line_actual[i] = nm;
+    }
+
+    // initializing to a empty list
     struct Move* best_final_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
     for(int i = 0; i <= total_depth; i++){
         best_final_line[i] = nm;
     }
 
     // gets best line at test depth and assigns it to best_test_line
-    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line, best_test_line);
+    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line, best_test_line, best_test_line_actual);
 
-    int eval = search_moves_with_hint(total_depth, total_depth, best_alpha, best_beta, false, line, best_final_line, best_test_line, test_depth, true);
+    for(int i = 0; i <= test_depth; i++){
+        printf("%d: %d\n", i, best_test_line[i]);
+    }
+
+    print_line(best_test_line_actual, test_depth);
+
+    bool applying_hint = true;
+
+    int eval = search_moves_with_hint(total_depth, total_depth, INT_MIN, INT_MAX, false, line, best_final_line, best_test_line, test_depth, &applying_hint);
 
     // find the best line and play the first move
     engine_move = best_final_line[total_depth];
