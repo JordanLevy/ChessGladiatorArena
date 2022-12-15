@@ -2030,10 +2030,10 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(numElems == 0){
         free(moves);
         if(white_check){
-            return INT_MIN + start_depth - depth;
+            return INT_MIN + (start_depth - depth);
         }
         else if(black_check){
-            return INT_MAX - start_depth + depth;
+            return INT_MAX - (start_depth - depth);
         }
         return 0;
     }
@@ -2048,13 +2048,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, false, line, best_line);
+            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = move;
+                /*for(int i = depth; i <= start_depth; i++){
+                    best_line[i] = line[i];
+                }*/
             }
             alpha = max(alpha, evaluation);
             if(depth <= 1){
@@ -2074,13 +2077,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, depth, alpha, beta, true, line, best_line);
+            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
                 best_line[depth] = move;
+                /*for(int i = depth; i <= start_depth; i++){
+                    best_line[i] = line[i];
+                }*/
             }
             beta = min(beta, evaluation);
             if(depth <= 1){

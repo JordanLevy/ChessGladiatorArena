@@ -249,7 +249,7 @@ def play_human_move(start, end, promo):
     refresh_graphics()
     move_count += 1
 
-
+#Kb8c8 Rf6f8 Kc8b8 Rf6f1 Kb8c8 Rf6f3
 def play_engine_move():
     st = time.time()
     evaluation = lib.calc_eng_move(6)
@@ -349,7 +349,7 @@ def test():
     print(time.time() - st)
 
 
-# test()
+#test()
 run_game()
 
 # cash_fen depth 4: 1350847 vs stockfish: 1350762
