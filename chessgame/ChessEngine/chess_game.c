@@ -2299,7 +2299,7 @@ int calc_eng_move(int depth){
     int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
 
     engine_move = best_line[depth];
-
+    print_line(best_line, depth);
     return eval;
 }
 
