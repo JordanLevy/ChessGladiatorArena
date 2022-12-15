@@ -107,7 +107,7 @@ after_Rf8c8 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
 after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
 black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
-fen = start_pos
+fen = crash_fen
 
 EMPTY_SQUARE = 0
 
@@ -251,7 +251,7 @@ def play_human_move(start, end, promo):
 
 def play_engine_move():
     st = time.time()
-    evaluation = lib.calc_eng_move(6)
+    evaluation = lib.calc_eng_move(2)
     #evaluation = lib.calc_eng_move_with_test(4, 6)
     print("time to engine move", time.time() - st)
     print('eval', evaluation)
@@ -341,6 +341,9 @@ def run_game():
         main_clock.tick(100)
 
 
+def test_suite():
+    pass
+
 def test():
     st = time.time()
     lib.init(c_char_p(fen), len(fen))
@@ -350,5 +353,6 @@ def test():
 
 # test()
 run_game()
+
 
 # cash_fen depth 4: 1350847 vs stockfish: 1350762
