@@ -31,6 +31,7 @@ RED = (255, 0, 0, 50)
 GREEN = (25, 166, 0, 50)
 GREY = (150, 150, 150, 50)
 YELLOW = (255, 255, 0, 50)
+GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
 # test
@@ -45,7 +46,7 @@ lib.try_undo_move.restype = c_bool
 lib.is_game_legal_move.restype = c_bool
 lib.is_game_legal_move.argtypes = [c_int, c_int, c_int]
 
-lib.get_board_state.restype = POINTER(c_int * 64)
+lib.get_board_state.restype = POINTER(c_char * 64)
 
 lib.get_white_check.restype = c_bool
 
@@ -75,8 +76,6 @@ lib.get_num_possible_moves.restype = c_int
 lib.get_mat_eval.restype = c_int
 
 lib.get_pos_eval.restype = c_int
-
-lib.get_rook_pos.restype = POINTER(c_int * 4)
 
 move_count = 0
 
@@ -110,6 +109,26 @@ black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 fen = start_pos
 
+EMPTY_SQUARE = 0
+
+bP = 1
+bN = 2
+bB = 3
+bR = 4
+bQ = 5
+bK = 6
+
+wP = 9
+wN = 10
+wB = 11
+wR = 12
+wQ = 13
+wK = 14
+
+white_promo = {'n': wN, 'b': wB, 'r': wR, 'q': wQ}
+black_promo = {'n': bN, 'b': bB, 'r': bR, 'q': bQ}
+
+show_spec = True
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -126,64 +145,61 @@ def coords_to_num(n):
     return n[1] * 8 + (7 - n[0])
 
 
-# returns the piece type on that square
-# 0  - empty square
-# 1  - wP
-# 2  - wN
-# 3  - wB
-# 4  - wR
-# 5  - wQ
-# 6  - wK
-# 7  - bP
-# 8  - bN
-# 9  - bB
-# 10 - bR
-# 11 - bQ
-# 12 - bK
 def get_piece(square):
-    return board[square]
+    return int.from_bytes(board[square], "big")
 
 
-def is_white_piece(piece):
-    return 1 <= piece <= 6
+def is_white_piece(piece_id):
+    return (piece_id >> 7) == 1
 
 
-def is_black_piece(piece):
-    return 7 <= piece <= 12
+def is_black_piece(piece_id):
+    return (piece_id >> 7) == 0
 
 
 def get_promo_num(is_white, key):
-    if key == 'n':
-        return (8, 2)[is_white]
-    if key == 'b':
-        return (9, 3)[is_white]
-    if key == 'r':
-        return (10, 4)[is_white]
-    if key == 'q':
-        return (11, 5)[is_white]
-    return 0
+    if key == '':
+        return 0
+    if is_white:
+        return white_promo[key]
+    return black_promo[key]
 
 
 def init_board():
     global piece_img
-    piece_img = [None] * 13
+    piece_img = [None] * 15
 
-    files = ['', 'Images/WhitePawn.png', 'Images/WhiteKnight.png', 'Images/WhiteBishop.png',
-             'Images/WhiteRook.png', 'Images/WhiteQueen.png', 'Images/WhiteKing.png',
-
+    files = ['',
              'Images/BlackPawn.png', 'Images/BlackKnight.png', 'Images/BlackBishop.png',
-             'Images/BlackRook.png', 'Images/BlackQueen.png', 'Images/BlackKing.png']
-    for j in range(1, 13):
+             'Images/BlackRook.png', 'Images/BlackQueen.png', 'Images/BlackKing.png',
+             '', '',
+             'Images/WhitePawn.png', 'Images/WhiteKnight.png', 'Images/WhiteBishop.png',
+             'Images/WhiteRook.png', 'Images/WhiteQueen.png', 'Images/WhiteKing.png']
+    for j in range(1, 15):
+        if not files[j]:
+            continue
         piece_img[j] = pygame.image.load(files[j])
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
+
+
+def get_type(piece_id):
+    return piece_id >> 4
+
+
+def get_spec(piece_id):
+    return piece_id & 15
 
 
 def draw_board():
     w_check = lib.get_white_check()
     b_check = lib.get_black_check()
 
+    font = pygame.font.SysFont('Arial', 18, bold=True)
+
     for i in range(64):
-        piece = get_piece(i)
+        piece_id = get_piece(i)
+        piece_type = get_type(piece_id)
+        piece_spec = get_spec(piece_id)
         # color the dark squares
         if (get_file(i) + get_rank(i)) % 2 == 1:
             square_color = BLUE
@@ -191,18 +207,24 @@ def draw_board():
         else:
             square_color = WHITE
         # if a king is in check, color their square red
-        if (w_check and piece == 6) or (b_check and piece == 12):
+        if (w_check and piece_type == wK) or (b_check and piece_type == bK):
             square_color = RED
         # draw the squares on the board
         pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
         # if there is a piece on this square and it's not currently being held
-        if piece > 0 and i != press_square:
-            # draw the piece on the board
-            screen.blit(pygame.transform.rotate(piece_img[piece], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
+        if piece_type != EMPTY_SQUARE and i != press_square:
+            screen.blit(pygame.transform.rotate(piece_img[piece_type], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
+            if show_spec:
+                img = font.render(str(piece_spec), True, pygame.Color(WHITE), pygame.Color(GRAY_GREEN))
+                screen.blit(img, (350 - (i % 8) * 50, 350 - (i // 8) * 50))
     # if there is a piece being held, draw it at the mouse position
-    if press_square > -1 and get_piece(press_square) > 0:
-        screen.blit(pygame.transform.rotate(piece_img[get_piece(press_square)], 0),
+    if press_square > -1 and get_type(get_piece(press_square)) > 0:
+        piece_spec = get_spec(get_piece(press_square))
+        screen.blit(pygame.transform.rotate(piece_img[get_type(get_piece(press_square))], 0),
                     (mouse_xy[0] - 25, mouse_xy[1] - 25))
+        if show_spec:
+            img = font.render(str(piece_spec), True, pygame.Color(WHITE), pygame.Color(GRAY_GREEN))
+            screen.blit(img, (mouse_xy[0] - 25, mouse_xy[1] - 25))
 
 
 def refresh_graphics():
@@ -218,12 +240,37 @@ def print_move(m):
     print(m.piece, m.start, m.end)
 
 
+def play_human_move(start, end, promo):
+    global move_count
+    lib.apply_move(start, end, promo)
+    lib.update_game_possible_moves()
+    get_updated_board()
+    refresh_graphics()
+    move_count += 1
+
+
+def play_engine_move():
+    st = time.time()
+    evaluation = lib.calc_eng_move(6)
+    #evaluation = lib.calc_eng_move_with_test(4, 6)
+    print("time to engine move", time.time() - st)
+    print('eval', evaluation)
+
+    start = lib.get_eng_move_start()
+    end = lib.get_eng_move_end()
+    move_id = lib.get_eng_move_id()
+    lib.apply_move(start, end, move_id)
+    lib.update_game_possible_moves()
+    get_updated_board()
+
+
 def run_game():
-    global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy, move_count
+    global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy
     screen = pygame.display.set_mode((400, 400), 0, 32)
-    mainClock = pygame.time.Clock()
+    main_clock = pygame.time.Clock()
     pygame.display.init()
     pygame.display.set_caption('Chess')
+    pygame.font.init()
     clicking = False
     init_board()
 
@@ -237,7 +284,6 @@ def run_game():
     press_square = -1
     release_square = -1
     promo_key = ''
-
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -278,28 +324,11 @@ def run_game():
                     piece = get_piece(press_square)
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
-                        a = lib.apply_move(press_square, release_square, promo_num)
-                        lib.update_game_possible_moves()
-                        get_updated_board()
-                        refresh_graphics()
-                        st = time.time()
-                        move_count += 1
-                        #eval = lib.calc_eng_move(6)
-                        eval = lib.calc_eng_move_with_test(4, 6)
-                        #print("time to engine move", time.time() - st)
-                        # print('eval', eval)
-                        # print('wc', lib.get_white_check())
-                        # print('bc', lib.get_black_check())
-
-                        s = lib.get_eng_move_start()
-                        e = lib.get_eng_move_end()
-                        id = lib.get_eng_move_id()
-                        a = lib.apply_move(s, e, id)
-                        lib.update_game_possible_moves()
-                        get_updated_board()
+                        play_human_move(press_square, release_square, promo_num)
+                        play_engine_move()
                     else:
+                        print('illegal', press_square, release_square, promo_num)
                         pass
-                        # print('illegal', press_square, release_square, promo_num)
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -309,17 +338,17 @@ def run_game():
                 refresh_graphics()
 
         pygame.display.update()
-        mainClock.tick(100)
+        main_clock.tick(100)
 
 
 def test():
     st = time.time()
     lib.init(c_char_p(fen), len(fen))
-    print(lib.detailed_perft(1))
+    print(lib.detailed_perft(6))
     print(time.time() - st)
 
 
-run_game()
 # test()
+run_game()
 
 # cash_fen depth 4: 1350847 vs stockfish: 1350762

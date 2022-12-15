@@ -132,3 +132,4 @@ chessgame/.idea/
 # codeblocks files
 .depend
 .layout
+chessgame/ChessEngine/ChessEngine.layout

@@ -1,0 +1,11 @@
+{
+    "cSpell.words": [
+        "bitboard",
+        "colortype",
+        "perft",
+        "queenside"
+    ],
+    "files.associations": {
+        "random": "c"
+    }
+}
