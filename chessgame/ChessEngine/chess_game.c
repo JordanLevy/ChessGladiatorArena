@@ -1789,6 +1789,10 @@ unsigned long long perft_test(int depth){
 }
 
 unsigned long long detailed_perft(int depth){
+    if(depth == 0){
+        return 1ULL;
+    }
+
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -1804,7 +1808,6 @@ unsigned long long detailed_perft(int depth){
     int rank;
 
     for(int i = 0; i < numElems; i++){
-
         move = moves[i];
         apply_move(move.start, move.end, move.move_id);
         n = perft_test(depth - 1);
@@ -2447,18 +2450,10 @@ int get_pos_eval(){
 }
 
 int main(){
-    printf("%d %d %d\n", NUM_COLOR_BITS, NUM_ROLE_BITS, NUM_SPEC_BITS);
-    printf("%d %d %d\n", COLOR_BITS_OFFSET, ROLE_BITS_OFFSET, SPEC_BITS_OFFSET);
-    printf("%d %d %d %d %d %d %d\n", EMPTY_SQUARE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING);
-    printf("%d %d\n", WHITE, BLACK);
-    printf("%d %d %d\n", COLOR_MASK, ROLE_MASK, SPEC_MASK);
-
-    printf("\n\n");
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    //printf("Perft: %llu\n", perft_test(6));*/
-
+    perft_test(6);
 
     return 0;
 }
