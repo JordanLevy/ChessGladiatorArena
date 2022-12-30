@@ -7,7 +7,7 @@
 	<limits.h>
 	<time.h>
 
-1669005151 source:d:\desktop\coding\python 3.7\workspace\chessgladiatorarena\chessgame\chessengine\chess_game.c
+1672416397 source:d:\desktop\coding\python 3.7\workspace\chessgladiatorarena\chessgame\chessengine\chess_game.c
 	<stdio.h>
 	<stdlib.h>
 	<stdbool.h>
@@ -16,6 +16,7 @@
 	<time.h>
 	<math.h>
 	<ctype.h>
+	<sys/time.h>
 
 1668641181 source:c:\users\hp\documents\resume\chess engen with j\chess app with jorden\chessgladiatorarena\chessgame\chessengine\chess_game.c
 	<stdio.h>

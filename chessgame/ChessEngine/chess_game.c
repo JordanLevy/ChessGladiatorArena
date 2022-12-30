@@ -6,6 +6,7 @@
 #include <time.h>
 #include <math.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #define len(x)  (sizeof(x) / sizeof((x)[0]))
 
@@ -118,16 +119,23 @@ list of 64 move list
 Engine debugging tool
 */
 
-struct Move {
+typedef struct {
     int start;
     int end;
     int move_id;
     unsigned char capture;
     unsigned char piece_id;
     int eval;
+} Move;
+
+struct Node{
+  Move data;  // The data stored in the node
+  struct Node* next;  // Pointer to the next node in the list
 };
 
-struct Move engine_move;
+double total_time = 0;
+
+Move engine_move;
 
 // best test alpha and beta
 int best_alpha = INT_MIN;
@@ -295,7 +303,7 @@ int num_moves = 0;
 bool white_turn = true;
 
 unsigned long long bitboards[15] = {0ULL};
-struct Move move_list[256];
+Move move_list[256];
 
 unsigned long long not_black_pieces = 0ULL;
 unsigned long long not_white_pieces = 0ULL;
@@ -319,7 +327,7 @@ unsigned long long king_span = 0ULL;
 unsigned long long file_ab = 0ULL;
 unsigned long long file_gh = 0ULL;
 
-//struct Move moves[256];
+//Move moves[256];
 //int num_legal_moves = 0;
 
 unsigned long long unsafe_white = 0ULL;
@@ -361,17 +369,99 @@ int next_spec[15] = {0};
 
 char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
-struct Move *game_possible_moves;
+struct Node* game_possible_moves_head;
+struct Node* game_possible_moves_tail;
 int num_game_moves;
 
-// returns the piece residing on a square (0-63)
-unsigned char get_piece(int square){
-    return board[square];
+// Insert a new node at the end of the list
+void insert(struct Node** head, struct Node** tail, Move data, int* numElems) {
+    // Create a new node
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+    new_node->data = data;
+    new_node->next = NULL;
+
+    // Special case: if the list is empty, the new node is the head and the last element
+    if (*head == NULL) {
+        *head = new_node;
+        *tail = new_node;
+        (*numElems)++;
+        return;
+    }
+
+    // Append the new node to the end of the list
+    (*tail)->next = new_node;
+    *tail = new_node;
+    (*numElems)++;
+}
+
+// Free all of the memory used by a linked list
+void free_list(struct Node* head) {
+    struct Node* current = head;
+    while (current != NULL) {
+        struct Node* next = current->next;
+        free(current);
+        current = next;
+    }
 }
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
 unsigned char get_type(unsigned char id){
     return id >> ROLE_BITS_OFFSET;
+}
+
+char piece_letter(int piece_id, bool caps){
+    char letters[] = "_PNBRQK__pnbrqk";
+    unsigned char type = get_type(piece_id);
+    if(caps && (type > 8)){
+        type -= 8;
+    }
+    return letters[type];
+}
+
+char file_letter(int n){
+    char letter[] = "abcdefgh";
+    return letter[n];
+}
+
+int get_file(int n){
+    return n % 8;
+}
+
+int get_rank(int n){
+    return n / 8;
+}
+
+void print_move(Move move){
+    int s = move.start;
+    /*if(s == -1){
+        return;
+    }*/
+    int e = move.end;
+    //int m = move.id;
+
+    char file = file_letter(7 - get_file(s));
+    int rank = get_rank(s) + 1;
+    printf("%c%c%d", piece_letter(move.piece_id, true), file, rank);
+
+    file = file_letter(7 - get_file(e));
+    rank = get_rank(e) + 1;
+    printf("%c%d", file, rank);
+}
+
+// Print the contents of the list
+void print_list(struct Node* head) {
+  struct Node* current = head;
+  while (current != NULL) {
+    print_move(current->data);
+    printf(" ");
+    current = current->next;
+  }
+  printf("\n");
+}
+
+// returns the piece residing on a square (0-63)
+unsigned char get_piece(int square){
+    return board[square];
 }
 
 // returns the character associated with a given piece_id
@@ -535,7 +625,6 @@ void init_fen(char *fen, size_t fen_length){
     int square = 63;
     char current = '_';
     int i = 0;
-    int a = 36;
     for(int i = 0; i < 256; i++){
         piece_location[i] = -1;
     }
@@ -616,18 +705,19 @@ void init_fen(char *fen, size_t fen_length){
     }
 }
 
-
-void append_move(struct Move* arr, struct Move m, int *i){
+void append_move(Move* arr, Move m, int *i){
     arr[*i] = m;
     (*i)++;
 }
 
-int get_file(int n){
-    return n % 8;
+void append_int(int* arr, int a, int *i){
+    arr[*i] = a;
+    (*i)++;
 }
 
-int get_rank(int n){
-    return n / 8;
+void append_char(unsigned char* arr, unsigned char a, int *i){
+    arr[*i] = a;
+    (*i)++;
 }
 
 int get_r_diag(int n){
@@ -798,8 +888,8 @@ void print_bitboard(unsigned long long bitboard){
     printf("\n");
 }
 
-void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems){
-    struct Move move;
+void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Node** head, struct Node** tail, int *numElems){
+    Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
@@ -809,7 +899,7 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
                     move.move_id = j;
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
-                    append_move(moves, move, numElems);
+                    insert(head, tail, move, numElems);
                 }
             }
         }
@@ -817,8 +907,8 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
 }
 
 
-void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move* moves, int *numElems){
-    struct Move move;
+void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Node** head, struct Node** tail, int *numElems){
+    Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
@@ -828,7 +918,8 @@ void add_moves_position(unsigned long long mask, int start_position, int min_id,
                     move.move_id = j;
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
-                    append_move(moves, move, numElems);
+                    //append_move(moves, move, numElems);
+                    insert(head, tail, move, numElems);
                 }
             }
         }
@@ -1024,7 +1115,7 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
                     // and this isn't the first move of the game
                     if(num_moves > 0){
                         // get the previous move
-                        struct Move move = move_list[num_moves - 1];
+                        Move move = move_list[num_moves - 1];
                         // and the previous move was a double pawn push
                         if(move.move_id == 13){
                             // we only care about this en passant pinning situation horizontally
@@ -1049,11 +1140,11 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
     return squares;
 }
 
-void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, struct Move* moves, int *numElems){
+void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     bool is_white = (color == WHITE);
     int e = 0;
     int m = 0;
-    struct Move prev_move;
+    Move prev_move;
     if(num_moves > 0){
         prev_move = move_list[num_moves - 1];
         e = prev_move.end;
@@ -1072,31 +1163,31 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
 
     // capture right
     unsigned long long mask = l_shift(bb, fwd * 8 - 1) & can_capture & not_promo_rank & ~file[1];
-    add_moves_offset(mask, -(fwd * 8 - 1), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 - 1), 0, 0, 0, head, tail, numElems);
 
     // capture left
     mask = l_shift(bb, fwd * 8 + 1) & can_capture & not_promo_rank & ~file[8];
-    add_moves_offset(mask, -(fwd * 8 + 1), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 + 1), 0, 0, 0, head, tail, numElems);
 
     // one forward
     mask = l_shift(bb, fwd * 8) & empty & not_promo_rank;
-    add_moves_offset(mask, -fwd * 8, 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -fwd * 8, 0, 0, 0, head, tail, numElems);
 
     // two forward
     mask = l_shift(bb, 2 * fwd * 8) & empty & l_shift(empty, fwd * 8) & double_push_rank;
-    add_moves_offset(mask, -(2 * fwd * 8), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(2 * fwd * 8), 0, 0, 0, head, tail, numElems);
 
     // promotion by capture right
     mask = l_shift(bb, fwd * 8 - 1) & can_capture & promo_rank & ~file[1];
-    add_moves_offset(mask, -(fwd * 8 - 1), 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 - 1), 0, promo_min, promo_max, head, tail, numElems);
 
     // promotion by capture left
     mask = l_shift(bb, fwd * 8 + 1) & can_capture & promo_rank & ~file[8];
-    add_moves_offset(mask, -(fwd * 8 + 1), 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 + 1), 0, promo_min, promo_max, head, tail, numElems);
 
     // promotion by one forward
     mask = l_shift(bb, fwd * 8) & empty & promo_rank;
-    add_moves_offset(mask, -fwd * 8, 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -fwd * 8, 0, promo_min, promo_max, head, tail, numElems);
 
     // if the previous move was a double pawn push, en passant might be possible
     if(m == DOUBLE_PAWN_PUSH){
@@ -1104,63 +1195,63 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
 
         // left en passant
         mask = l_shift(bb, 1) & enemy_pawns & not_promo_rank & ~file[8] & pushed_pawn_location;
-        add_moves_offset(mask, -1, fwd * 8, 0, 0, moves, numElems);
+        add_moves_offset(mask, -1, fwd * 8, 0, 0, head, tail, numElems);
 
         // right en passant
         mask = l_shift(bb, -1) & enemy_pawns & not_promo_rank & ~file[1] & pushed_pawn_location;
-        add_moves_offset(mask, 1, fwd * 8, 0, 0, moves, numElems);
+        add_moves_offset(mask, 1, fwd * 8, 0, 0, head, tail, numElems);
     }
 }
 
-void possible_wP(unsigned long long bb, struct Move* moves, int *numElems){
-    possible_P(bb, black_pieces, rank[8], bitboards[bP], rank[4], 1, WHITE, moves, numElems);
+void possible_wP(unsigned long long bb, struct Node** head, struct Node** tail, int *numElems){
+    possible_P(bb, black_pieces, rank[8], bitboards[bP], rank[4], 1, WHITE, head, tail, numElems);
 }
 
-void possible_bP(unsigned long long bb, struct Move* moves, int *numElems){
-    possible_P(bb, white_pieces, rank[1], bitboards[wP], rank[5], -1, BLACK, moves, numElems);
+void possible_bP(unsigned long long bb, struct Node** head, struct Node** tail, int *numElems){
+    possible_P(bb, white_pieces, rank[1], bitboards[wP], rank[5], -1, BLACK, head, tail, numElems);
 }
 
-void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     unsigned char type = get_type(color | KNIGHT);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | KNIGHT | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(span_piece(mask, location, knight_span, 18, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(span_piece(mask, location, knight_span, 18, 0ULL), location, 0, 0, head, tail, numElems);
     }
 }
 
-void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     unsigned char type = get_type(color | BISHOP);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | BISHOP | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, head, tail, numElems);
     }
 }
 
-void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     unsigned char type = get_type(color | ROOK);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | ROOK | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, head, tail, numElems);
     }
 }
 
-void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     unsigned char type = get_type(color | QUEEN);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | QUEEN | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, head, tail, numElems);
     }
 }
 
-void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, struct Node** head, struct Node** tail, int *numElems){
     unsigned long long squares = 0ULL;
     unsigned long long safe = ~unsafe_white;
     bool is_white = color == WHITE;
@@ -1174,7 +1265,7 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | KING | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(span_piece((mask & safe), location, king_span, 9, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(span_piece((mask & safe), location, king_span, 9, 0ULL), location, 0, 0, head, tail, numElems);
     }
 
     // if the king is in check, king cannot castle
@@ -1186,12 +1277,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         // white queenside castle
         if(piece_location[queenside_wR] == 7 && queenside_wR_num_moves == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
-            add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, -2, 0, 0, 0, head, tail, numElems);
         }
         // white kingside castle
         if(piece_location[kingside_wR] == 0 && kingside_wR_num_moves == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
-            add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, 2, 0, 0, 0, head, tail, numElems);
         }
     }
     // this is black king, hasn't moved yet
@@ -1199,12 +1290,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         // black queenside castle
         if(piece_location[queenside_bR] == 63 && queenside_bR_num_moves == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
-            add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, -2, 0, 0, 0, head, tail, numElems);
         }
         // black kingside castle
         if(piece_location[kingside_bR] == 56 && kingside_bR_num_moves == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
-            add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, 2, 0, 0, 0, head, tail, numElems);
         }
     }
 }
@@ -1384,41 +1475,41 @@ void update_piece_masks(){
     occupied = ~empty;
 }
 
-void possible_moves_white(struct Move* moves, int *numElems){
+void possible_moves_white(struct Node** head, struct Node** tail, int *numElems){
     update_piece_masks();
     update_unsafe();
     (*numElems) = 0;
-    possible_wP(bitboards[wP], moves, numElems);
-    possible_N(bitboards[wN], not_white_pieces, WHITE, moves, numElems);
-    possible_B(bitboards[wB], not_white_pieces, WHITE, moves, numElems);
-    possible_R(bitboards[wR], not_white_pieces, WHITE, moves, numElems);
-    possible_Q(bitboards[wQ], not_white_pieces, WHITE, moves, numElems);
-    possible_K(bitboards[wK], not_white_pieces, WHITE, moves, numElems);
+    possible_wP(bitboards[wP], head, tail, numElems);
+    possible_N(bitboards[wN], not_white_pieces, WHITE, head, tail, numElems);
+    possible_B(bitboards[wB], not_white_pieces, WHITE, head, tail, numElems);
+    possible_R(bitboards[wR], not_white_pieces, WHITE, head, tail, numElems);
+    possible_Q(bitboards[wQ], not_white_pieces, WHITE, head, tail, numElems);
+    possible_K(bitboards[wK], not_white_pieces, WHITE, head, tail, numElems);
 }
 
-void possible_moves_black(struct Move* moves, int *numElems){
+void possible_moves_black(struct Node** head, struct Node** tail, int *numElems){
     update_piece_masks();
     update_unsafe();
     (*numElems) = 0;
-    possible_bP(bitboards[bP], moves, numElems);
-    possible_N(bitboards[bN], not_black_pieces, BLACK, moves, numElems);
-    possible_B(bitboards[bB], not_black_pieces, BLACK, moves, numElems);
-    possible_R(bitboards[bR], not_black_pieces, BLACK, moves, numElems);
-    possible_Q(bitboards[bQ], not_black_pieces, BLACK, moves, numElems);
-    possible_K(bitboards[bK], not_black_pieces, BLACK, moves, numElems);
+    possible_bP(bitboards[bP], head, tail, numElems);
+    possible_N(bitboards[bN], not_black_pieces, BLACK, head, tail, numElems);
+    possible_B(bitboards[bB], not_black_pieces, BLACK, head, tail, numElems);
+    possible_R(bitboards[bR], not_black_pieces, BLACK, head, tail, numElems);
+    possible_Q(bitboards[bQ], not_black_pieces, BLACK, head, tail, numElems);
+    possible_K(bitboards[bK], not_black_pieces, BLACK, head, tail, numElems);
 }
 
-void update_possible_moves(struct Move* moves, int *numElems){
+void update_possible_moves(struct Node** head, struct Node** tail, int *numElems){
     if(white_turn){
-        possible_moves_white(moves, numElems);
+        possible_moves_white(head, tail, numElems);
     }
     else{
-        possible_moves_black(moves, numElems);
+        possible_moves_black(head, tail, numElems);
     }
 }
 
 void update_game_possible_moves(){
-    update_possible_moves(game_possible_moves, &num_game_moves);
+    update_possible_moves(&game_possible_moves_head, &game_possible_moves_tail, &num_game_moves);
 }
 
 bool white_in_checkmate(int numElems){
@@ -1455,13 +1546,15 @@ void init_board(char* fen, size_t len){
     init_masks();
 }
 
-bool is_legal_move(int start, int end, int promo, struct Move* moves, size_t n){
-    struct Move move;
-    for(int i = 0; i < n; i++){
-        move = moves[i];
+bool is_legal_move(int start, int end, int promo, struct Node* head, struct Node* tail, size_t n){
+    Move move;
+    struct Node* current = head;
+    while (current != NULL) {
+        move = current->data;
         if(move.start == start && move.end == end && move.move_id == promo){
             return true;
         }
+        current = current->next;
     }
     return false;
 }
@@ -1478,53 +1571,25 @@ void flip_turns(){
     white_turn = !white_turn;
 }
 
-char piece_letter(int piece_id, bool caps){
-    char letters[] = "_PNBRQK__pnbrqk";
-    unsigned char type = get_type(piece_id);
-    if(caps && (type > 8)){
-        type -= 8;
-    }
-    return letters[type];
-}
+// Print the contents of the list
+void print_legal_moves(struct Node* head) {
+  struct Node* current = head;
+  while (current != NULL) {
+    Move move = current->data;
+    int s = move.start;
+    int e = move.end;
+    int m = move.move_id;
 
-char file_letter(int n){
-    char letter[] = "abcdefgh";
-    return letter[n];
-}
+    char file = file_letter(7 - get_file(s));
+    int rank = get_rank(s) + 1;
+    printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
 
-void print_legal_moves(struct Move* moves, int *numElems){
-    for(int i = 0; i < (*numElems); i++){
-        struct Move move = moves[i];
-        int s = move.start;
-        int e = move.end;
-        int m = move.move_id;
-        printf("%d:\t", i);
-
-        char file = file_letter(7 - get_file(s));
-        int rank = get_rank(s) + 1;
-        printf("%c%c%d", piece_letter(get_piece(s), true), file, rank);
-
-        file = file_letter(7 - get_file(e));
-        rank = get_rank(e) + 1;
-        printf("%c%d\t%d\n", file, rank, m);
-    }
-}
-
-void print_move(struct Move move){
-        int s = move.start;
-        /*if(s == -1){
-            return;
-        }*/
-        int e = move.end;
-        //int m = move.id;
-
-        char file = file_letter(7 - get_file(s));
-        int rank = get_rank(s) + 1;
-        printf("%c%c%d", piece_letter(move.piece_id, true), file, rank);
-
-        file = file_letter(7 - get_file(e));
-        rank = get_rank(e) + 1;
-        printf("%c%d", file, rank);
+    file = file_letter(7 - get_file(e));
+    rank = get_rank(e) + 1;
+    printf("%c%d\t%d\n", file, rank, m);
+    current = current->next;
+  }
+  printf("\n");
 }
 
 // if they moved one of the castling rooks, increment the number of moves it has made
@@ -1592,7 +1657,7 @@ bool apply_move(int start, int end, int move_id){
         printf("Not your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n", white_turn, start, end, move_id);
         draw_board();
         update_game_possible_moves();
-        print_legal_moves(game_possible_moves, &num_game_moves);
+        print_legal_moves(game_possible_moves_head);
         return false;
     }
     unsigned char captured_piece = get_piece(end);
@@ -1624,7 +1689,7 @@ bool apply_move(int start, int end, int move_id){
     else{
         // previous move start, end, and move_id
         if(num_moves > 0){
-            struct Move prev_move = move_list[num_moves - 1];
+            Move prev_move = move_list[num_moves - 1];
             int e = prev_move.end;
             int m = prev_move.move_id;
             unsigned char ep_pawn = get_piece(e);  // pawn that was captured en passant
@@ -1643,7 +1708,7 @@ bool apply_move(int start, int end, int move_id){
             }
         }
     }
-    struct Move move;
+    Move move;
     move.start = new_s;
     move.end = new_e;
     move.move_id = new_m;
@@ -1708,7 +1773,7 @@ void undo_move(){
     }
 
     //previous move (the one we're undoing)
-    struct Move move = move_list[num_moves - 1];
+    Move move = move_list[num_moves - 1];
     int start = move.start;
     int end = move.end;
     int move_id = move.move_id;
@@ -1765,37 +1830,42 @@ unsigned long long perft_test(int depth){
         return 1ULL;
     }
 
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
     int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
+    update_possible_moves(&head, &tail, &numElems);
 
     unsigned long long num_positions = 0ULL;
-    struct Move move;
+    Move move;
 
-    for(int i = 0; i < numElems; i++){
-        move = moves[i];
+    struct Node* current = head;
+    while (current != NULL) {
+        move = current->data;
         apply_move(move.start, move.end, move.move_id);
         num_positions += perft_test(depth - 1);
         undo_move();
         decr_num_moves();
         flip_turns();
         update_piece_masks();
+        current = current->next;
     }
 
-    free(moves);
+    free_list(head);
 
     return num_positions;
 }
 
 unsigned long long detailed_perft(int depth){
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
+
+    update_possible_moves(&head, &tail, &numElems);
 
     unsigned long long num_positions = 0ULL;
-    struct Move move;
+    Move move;
     int n;
     int s;
     int e;
@@ -1803,9 +1873,9 @@ unsigned long long detailed_perft(int depth){
     char file;
     int rank;
 
-    for(int i = 0; i < numElems; i++){
-
-        move = moves[i];
+    struct Node* current = head;
+    while (current != NULL) {
+        move = current->data;
         apply_move(move.start, move.end, move.move_id);
         n = perft_test(depth - 1);
         num_positions += n;
@@ -1823,9 +1893,10 @@ unsigned long long detailed_perft(int depth){
         undo_move();
         decr_num_moves();
         flip_turns();
+        current = current->next;
     }
 
-    free(moves);
+    free_list(head);
 
     return num_positions;
 }
@@ -1865,7 +1936,7 @@ bool try_undo_move(){
 }
 
 bool is_game_legal_move(int start, int end, int promo){
-    return is_legal_move(start, end, promo, game_possible_moves, num_game_moves);
+    return is_legal_move(start, end, promo, game_possible_moves_head, game_possible_moves_tail, num_game_moves);
 }
 
 unsigned char* get_board_state(){
@@ -1873,7 +1944,8 @@ unsigned char* get_board_state(){
 }
 
 void init(char* fen, int len){
-    game_possible_moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    game_possible_moves_head = NULL;
+    game_possible_moves_tail = NULL;
     num_game_moves = 0;
     init_board(fen, len);
 }
@@ -1902,7 +1974,7 @@ void run_game(){
         else{
             printf("black's turn\n");
         }
-        print_legal_moves(game_possible_moves, &num_game_moves);
+        print_legal_moves(game_possible_moves_head);
 
         //get input from user in notation (e.g. b1c3)
         printf("Make a move: ");
@@ -1929,11 +2001,11 @@ void run_game(){
         //if start and end squares within bounds
         if(0 <= start && start < 64 && 0 <= end && end < 64){
             //if the move is in the list of legal moves
-            if(is_legal_move(start, end, promo, game_possible_moves, num_game_moves)){
+            if(is_legal_move(start, end, promo, game_possible_moves_head, game_possible_moves_tail, num_game_moves)){
                 //make the move on the board
                 apply_move(start, end, 0);
                 printf("%d\n" ,mat_eval);
-                update_possible_moves(game_possible_moves, &num_game_moves);
+                update_possible_moves(&game_possible_moves_head, &game_possible_moves_tail, &num_game_moves);
             }
             //otherwise the move is illegal
             else{
@@ -1946,7 +2018,7 @@ void run_game(){
             //if there is a move to undo
             if(undo_successful){
                 printf("Undo\n\n");
-                update_possible_moves(game_possible_moves, &num_game_moves);
+                update_possible_moves(&game_possible_moves_head, &game_possible_moves_tail, &num_game_moves);
             }
             //there are no moves to undo
             else{
@@ -1974,39 +2046,46 @@ int search_moves(int depth, int start_depth){
     if(depth == 0){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
     int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
-    struct Move move;
+    update_possible_moves(&head, &tail, &numElems);
+    Move move;
 
     if(numElems == 0){
         if(white_check || black_check){
+            free_list(head);
             return INT_MAX;
         }
+        free_list(head);
         return 0;
     }
     int bestEvaluation = INT_MAX;
 
-    for(int i = 0; i < numElems; i++){
-        move = moves[i];
+    struct Node* current = head;
+    while (current != NULL) {
+        move = current->data;
         apply_move(move.start, move.end, move.move_id);
         int evaluation = -search_moves(depth - 1, depth);
         if(evaluation < bestEvaluation){
             bestEvaluation = evaluation;
             if(depth == start_depth){
-
                 engine_move = move;
             }
         }
         undo_move();
         decr_num_moves();
         flip_turns();
+        current = current->next;
     }
+
+    free_list(head);
+
     return bestEvaluation;
 }
 
-void print_line(struct Move* line, size_t n){
+void print_line(Move* line, size_t n){
     for(int i = 1; i <= n; i++){
         print_move(line[i]);
         printf(" ");
@@ -2016,19 +2095,20 @@ void print_line(struct Move* line, size_t n){
 
 
 // this is what does the pruning
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
 
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
     int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
-    struct Move move;
+    update_possible_moves(&head, &tail, &numElems);
+    Move move;
 
     if(numElems == 0){
-        free(moves);
+        free_list(head);
         if(white_check){
             return INT_MIN + (start_depth - depth);
         }
@@ -2038,14 +2118,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         return 0;
     }
     if(depth == 0){
-        free(moves);
+        free_list(head);
         return static_eval();
     }
     // white making a move
     if (player){
         int maxEval = INT_MIN;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+        struct Node* current = head;
+        while (current != NULL) {
+            move = current->data;
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
@@ -2055,9 +2136,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = move;
-                /*for(int i = depth; i <= start_depth; i++){
-                    best_line[i] = line[i];
-                }*/
             }
             alpha = max(alpha, evaluation);
             if(depth <= 1){
@@ -2066,15 +2144,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if (beta <= alpha){
                 break;
             }
+            current = current->next;
         }
-        free(moves);
+        free_list(head);
         return maxEval;
     }
-
     else{
         int minEval = INT_MAX;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+        struct Node* current = head;
+        while (current != NULL) {
+            move = current->data;
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
@@ -2084,9 +2163,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if(evaluation < minEval){
                 minEval = evaluation;
                 best_line[depth] = move;
-                /*for(int i = depth; i <= start_depth; i++){
-                    best_line[i] = line[i];
-                }*/
             }
             beta = min(beta, evaluation);
             if(depth <= 1){
@@ -2095,22 +2171,23 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             if (beta <= alpha){
                 break;
             }
+            current = current->next;
         }
-        free(moves);
+        free_list(head);
         return minEval;
     }
 }
 // copy of search moves pruning
-int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
+/*int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
 
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
-    struct Move move;
+    Move move;
 
     if(numElems == 0){
         free(moves);
@@ -2206,21 +2283,22 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
         free(moves);
         return minEval;
     }
-}
+}*/
 
 // this is the test for the depth 4
-int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move* line, int* best_line, struct Move* best_line_actual_moves){
+int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, Move* line, int* best_line, Move* best_line_actual_moves){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
     int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
-    struct Move move;
+    update_possible_moves(&head, &tail, &numElems);
+    Move move;
 
     if(numElems == 0){
-        free(moves);
+        free_list(head);
         if(white_check){
             return INT_MIN + start_depth - depth;
         }
@@ -2230,14 +2308,16 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
         return 0;
     }
     if(depth == 0){
-        free(moves);
+        free_list(head);
         return static_eval();
     }
     // white making a move
     if (player){
         int maxEval = INT_MIN;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+        int i = 0;
+        struct Node* current = head;
+        while (current != NULL) {
+            move = current->data;
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line, best_line_actual_moves);
@@ -2253,15 +2333,20 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             if (beta <= alpha){
                 break;
             }
+            current = current->next;
+            i++;
         }
-        free(moves);
+        free_list(head);
         return maxEval;
     }
 
     else{
         int minEval = INT_MAX;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+
+        int i = 0;
+        struct Node* current = head;
+        while (current != NULL) {
+            move = current->data;
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line, best_line_actual_moves);
@@ -2277,14 +2362,16 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
             if (beta <= alpha){
                 break;
             }
+            current = current->next;
+            i++;
         }
-        free(moves);
+        free_list(head);
         return minEval;
     }
 }
 
 int calc_eng_move(int depth){
-    struct Move nm;
+    Move nm;
     nm.capture = -1;
     nm.end = -1;
     nm.eval = -1;
@@ -2292,12 +2379,12 @@ int calc_eng_move(int depth){
     nm.piece_id = -1;
     nm.start = -1;
 
-    struct Move* line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    Move* line = (Move*)malloc((depth + 1) * sizeof(Move));
     for(int i = 0; i <= depth; i++){
         line[i] = nm;
     }
 
-    struct Move* best_line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    Move* best_line = (Move*)malloc((depth + 1) * sizeof(Move));
     for(int i = 1; i <= depth; i++){
         best_line[i] = nm;
     }
@@ -2309,7 +2396,7 @@ int calc_eng_move(int depth){
     return eval;
 }
 
-bool move_equal(struct Move a, struct Move b){
+bool move_equal(Move a, Move b){
     if(a.move_id != b.move_id) return false;
     if(a.capture != b.capture) return false;
     if(a.start != b.start) return false;
@@ -2318,8 +2405,8 @@ bool move_equal(struct Move a, struct Move b){
     return true;
 }
 
-int calc_eng_move_with_test(int test_depth, int total_depth){
-    struct Move nm;
+/*int calc_eng_move_with_test(int test_depth, int total_depth){
+    Move nm;
     nm.capture = -1;
     nm.end = -1;
     nm.eval = -1;
@@ -2331,13 +2418,13 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     best_beta = INT_MAX;
 
     // initializing to a empty list
-    struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         line[i] = nm;
     }
 
     // initializing to a empty list
-    struct Move* best_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* best_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         best_line[i] = nm;
     }
@@ -2349,13 +2436,13 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     }
 
     // initializing to a empty list
-    struct Move* best_test_line_actual = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+    Move* best_test_line_actual = (Move*)malloc((test_depth + 1) * sizeof(Move));
     for(int i = 0; i <= test_depth; i++){
         best_test_line_actual[i] = nm;
     }
 
     // initializing to a empty list
-    struct Move* best_final_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* best_final_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         best_final_line[i] = nm;
     }
@@ -2377,7 +2464,8 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
     engine_move = best_final_line[total_depth];
 
     return eval;
-}
+}*/
+
 int get_eng_move_start(){
     return engine_move.start;
 }
@@ -2430,8 +2518,8 @@ int get_kingside_bR_num_moves(){
 int get_queenside_bR_num_moves(){
     return queenside_bR_num_moves;
 }
-struct Move* get_possible_moves(){
-    return game_possible_moves;
+struct Node* get_possible_moves(){
+    return game_possible_moves_head;
 }
 
 int get_num_possible_moves(){
@@ -2447,18 +2535,29 @@ int get_pos_eval(){
 }
 
 int main(){
-    printf("%d %d %d\n", NUM_COLOR_BITS, NUM_ROLE_BITS, NUM_SPEC_BITS);
-    printf("%d %d %d\n", COLOR_BITS_OFFSET, ROLE_BITS_OFFSET, SPEC_BITS_OFFSET);
-    printf("%d %d %d %d %d %d %d\n", EMPTY_SQUARE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING);
-    printf("%d %d\n", WHITE, BLACK);
-    printf("%d %d %d\n", COLOR_MASK, ROLE_MASK, SPEC_MASK);
-
-    printf("\n\n");
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    //printf("Perft: %llu\n", perft_test(6));*/
+    printf("Perft: %llu\n", perft_test(6));
 
+    // Create an empty linked list
+    /*struct Node* head = NULL;
+    struct Node* tail = NULL;
+    int numElems = 0;
+
+    Move m;
+    m.start = 5;
+    m.end = 6;
+
+    int iterations = 10;
+    // Insert some elements into the list
+    for(int i = 0; i < iterations; i++){
+        insert(&head, &tail, m, &numElems);
+    }
+
+    print_list(head);
+
+    free_list(head);*/
 
     return 0;
 }

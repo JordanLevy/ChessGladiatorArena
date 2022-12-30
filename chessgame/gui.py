@@ -61,8 +61,8 @@ lib.detailed_perft.argtypes = [c_int]
 lib.calc_eng_move.restype = c_int
 lib.calc_eng_move.argtypes = [c_int]
 
-lib.calc_eng_move_with_test.restype = c_int
-lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
+#lib.calc_eng_move_with_test.restype = c_int
+#lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
 
 lib.get_eng_move_start.restype = c_int
 lib.get_eng_move_end.restype = c_int
@@ -108,7 +108,7 @@ after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
 black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 mate_in_1_3 = b'2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
-fen = mate_in_1_3
+fen = start_pos
 
 EMPTY_SQUARE = 0
 
@@ -351,5 +351,3 @@ def test():
 
 #test()
 run_game()
-
-# cash_fen depth 4: 1350847 vs stockfish: 1350762
