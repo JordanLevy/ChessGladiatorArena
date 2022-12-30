@@ -2538,26 +2538,7 @@ int main(){
     char* fen = start_position;
     init(fen, strlen(fen));
     //run_game();
-    printf("Perft: %llu\n", perft_test(6));
-
-    // Create an empty linked list
-    /*struct Node* head = NULL;
-    struct Node* tail = NULL;
-    int numElems = 0;
-
-    Move m;
-    m.start = 5;
-    m.end = 6;
-
-    int iterations = 10;
-    // Insert some elements into the list
-    for(int i = 0; i < iterations; i++){
-        insert(&head, &tail, m, &numElems);
-    }
-
-    print_list(head);
-
-    free_list(head);*/
+    perft_test(6);
 
     return 0;
 }
