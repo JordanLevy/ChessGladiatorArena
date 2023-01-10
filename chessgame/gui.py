@@ -108,7 +108,7 @@ after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
 black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 mate_in_1_3 = b'2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
-fen = mate_in_1_3
+fen = start_pos
 
 EMPTY_SQUARE = 0
 
@@ -249,7 +249,7 @@ def play_human_move(start, end, promo):
     refresh_graphics()
     move_count += 1
 
-#Kb8c8 Rf6f8 Kc8b8 Rf6f1 Kb8c8 Rf6f3
+
 def play_engine_move():
     st = time.time()
     evaluation = lib.calc_eng_move(6)

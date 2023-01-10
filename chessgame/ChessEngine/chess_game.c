@@ -2015,6 +2015,28 @@ void print_line(struct Move* line, size_t n){
 }
 
 
+// this is to do stuf like chking i fyou are capteringa a good pece
+int calc_static_move_eval(struct Move move){
+    if (move.capture > 0){
+        return abs(values[get_type(move.capture)] + values[move.piece_id]);
+    }
+    return 0;
+}
+
+// this function should order the moves that we search
+void order_moves(struct Move* ordered, int size, bool player){
+    if (player){
+            int move_val[size];
+            for(int i = 0; i < size; i++){
+                move_val[i] = calc_static_move_eval(ordered[i]);
+            }
+    }
+    else{
+
+    }
+
+}
+
 // this is what does the pruning
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
     if(depth == 0 && !white_check && !black_check){
