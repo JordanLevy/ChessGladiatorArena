@@ -2018,24 +2018,54 @@ void print_line(struct Move* line, size_t n){
 // this is to do stuf like chking i fyou are capteringa a good pece
 int calc_static_move_eval(struct Move move){
     if (move.capture > 0){
+        //this will give you the value of what is being captered
         return abs(values[get_type(move.capture)] + values[move.piece_id]);
     }
     return 0;
 }
 
-// this function should order the moves that we search
-void order_moves(struct Move* ordered, int size, bool player){
-    if (player){
-            int move_val[size];
-            for(int i = 0; i < size; i++){
-                move_val[i] = calc_static_move_eval(ordered[i]);
-            }
-    }
-    else{
+// swaps the vals at the indexis
+void swap(int* array, int val1, int val2){
+    int store = array[val1];
+    array[val1] = array[val2];
+    array[val2] = store;
+}
 
+int partition(int* array, int low, int hi){
+    int pivet = array[low];
+    int left_wall = low;
+    int right_wall = hi;
+    for (int i = low +1; i <= hi; i++){
+        if (array[i] < pivet){
+            swap(array, i, left_wall);
+            left_wall += 1;
+        }
+    }
+    swap(array, low, left_wall);
+    return left_wall;
+}
+
+void quick_sort(int array[], int low, int hi){
+    if (low > hi){
+        int pivet_loc = partition(array, low, hi);
+        quick_sort(array, low, pivet_loc);
+        quick_sort(array, pivet_loc + 1, hi);
     }
 
 }
+
+// this function should order the moves that we search
+void order_moves(struct Move* ordered, int size, bool player){
+
+        int move_val[size];
+        for(int i = 0; i < size; i++){
+            move_val[i] = calc_static_move_eval(ordered[i]);
+        }
+
+
+
+}
+
 
 // this is what does the pruning
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
@@ -2469,6 +2499,7 @@ int get_pos_eval(){
 }
 
 int main(){
+    /*
     printf("%d %d %d\n", NUM_COLOR_BITS, NUM_ROLE_BITS, NUM_SPEC_BITS);
     printf("%d %d %d\n", COLOR_BITS_OFFSET, ROLE_BITS_OFFSET, SPEC_BITS_OFFSET);
     printf("%d %d %d %d %d %d %d\n", EMPTY_SQUARE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING);
@@ -2480,7 +2511,10 @@ int main(){
     init(fen, strlen(fen));
     //run_game();
     //printf("Perft: %llu\n", perft_test(6));*/
-
-
+    int array[9] = {10, 9, 4, 7, 3, 6, 6, 4, 222};
+    quick_sort(array, 0, 8);
+    for(int i = 0; i < 9; i++){
+        printf("%d, ",array[i]);
+    }
     return 0;
 }
