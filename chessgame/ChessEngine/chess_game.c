@@ -50,6 +50,8 @@
 #define EN_PASSANT_CAPTURE 17
 #define CASTLING 18
 
+#define CAPTURE_PIECE_VALUE_MULTIPLIER 10
+
 /* move_ids are as follows:
 0: normal move
 1-15 (wP-bK): promotion to the specified type
@@ -535,7 +537,6 @@ void init_fen(char *fen, size_t fen_length){
     int square = 63;
     char current = '_';
     int i = 0;
-    int a = 36;
     for(int i = 0; i < 256; i++){
         piece_location[i] = -1;
     }
@@ -2016,54 +2017,103 @@ void print_line(struct Move* line, size_t n){
 
 
 // this is to do stuf like chking i fyou are capteringa a good pece
-int calc_static_move_eval(struct Move move){
+int calc_static_move_eval(struct Move move, bool is_white_turn){
+    int value = 0;
+    unsigned char moved_piece = get_type(move.piece_id);
+    unsigned char capture = get_type(move.capture);
     if (move.capture > 0){
         //this will give you the value of what is being captered
-        return abs(values[get_type(move.capture)] + values[move.piece_id]);
+        value += CAPTURE_PIECE_VALUE_MULTIPLIER * abs(values[capture]) - abs(values[moved_piece]);
     }
-    return 0;
+    int a = square_incentive[moved_piece][move.end] - square_incentive[moved_piece][move.start];
+    if(is_white_turn){
+        value += a;
+    }
+    else{
+        value -= a;
+    }
+    return value;
 }
 
 // swaps the vals at the indexis
-void swap(int* array, int val1, int val2){
-    int store = array[val1];
-    array[val1] = array[val2];
-    array[val2] = store;
+void swap(int* scores, struct Move* legal_moves, int val1, int val2){
+    int temp_int = scores[val1];
+    scores[val1] = scores[val2];
+    scores[val2] = temp_int;
+
+    struct Move temp_move = legal_moves[val1];
+    legal_moves[val1] = legal_moves[val2];
+    legal_moves[val2] = temp_move;
 }
 
-int partition(int* array, int low, int hi){
-    int pivet = array[low];
-    int left_wall = low;
-    int right_wall = hi;
-    for (int i = low +1; i <= hi; i++){
-        if (array[i] < pivet){
-            swap(array, i, left_wall);
-            left_wall += 1;
+int median_of_three(int* scores, struct Move* legal_moves, int low, int hi){
+    int mid = (low + hi) / 2;
+    if(scores[mid] < scores[low]){
+        swap(scores, legal_moves, low, mid);
+    }
+    if(scores[hi] < scores[low]){
+        swap(scores, legal_moves, low, hi);
+    }
+    if(scores[hi] < scores[mid]){
+        swap(scores, legal_moves, mid, hi);
+    }
+    return mid;
+}
+
+int partition(int* scores, struct Move* legal_moves, int low, int hi){
+    int pivotIndex = median_of_three(scores, legal_moves, low, hi);
+    int pivot = -scores[pivotIndex];
+    swap(scores, legal_moves, low, pivotIndex);
+    int i = low;
+    int j = hi + 1;
+    while(true){
+        while(-scores[++i] < pivot){
+            if(i == hi){
+                break;
+            }
         }
+        while(pivot < -scores[--j]){
+            if(j == low){
+                break;
+            }
+        }
+        if(i >= j){
+            break;
+        }
+        swap(scores, legal_moves, i, j);
     }
-    swap(array, low, left_wall);
-    return left_wall;
+    swap(scores, legal_moves, low, j);
+    return j;
 }
 
-void quick_sort(int array[], int low, int hi){
-    if (low > hi){
-        int pivet_loc = partition(array, low, hi);
-        quick_sort(array, low, pivet_loc);
-        quick_sort(array, pivet_loc + 1, hi);
+void quick_sort(int* scores, struct Move* legal_moves, int low, int hi){
+    if (hi <= low){
+        return;
     }
-
+    int j = partition(scores, legal_moves, low, hi);
+    quick_sort(scores, legal_moves, low, j - 1);
+    quick_sort(scores, legal_moves, j + 1, hi);
 }
 
 // this function should order the moves that we search
-void order_moves(struct Move* ordered, int size, bool player){
+// best moves at the start of the list
+void order_moves(struct Move* ordered, int size, bool is_white_turn){
+    int* move_val = (int*)malloc(size * sizeof(int));
+    for(int i = 0; i < size; i++){
+        move_val[i] = calc_static_move_eval(ordered[i], is_white_turn);
+        //print_move(ordered[i]);
+        //printf(" %d\n", move_val[i]);
+    }
+    quick_sort(move_val, ordered, 0, size - 1);
+    /*printf("\n\nSorted\n\n");
+    for(int i = 0; i < size; i++){
+        print_move(ordered[i]);
+        printf(" %d\n", move_val[i]);
+    }*/
+}
 
-        int move_val[size];
-        for(int i = 0; i < size; i++){
-            move_val[i] = calc_static_move_eval(ordered[i]);
-        }
-
-
-
+void game_order_moves(){
+    order_moves(game_possible_moves, num_game_moves, white_turn);
 }
 
 
@@ -2077,6 +2127,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
+    order_moves(moves, numElems, player);
     struct Move move;
 
     if(numElems == 0){
@@ -2498,23 +2549,48 @@ int get_pos_eval(){
     return pos_eval;
 }
 
-int main(){
-    /*
-    printf("%d %d %d\n", NUM_COLOR_BITS, NUM_ROLE_BITS, NUM_SPEC_BITS);
-    printf("%d %d %d\n", COLOR_BITS_OFFSET, ROLE_BITS_OFFSET, SPEC_BITS_OFFSET);
-    printf("%d %d %d %d %d %d %d\n", EMPTY_SQUARE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING);
-    printf("%d %d\n", WHITE, BLACK);
-    printf("%d %d %d\n", COLOR_MASK, ROLE_MASK, SPEC_MASK);
+bool str_equals(const char* a, const char* b){
+    return strcmp(a, b) == 0;
+}
 
-    printf("\n\n");
-    char* fen = start_position;
-    init(fen, strlen(fen));
-    //run_game();
-    //printf("Perft: %llu\n", perft_test(6));*/
-    int array[9] = {10, 9, 4, 7, 3, 6, 6, 4, 222};
-    quick_sort(array, 0, 8);
-    for(int i = 0; i < 9; i++){
-        printf("%d, ",array[i]);
+bool startswith(const char* str, const char* prefix) {
+    size_t len_str = strlen(str);
+    size_t len_prefix = strlen(prefix);
+    if (len_prefix > len_str) {
+        return 0;
     }
+    return strncmp(str, prefix, len_prefix) == 0;
+}
+
+void uci_communication(){
+    char command[256];
+
+    while (fgets(command, sizeof(command), stdin)) {
+        // remove newline character from the command
+        command[strcspn(command, "\n")] = 0;
+
+        if(str_equals(command, "uci")) {
+            printf("The command is UCI.\n");
+        } else if(startswith(command, "setoption")) {
+            printf("The command is setoption.\n");
+        } else if(str_equals(command, "isready")) {
+            printf("The command is isready.\n");
+        } else if(str_equals(command, "ucinewgame")) {
+            printf("The command is ucinewgame.\n");
+        } else if(startswith(command, "position")) {
+            printf("The command is position.\n");
+        } else if(startswith(command, "go")) {
+            printf("The command is go.\n");
+        } else {
+            printf("Invalid command.\n");
+        }
+
+        fflush(stdout);
+    }
+}
+
+int main(){
+    uci_communication();
+
     return 0;
 }

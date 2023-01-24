@@ -2,10 +2,10 @@ from ctypes import *
 import math
 import sys
 import time
+import subprocess
 
 import pygame
 from pygame.locals import *
-
 
 class Move(Structure):
     _fields_ = [('start', c_int),
@@ -34,7 +34,6 @@ YELLOW = (255, 255, 0, 50)
 GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
-# test
 lib = CDLL('./chess_game.so')
 
 lib.init.argtypes = [c_char_p, c_int]
@@ -130,6 +129,9 @@ white_promo = {'n': wN, 'b': wB, 'r': wR, 'q': wQ}
 black_promo = {'n': bN, 'b': bB, 'r': bR, 'q': bQ}
 
 show_spec = True
+
+path_to_exe = './ChessEngine/bin/Debug/ChessEngine.exe'
+
 
 # get what file you are on given an index 0-63
 def get_file(n):
@@ -253,10 +255,10 @@ def play_human_move(start, end, promo):
 def play_engine_move():
     st = time.time()
     evaluation = lib.calc_eng_move(6)
-    #evaluation = lib.calc_eng_move_with_test(4, 6)
+    # evaluation = lib.calc_eng_move_with_test(4, 6)
     print("time to engine move", time.time() - st)
     print('eval', evaluation)
-    
+
     start = lib.get_eng_move_start()
     end = lib.get_eng_move_end()
     move_id = lib.get_eng_move_id()
@@ -285,6 +287,8 @@ def run_game():
     press_square = -1
     release_square = -1
     promo_key = ''
+
+    # lib.game_order_moves()
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -327,6 +331,7 @@ def run_game():
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
                         play_engine_move()
+                        # lib.game_order_moves()
                     else:
                         print('illegal', press_square, release_square, promo_num)
                         pass
@@ -342,14 +347,45 @@ def run_game():
         main_clock.tick(100)
 
 
-def test():
-    st = time.time()
-    lib.init(c_char_p(fen), len(fen))
-    print(lib.detailed_perft(6))
-    print(time.time() - st)
+# def test():
+#     st = time.time()
+#     lib.init(c_char_p(fen), len(fen))
+#     print(lib.detailed_perft(5))
+#     print(time.time() - st)
 
 
-#test()
+def init_process(path):
+    return subprocess.Popen([path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+
+def close_communication(process):
+    process.terminate()
+
+
+def send_command(process, cmd):
+    # Send the command and return the response
+    process.stdin.write((cmd + '\n').encode())
+    process.stdin.flush()
+    output = process.stdout.readline()
+    return output.decode().strip()
+
+
+def open_communication():
+    process = init_process(path_to_exe)
+
+    while True:
+        cmd = input('Input: ')
+        if cmd == 'exit':
+            break
+        result = send_command(process, cmd)
+        print(result)
+
+    close_communication(process)
+
+
+# test()
 run_game()
+
+#open_communication()
 
 # cash_fen depth 4: 1350847 vs stockfish: 1350762
