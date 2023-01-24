@@ -1,4 +1,4 @@
-from ctypes import *
+# from ctypes import *
 import math
 import sys
 import time
@@ -7,13 +7,13 @@ import subprocess
 import pygame
 from pygame.locals import *
 
-class Move(Structure):
-    _fields_ = [('start', c_int),
-                ('end', c_int),
-                ('id', c_int),
-                ('capture', c_int),
-                ('piece', c_int),
-                ('eval', c_int)]
+# class Move(Structure):
+#     _fields_ = [('start', c_int),
+#                 ('end', c_int),
+#                 ('id', c_int),
+#                 ('capture', c_int),
+#                 ('piece', c_int),
+#                 ('eval', c_int)]
 
 
 screen = None
@@ -34,47 +34,47 @@ YELLOW = (255, 255, 0, 50)
 GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
-lib = CDLL('./chess_game.so')
-
-lib.init.argtypes = [c_char_p, c_int]
-
-lib.apply_move.restype = c_bool
-
-lib.try_undo_move.restype = c_bool
-
-lib.is_game_legal_move.restype = c_bool
-lib.is_game_legal_move.argtypes = [c_int, c_int, c_int]
-
-lib.get_board_state.restype = POINTER(c_char * 64)
-
-lib.get_white_check.restype = c_bool
-
-lib.get_black_check.restype = c_bool
-
-lib.perft_test.restype = c_int
-lib.perft_test.argtypes = [c_int]
-
-lib.detailed_perft.restype = c_int
-lib.detailed_perft.argtypes = [c_int]
-
-lib.calc_eng_move.restype = c_int
-lib.calc_eng_move.argtypes = [c_int]
-
-lib.calc_eng_move_with_test.restype = c_int
-lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
-
-lib.get_eng_move_start.restype = c_int
-lib.get_eng_move_end.restype = c_int
-lib.get_eng_move_eval.restype = c_int
-lib.get_eng_move_id.restype = c_int
-
-lib.get_possible_moves.restype = POINTER(Move)
-
-lib.get_num_possible_moves.restype = c_int
-
-lib.get_mat_eval.restype = c_int
-
-lib.get_pos_eval.restype = c_int
+# lib = CDLL('./chess_game.so')
+#
+# lib.init.argtypes = [c_char_p, c_int]
+#
+# lib.apply_move.restype = c_bool
+#
+# lib.try_undo_move.restype = c_bool
+#
+# lib.is_game_legal_move.restype = c_bool
+# lib.is_game_legal_move.argtypes = [c_int, c_int, c_int]
+#
+# lib.get_board_state.restype = POINTER(c_char * 64)
+#
+# lib.get_white_check.restype = c_bool
+#
+# lib.get_black_check.restype = c_bool
+#
+# lib.perft_test.restype = c_int
+# lib.perft_test.argtypes = [c_int]
+#
+# lib.detailed_perft.restype = c_int
+# lib.detailed_perft.argtypes = [c_int]
+#
+# lib.calc_eng_move.restype = c_int
+# lib.calc_eng_move.argtypes = [c_int]
+#
+# lib.calc_eng_move_with_test.restype = c_int
+# lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
+#
+# lib.get_eng_move_start.restype = c_int
+# lib.get_eng_move_end.restype = c_int
+# lib.get_eng_move_eval.restype = c_int
+# lib.get_eng_move_id.restype = c_int
+#
+# lib.get_possible_moves.restype = POINTER(Move)
+#
+# lib.get_num_possible_moves.restype = c_int
+#
+# lib.get_mat_eval.restype = c_int
+#
+# lib.get_pos_eval.restype = c_int
 
 move_count = 0
 
@@ -384,8 +384,8 @@ def open_communication():
 
 
 # test()
-run_game()
+#run_game()
 
-#open_communication()
+open_communication()
 
 # cash_fen depth 4: 1350847 vs stockfish: 1350762
