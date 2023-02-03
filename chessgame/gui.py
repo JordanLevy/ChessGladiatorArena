@@ -1,6 +1,7 @@
 # from ctypes import *
 import math
 import sys
+import threading
 import time
 import subprocess
 
@@ -358,12 +359,7 @@ def init_process(path):
     return subprocess.Popen([path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 
-def close_communication(process):
-    process.terminate()
-
-
 def send_command(process, cmd):
-    # Send the command and return the response
     process.stdin.write((cmd + '\n').encode())
     process.stdin.flush()
     output = process.stdout.readline()
@@ -372,20 +368,32 @@ def send_command(process, cmd):
 
 def open_communication():
     process = init_process(path_to_exe)
-
-    while True:
-        cmd = input('Input: ')
-        if cmd == 'exit':
-            break
-        result = send_command(process, cmd)
-        print(result)
-
+    read_thread = threading.Thread(target=read_from_process, args=(process,))
+    write_thread = threading.Thread(target=write_to_process, args=(process,))
+    read_thread.start()
+    write_thread.start()
+    read_thread.join()
+    write_thread.join()
     close_communication(process)
 
 
-# test()
-#run_game()
+def close_communication(process):
+    process.terminate()
+
+
+def read_from_process(process):
+    while True:
+        output = process.stdout.readline()
+        if output == b'':
+            break
+        print(output.decode().strip())
+
+
+def write_to_process(process):
+    while True:
+        cmd = input()
+        process.stdin.write((cmd + '\n').encode())
+        process.stdin.flush()
+
 
 open_communication()
-
-# cash_fen depth 4: 1350847 vs stockfish: 1350762

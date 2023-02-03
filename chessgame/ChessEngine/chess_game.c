@@ -2386,7 +2386,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
     }
 }
 
-int calc_eng_move(int depth){
+struct Move calc_eng_move(int depth){
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2408,8 +2408,8 @@ int calc_eng_move(int depth){
     int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
 
     engine_move = best_line[depth];
-    print_line(best_line, depth);
-    return eval;
+    engine_move.eval = eval;
+    return engine_move;
 }
 
 bool move_equal(struct Move a, struct Move b){
@@ -2421,7 +2421,7 @@ bool move_equal(struct Move a, struct Move b){
     return true;
 }
 
-int calc_eng_move_with_test(int test_depth, int total_depth){
+struct Move calc_eng_move_with_test(int test_depth, int total_depth){
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2470,16 +2470,14 @@ int calc_eng_move_with_test(int test_depth, int total_depth){
         printf("%d: %d\n", i, best_test_line[i]);
     }
 
-    print_line(best_test_line_actual, test_depth);
-
     bool applying_hint = true;
 
     int eval = search_moves_with_hint(total_depth, total_depth, INT_MIN, INT_MAX, false, line, best_final_line, best_test_line, test_depth, &applying_hint);
 
     // find the best line and play the first move
     engine_move = best_final_line[total_depth];
-
-    return eval;
+    engine_move.eval = eval;
+    return engine_move;
 }
 int get_eng_move_start(){
     return engine_move.start;
@@ -2562,6 +2560,68 @@ bool startswith(const char* str, const char* prefix) {
     return strncmp(str, prefix, len_prefix) == 0;
 }
 
+char* substring(char* str, int start, int end) {
+    int i;
+    int j = 0;
+    char* sub = (char*)malloc(sizeof(char) * (end - start + 1));
+    for (i = start; i <= end; i++) {
+        sub[j] = str[i];
+        j++;
+    }
+    sub[j] = '\0';
+    return sub;
+}
+
+void inputUCI(){
+    printf("id name Odin\n");
+    printf("id author Ryan Johnson and Jordan Levy\n");
+    printf("uciok\n");
+}
+
+void inputSetOption(){
+    printf("setOption working\n");
+}
+
+void inputIsReady(){
+    printf("readyok\n");
+}
+
+void inputUCINewGame(){
+    printf("ucinewgame working\n");
+}
+
+void inputPosition(char* input){
+
+    char* cmd = input;
+    cmd = substring(cmd, 9, strlen(cmd));
+    strcat(cmd, " ");
+    if(startswith(cmd, "startpos ")){
+        cmd = substring(cmd, 9, strlen(cmd));
+        init(start_position, strlen(start_position));
+        printf("startpos working\n");
+    }
+    else if(startswith(cmd, "fen ")){
+        cmd = substring(cmd, 4, strlen(cmd));
+        init(cmd, strlen(cmd));
+        printf("fen working\n");
+    }
+    if(startswith(cmd, "moves ")){
+        cmd = substring(cmd, 6, strlen(cmd));
+        printf("moves working\n");
+        //TODO make moves accordingly
+    }
+}
+
+void inputGo(char* input){
+    char* cmd = input;
+    cmd = substring(cmd, 3, strlen(cmd));
+    if(startswith(cmd, "depth ")){
+        cmd = substring(cmd, 6, strlen(cmd));
+        int depth = atoi(cmd);
+        printf("bestmove e2e4 %d\n", depth);
+    }
+}
+
 void uci_communication(){
     char command[256];
 
@@ -2570,17 +2630,19 @@ void uci_communication(){
         command[strcspn(command, "\n")] = 0;
 
         if(str_equals(command, "uci")) {
-            printf("The command is UCI.\n");
+            inputUCI();
         } else if(startswith(command, "setoption")) {
-            printf("The command is setoption.\n");
+            inputSetOption();
         } else if(str_equals(command, "isready")) {
-            printf("The command is isready.\n");
+            inputIsReady();
         } else if(str_equals(command, "ucinewgame")) {
-            printf("The command is ucinewgame.\n");
+            inputUCINewGame();
         } else if(startswith(command, "position")) {
-            printf("The command is position.\n");
+            inputPosition(command);
         } else if(startswith(command, "go")) {
-            printf("The command is go.\n");
+            inputGo(command);
+        } else if(startswith(command, "quit")) {
+            break;
         } else {
             printf("Invalid command.\n");
         }
