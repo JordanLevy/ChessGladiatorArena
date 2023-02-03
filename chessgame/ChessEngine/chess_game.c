@@ -2387,6 +2387,7 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
 }
 
 struct Move calc_eng_move(int depth){
+    draw_board();
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2547,6 +2548,42 @@ int get_pos_eval(){
     return pos_eval;
 }
 
+char* move_to_string(struct Move move){
+    char* result = (char*)malloc(sizeof(char) * 5);
+    int s = move.start;
+
+    /*if(s == -1){
+        return;
+    }*/
+    int e = move.end;
+    int m = move.move_id;
+
+    char promotion = '\0';
+
+    char start_file = file_letter(7 - get_file(s));
+    int start_rank = get_rank(s) + 1;
+
+    char end_file = file_letter(7 - get_file(e));
+    int end_rank = get_rank(e) + 1;
+
+    if(m == wN || m == bN){
+        promotion = 'n';
+    }
+    else if(m == wB || m == bB){
+        promotion = 'b';
+    }
+    else if(m == wR || m == bR){
+        promotion = 'r';
+    }
+    else if(m == wQ || m == bQ){
+        promotion = 'q';
+    }
+
+    snprintf(result, 6, "%c%d%c%d%c", start_file, start_rank, end_file, end_rank, promotion);
+
+    return result;
+}
+
 bool str_equals(const char* a, const char* b){
     return strcmp(a, b) == 0;
 }
@@ -2587,7 +2624,7 @@ void inputIsReady(){
 }
 
 void inputUCINewGame(){
-    printf("ucinewgame working\n");
+    init(start_position, strlen(start_position));
 }
 
 void inputPosition(char* input){
@@ -2598,16 +2635,13 @@ void inputPosition(char* input){
     if(startswith(cmd, "startpos ")){
         cmd = substring(cmd, 9, strlen(cmd));
         init(start_position, strlen(start_position));
-        printf("startpos working\n");
     }
     else if(startswith(cmd, "fen ")){
         cmd = substring(cmd, 4, strlen(cmd));
         init(cmd, strlen(cmd));
-        printf("fen working\n");
     }
     if(startswith(cmd, "moves ")){
         cmd = substring(cmd, 6, strlen(cmd));
-        printf("moves working\n");
         //TODO make moves accordingly
     }
 }
@@ -2618,12 +2652,16 @@ void inputGo(char* input){
     if(startswith(cmd, "depth ")){
         cmd = substring(cmd, 6, strlen(cmd));
         int depth = atoi(cmd);
-        printf("bestmove e2e4 %d\n", depth);
+        struct Move result = calc_eng_move(depth);
+        char* move_string = move_to_string(result);
+        printf("bestmove %s\n", move_string);
     }
 }
 
 void uci_communication(){
     char command[256];
+
+    init(start_position, strlen(start_position));
 
     while (fgets(command, sizeof(command), stdin)) {
         // remove newline character from the command
