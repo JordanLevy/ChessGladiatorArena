@@ -35,6 +35,7 @@ YELLOW = (255, 255, 0, 50)
 GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
+move_list_fen = []
 # lib = CDLL('./chess_game.so')
 #
 # lib.init.argtypes = [c_char_p, c_int]
@@ -168,6 +169,10 @@ def get_promo_num(is_white, key):
         return white_promo[key]
     return black_promo[key]
 
+def update_move_list(move):
+    move_list_fen.append(move)
+
+
 
 def init_board():
     global piece_img
@@ -193,10 +198,13 @@ def get_type(piece_id):
 def get_spec(piece_id):
     return piece_id & 15
 
-
+def init_fen():
+    global board
+    board[22] = wK << 4
+    board[43] = bK << 4
 def draw_board():
-    w_check = lib.get_white_check()
-    b_check = lib.get_black_check()
+    w_check = False
+    b_check = False
 
     font = pygame.font.SysFont('Arial', 18, bold=True)
 
@@ -267,7 +275,10 @@ def play_engine_move():
     lib.update_game_possible_moves()
     get_updated_board()
 
-
+def teleport_piece(start, end, promo_val):
+    global board
+    board[end] = board[start]
+    board[start] = EMPTY_SQUARE
 def run_game():
     global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy
     screen = pygame.display.set_mode((400, 400), 0, 32)
@@ -277,11 +288,11 @@ def run_game():
     pygame.font.init()
     clicking = False
     init_board()
+    init_fen()
+    #lib.init(c_char_p(fen), len(fen))
 
-    lib.init(c_char_p(fen), len(fen))
-
-    lib.update_game_possible_moves()
-    get_updated_board()
+    #lib.update_game_possible_moves()
+    #get_updated_board()
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
@@ -299,10 +310,11 @@ def run_game():
                 sys.exit()
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
-                    lib.try_undo_move()
-                    lib.update_game_possible_moves()
-                    get_updated_board()
-                    refresh_graphics()
+                    pass
+                    #lib.try_undo_move()
+                    #lib.update_game_possible_moves()
+                    #get_updated_board()
+                    #refresh_graphics()
                 if event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
@@ -329,6 +341,7 @@ def run_game():
                     release_square = coords_to_num(release_xy)
                     piece = get_piece(press_square)
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
+                    """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
                         play_engine_move()
@@ -336,6 +349,7 @@ def run_game():
                     else:
                         print('illegal', press_square, release_square, promo_num)
                         pass
+                    """
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
