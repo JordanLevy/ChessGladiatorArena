@@ -2630,27 +2630,27 @@ void inputUCINewGame(){
 void inputPosition(char* input){
 
     char* cmd = input;
-    cmd = substring(cmd, 9, strlen(cmd));
+    cmd += 9;
     strcat(cmd, " ");
     if(startswith(cmd, "startpos ")){
-        cmd = substring(cmd, 9, strlen(cmd));
+        cmd += 9;
         init(start_position, strlen(start_position));
     }
     else if(startswith(cmd, "fen ")){
-        cmd = substring(cmd, 4, strlen(cmd));
+        cmd += 4;
         init(cmd, strlen(cmd));
     }
     if(startswith(cmd, "moves ")){
-        cmd = substring(cmd, 6, strlen(cmd));
+        cmd += 6;
         //TODO make moves accordingly
     }
 }
 
 void inputGo(char* input){
     char* cmd = input;
-    cmd = substring(cmd, 3, strlen(cmd));
+    cmd += 3;
     if(startswith(cmd, "depth ")){
-        cmd = substring(cmd, 6, strlen(cmd));
+        cmd += 6;
         int depth = atoi(cmd);
         struct Move result = calc_eng_move(depth);
         char* move_string = move_to_string(result);
