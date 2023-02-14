@@ -35,6 +35,7 @@ YELLOW = (255, 255, 0, 50)
 GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
+white_turn = True
 move_list_fen = []
 # lib = CDLL('./chess_game.so')
 #
@@ -81,35 +82,34 @@ move_list_fen = []
 move_count = 0
 
 # fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
-start_pos = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
-crash_fen = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NbPP1/2RQK2R w Kkq -'
-ke2_fen = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NKPP1/2RQ3R b kq -'
-g5g4_fen = b'r3k2r/ppp2p2/2n2q1p/3p4/P2P2p1/2P1P1P1/3NKPP1/2RQ3R w kq -'
-e3e4_fen = b'r3k2r/ppp2p2/2n2q1p/3p4/P2PP1p1/2P3P1/3NKPP1/2RQ3R b kq -'
-Qf6f2_fen = b'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/2RQ3R w kq - 0 3'
+start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+crash_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NbPP1/2RQK2R w Kkq -'
+ke2_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NKPP1/2RQ3R b kq -'
+g5g4_fen = 'r3k2r/ppp2p2/2n2q1p/3p4/P2P2p1/2P1P1P1/3NKPP1/2RQ3R w kq -'
+e3e4_fen = 'r3k2r/ppp2p2/2n2q1p/3p4/P2PP1p1/2P3P1/3NKPP1/2RQ3R b kq -'
+Qf6f2_fen = 'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/2RQ3R w kq - 0 3'
 
-Qf6f2_fen_w_rook_on_b1 = b'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/1R1Q3R w kq - 0 3'
-Qf6f2_fen_w_rook_on_b1_and_knight_b4 = b'r3k2r/ppp2p2/2n4p/3p4/PN1PP1p1/2P3P1/2N1KqP1/1R1Q3R w kq - 0 3'
-minimal = b'4k3/8/8/8/8/8/4Kq2/1R1Q4 w - - 0 3'
-minimal_not_touching = b'4k3/8/8/8/8/8/4K1q1/1R4Q w - - 0 3'
-minimal_diagonal = b'4k3/8/8/8/8/8/4K3/1R1Q1q2 w - - 0 3'
-minimal_flipped = b'3k4/8/8/8/8/8/2qK4/1Q4R1 w - - 0 3'
-minimal_3rd_rank = b'4k3/8/8/8/8/4Kq2/8/1R1Q4 w - - 0 3'
-minimal_rook = b'4k3/8/8/8/8/4Kr2/8/1R1Q4 w - - 0 3'
+Qf6f2_fen_w_rook_on_b1 = 'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/1R1Q3R w kq - 0 3'
+Qf6f2_fen_w_rook_on_b1_and_knight_b4 = 'r3k2r/ppp2p2/2n4p/3p4/PN1PP1p1/2P3P1/2N1KqP1/1R1Q3R w kq - 0 3'
+minimal = '4k3/8/8/8/8/8/4Kq2/1R1Q4 w - - 0 3'
+minimal_not_touching = '4k3/8/8/8/8/8/4K1q1/1R4Q w - - 0 3'
+minimal_diagonal = '4k3/8/8/8/8/8/4K3/1R1Q1q2 w - - 0 3'
+minimal_flipped = '3k4/8/8/8/8/8/2qK4/1Q4R1 w - - 0 3'
+minimal_3rd_rank = '4k3/8/8/8/8/4Kq2/8/1R1Q4 w - - 0 3'
+minimal_rook = '4k3/8/8/8/8/4Kr2/8/1R1Q4 w - - 0 3'
 
-start_e2e3 = b'rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
-start_h7h6 = b'rnbqkbnr/ppppppp1/7p/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
-start_d1h5 = b'rnbqkbnr/ppppppp1/7p/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2'  # f7f6 is pinned, but still counted
+start_e2e3 = 'rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+start_h7h6 = 'rnbqkbnr/ppppppp1/7p/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
+start_d1h5 = 'rnbqkbnr/ppppppp1/7p/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2'  # f7f6 is pinned, but still counted
 
-crash_after_Qxe2 = b'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R b Kkq - 0 1'
-after_castles = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R w K - 0 1'
-after_f2f3 = b'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R b K - 0 1'
-after_Rf8c8 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
-after_g3g4 = b'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
-black_to_mate = b'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
-dont_know = b'1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
-mate_in_1_3 = b'2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
-fen = start_pos
+crash_after_Qxe2 = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R b Kkq - 0 1'
+after_castles = 'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R w K - 0 1'
+after_f2f3 = 'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R b K - 0 1'
+after_Rf8c8 = 'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
+after_g3g4 = 'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
+black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
+dont_know = '1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
+mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
 
 EMPTY_SQUARE = 0
 
@@ -150,8 +150,36 @@ def coords_to_num(n):
     return n[1] * 8 + (7 - n[0])
 
 
+def decode_notation(move):
+    start_file = move[0]
+    start_rank = int(move[1])
+    end_file = move[2]
+    end_rank = int(move[3])
+    promo = None
+    if len(move) == 5:
+        if white_turn:
+            promo = white_promo[move[4]]
+        else:
+            promo = black_promo[move[4]]
+
+    start_file_num = ord(start_file) - 97
+    end_file_num = ord(end_file) - 97
+
+    start_rank -= 1
+    end_rank -= 1
+
+    start = coords_to_num((start_file_num, start_rank))
+    end = coords_to_num((end_file_num, end_rank))
+
+    return start, end, promo
+
+
 def get_piece(square):
-    return int.from_bytes(board[square], "big")
+    return board[square]
+
+
+def set_piece(square, piece_type):
+    board[square] = piece_type << 4
 
 
 def is_white_piece(piece_id):
@@ -169,9 +197,9 @@ def get_promo_num(is_white, key):
         return white_promo[key]
     return black_promo[key]
 
+
 def update_move_list(move):
     move_list_fen.append(move)
-
 
 
 def init_board():
@@ -198,10 +226,32 @@ def get_type(piece_id):
 def get_spec(piece_id):
     return piece_id & 15
 
-def init_fen():
-    global board
-    board[22] = wK << 4
-    board[43] = bK << 4
+
+# rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+def init_fen(fen):
+    global board, white_turn
+    letter_to_piece = {'p': bP, 'n': bN, 'b': bB, 'r': bR, 'q': bQ, 'k': bK, 'P': wP, 'N': wN, 'B': wB, 'R': wR,
+                       'Q': wQ, 'K': wK}
+    board = [EMPTY_SQUARE for i in range(64)]
+    print(fen)
+    pieces, turn, castling_rights, en_passant, fifty_move_rule, turn_number = fen.split(' ')
+    index = 0
+    square = 63
+    n = len(pieces)
+    while index < n:
+        char = pieces[index]
+        if char == '/':
+            index += 1
+            continue
+        elif char in letter_to_piece:
+            set_piece(square, letter_to_piece[char])
+            square -= 1
+        else:
+            square -= int(char)
+        index += 1
+    white_turn = (turn == 'w')
+
+
 def draw_board():
     w_check = False
     b_check = False
@@ -275,12 +325,16 @@ def play_engine_move():
     lib.update_game_possible_moves()
     get_updated_board()
 
+
 def teleport_piece(start, end, promo_val):
+    print(start, end, promo_val)
     global board
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
-def run_game():
-    global board, screen, press_xy, release_xy, press_square, release_square, mouse_xy
+
+
+def run_game(process):
+    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy
     screen = pygame.display.set_mode((400, 400), 0, 32)
     main_clock = pygame.time.Clock()
     pygame.display.init()
@@ -288,11 +342,11 @@ def run_game():
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen()
-    #lib.init(c_char_p(fen), len(fen))
+    init_fen(start_pos)
+    # lib.init(c_char_p(fen), len(fen))
 
-    #lib.update_game_possible_moves()
-    #get_updated_board()
+    # lib.update_game_possible_moves()
+    # get_updated_board()
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
@@ -311,10 +365,10 @@ def run_game():
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     pass
-                    #lib.try_undo_move()
-                    #lib.update_game_possible_moves()
-                    #get_updated_board()
-                    #refresh_graphics()
+                    # lib.try_undo_move()
+                    # lib.update_game_possible_moves()
+                    # get_updated_board()
+                    # refresh_graphics()
                 if event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
@@ -341,6 +395,14 @@ def run_game():
                     release_square = coords_to_num(release_xy)
                     piece = get_piece(press_square)
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
+
+                    # human move
+                    teleport_piece(press_square, release_square, promo_num)
+                    white_turn = not white_turn
+
+                    # engine move
+                    process.stdin.write(('go depth 6' + '\n').encode())
+                    process.stdin.flush()
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
@@ -383,11 +445,14 @@ def send_command(process, cmd):
 def open_communication():
     process = init_process(path_to_exe)
     read_thread = threading.Thread(target=read_from_process, args=(process,))
-    write_thread = threading.Thread(target=write_to_process, args=(process,))
+    # write_thread = threading.Thread(target=write_to_process, args=(process,))
+    game_thread = threading.Thread(target=run_game, args=(process,))
     read_thread.start()
-    write_thread.start()
+    # write_thread.start()
+    game_thread.start()
     read_thread.join()
-    write_thread.join()
+    # write_thread.join()
+    game_thread.join()
     close_communication(process)
 
 
@@ -400,14 +465,21 @@ def read_from_process(process):
         output = process.stdout.readline()
         if output == b'':
             break
-        print(output.decode().strip())
+
+        response = output.decode().strip()
+        if response.startswith('bestmove'):
+            cmd, move = response.split(' ')
+            start, end, promo = decode_notation(move)
+            teleport_piece(start, end, promo)
+            refresh_graphics()
+        print(response)
 
 
-def write_to_process(process):
-    while True:
-        cmd = input()
-        process.stdin.write((cmd + '\n').encode())
-        process.stdin.flush()
+# def write_to_process(process):
+# while True:
+# cmd = input()
+# process.stdin.write((cmd + '\n').encode())
+# process.stdin.flush()
 
 
 open_communication()
