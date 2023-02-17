@@ -127,6 +127,9 @@ wR = 12
 wQ = 13
 wK = 14
 
+letter_to_piece = {'p': bP, 'n': bN, 'b': bB, 'r': bR, 'q': bQ, 'k': bK, 'P': wP, 'N': wN, 'B': wB, 'R': wR,'Q': wQ, 'K': wK}
+piece_to_letter = {bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k', wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K'}
+
 white_promo = {'n': wN, 'b': wB, 'r': wR, 'q': wQ}
 black_promo = {'n': bN, 'b': bB, 'r': bR, 'q': bQ}
 
@@ -219,6 +222,9 @@ def init_board():
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
 
 
+
+
+
 def get_type(piece_id):
     return piece_id >> 4
 
@@ -226,14 +232,36 @@ def get_type(piece_id):
 def get_spec(piece_id):
     return piece_id & 15
 
+def board_to_fen():
+    fen = ""
+    spaces = 0
+
+    for i in range(63, -1, -1):
+        piece = get_type(board[i])
+        if (piece not in piece_to_letter):
+            spaces += 1
+        else:
+            if (spaces != 0):
+                fen += str(spaces)
+                spaces = 0
+            fen += piece_to_letter[piece]
+        if (i%8 == 0):
+            if (spaces != 0):
+                fen += str(spaces)
+                spaces = 0
+            if i != 0:
+                fen += "/"
+    if white_turn:
+        fen += " w"
+    else:
+        fen += " b"
+    print(fen)
+
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 def init_fen(fen):
     global board, white_turn
-    letter_to_piece = {'p': bP, 'n': bN, 'b': bB, 'r': bR, 'q': bQ, 'k': bK, 'P': wP, 'N': wN, 'B': wB, 'R': wR,
-                       'Q': wQ, 'K': wK}
     board = [EMPTY_SQUARE for i in range(64)]
-    print(fen)
     pieces, turn, castling_rights, en_passant, fifty_move_rule, turn_number = fen.split(' ')
     index = 0
     square = 63
@@ -315,8 +343,8 @@ def play_engine_move():
     st = time.time()
     evaluation = lib.calc_eng_move(6)
     # evaluation = lib.calc_eng_move_with_test(4, 6)
-    print("time to engine move", time.time() - st)
-    print('eval', evaluation)
+    #print("time to engine move", time.time() - st)
+    #print('eval', evaluation)
 
     start = lib.get_eng_move_start()
     end = lib.get_eng_move_end()
@@ -327,11 +355,10 @@ def play_engine_move():
 
 
 def teleport_piece(start, end, promo_val):
-    print(start, end, promo_val)
     global board
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
-
+    board_to_fen()
 
 def run_game(process):
     global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy
@@ -472,7 +499,6 @@ def read_from_process(process):
             start, end, promo = decode_notation(move)
             teleport_piece(start, end, promo)
             refresh_graphics()
-        print(response)
 
 
 # def write_to_process(process):
