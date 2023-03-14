@@ -2387,7 +2387,6 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
 }
 
 struct Move calc_eng_move(int depth){
-    draw_board();
     struct Move nm;
     nm.capture = -1;
     nm.end = -1;
@@ -2638,6 +2637,7 @@ void inputPosition(char* input){
     }
     else if(startswith(cmd, "fen ")){
         cmd += 4;
+        printf("info %s\n", cmd);
         init(cmd, strlen(cmd));
     }
     if(startswith(cmd, "moves ")){
@@ -2647,12 +2647,14 @@ void inputPosition(char* input){
 }
 
 void inputGo(char* input){
+    printf("info I'm here\n");
     char* cmd = input;
     cmd += 3;
     if(startswith(cmd, "depth ")){
         cmd += 6;
         int depth = atoi(cmd);
         struct Move result = calc_eng_move(depth);
+        printf("info %d %d\n", result.start, result.end);
         char* move_string = move_to_string(result);
         printf("bestmove %s\n", move_string);
     }
@@ -2665,19 +2667,26 @@ void uci_communication(){
 
     while (fgets(command, sizeof(command), stdin)) {
         // remove newline character from the command
+        printf("info %s\n", command);
         command[strcspn(command, "\n")] = 0;
 
         if(str_equals(command, "uci")) {
+            printf("info uci\n");
             inputUCI();
         } else if(startswith(command, "setoption")) {
+            printf("info setoption\n");
             inputSetOption();
         } else if(str_equals(command, "isready")) {
+            printf("info isready\n");
             inputIsReady();
         } else if(str_equals(command, "ucinewgame")) {
+            printf("info ucinewgame\n");
             inputUCINewGame();
         } else if(startswith(command, "position")) {
+            printf("info position\n");
             inputPosition(command);
         } else if(startswith(command, "go")) {
+            printf("info go\n");
             inputGo(command);
         } else if(startswith(command, "quit")) {
             break;

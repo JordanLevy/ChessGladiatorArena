@@ -255,7 +255,7 @@ def board_to_fen():
         fen += " w"
     else:
         fen += " b"
-    print(fen)
+    return fen
 
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
@@ -426,10 +426,11 @@ def run_game(process):
                     # human move
                     teleport_piece(press_square, release_square, promo_num)
                     white_turn = not white_turn
+                    fen = board_to_fen()
+                    send_command(process, 'position fen ' + fen)
 
-                    # engine move
-                    process.stdin.write(('go depth 6' + '\n').encode())
-                    process.stdin.flush()
+                    white_turn = not white_turn
+                    send_command(process, 'go depth 6')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
@@ -465,8 +466,6 @@ def init_process(path):
 def send_command(process, cmd):
     process.stdin.write((cmd + '\n').encode())
     process.stdin.flush()
-    output = process.stdout.readline()
-    return output.decode().strip()
 
 
 def open_communication():
@@ -495,10 +494,14 @@ def read_from_process(process):
 
         response = output.decode().strip()
         if response.startswith('bestmove'):
+            print(response)
             cmd, move = response.split(' ')
             start, end, promo = decode_notation(move)
+            print(move)
             teleport_piece(start, end, promo)
             refresh_graphics()
+        if response.startswith('info'):
+            print(response)
 
 
 # def write_to_process(process):
