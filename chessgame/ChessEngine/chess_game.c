@@ -2650,6 +2650,8 @@ void inputGo(char* input){
     printf("info I'm here\n");
     char* cmd = input;
     cmd += 3;
+    printf("starting search\n");
+    draw_board();
     if(startswith(cmd, "depth ")){
         cmd += 6;
         int depth = atoi(cmd);
@@ -2699,7 +2701,9 @@ void uci_communication(){
 }
 
 int main(){
-    uci_communication();
-
+    //uci_communication();
+    //init(start_position, strlen(start_position));
+    //printf("%llu", detailed_perft(4));
+    //detailed_perft(4);
     return 0;
 }

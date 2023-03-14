@@ -83,6 +83,7 @@ move_count = 0
 
 # fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
 start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+test_pos1 = "r1bqkbnr/pppppppp/2n5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2"
 crash_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NbPP1/2RQK2R w Kkq -'
 ke2_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NKPP1/2RQ3R b kq -'
 g5g4_fen = 'r3k2r/ppp2p2/2n2q1p/3p4/P2P2p1/2P1P1P1/3NKPP1/2RQ3R w kq -'
@@ -343,8 +344,6 @@ def play_engine_move():
     st = time.time()
     evaluation = lib.calc_eng_move(6)
     # evaluation = lib.calc_eng_move_with_test(4, 6)
-    #print("time to engine move", time.time() - st)
-    #print('eval', evaluation)
 
     start = lib.get_eng_move_start()
     end = lib.get_eng_move_end()
@@ -430,6 +429,7 @@ def run_game(process):
                     send_command(process, 'position fen ' + fen)
 
                     white_turn = not white_turn
+                    print(fen)
                     send_command(process, 'go depth 6')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
@@ -491,18 +491,15 @@ def read_from_process(process):
         output = process.stdout.readline()
         if output == b'':
             break
-
         response = output.decode().strip()
+        print(response)
         if response.startswith('bestmove'):
-            print(response)
             cmd, move = response.split(' ')
             start, end, promo = decode_notation(move)
-            print(move)
             teleport_piece(start, end, promo)
             refresh_graphics()
         if response.startswith('info'):
-            print(response)
-
+            pass
 
 # def write_to_process(process):
 # while True:
