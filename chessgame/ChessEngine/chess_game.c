@@ -530,9 +530,89 @@ void move_piece(unsigned char id, int start, int end){
     pos_eval -= square_incentive[type][start];
 }
 
-void init_fen(char *fen, size_t fen_length){
+void reset_board(){
+    best_alpha = INT_MIN;
+    best_beta = INT_MAX;
+
     mat_eval = 0;
     pos_eval = 0;
+    num_moves = 0;
+    white_turn = true;
+
+    for(int i = 0; i < 15; i++){
+        bitboards[i] = 0ULL;
+    }
+
+    not_black_pieces = 0ULL;
+    not_white_pieces = 0ULL;
+    all_squares = 0ULL;
+
+    white_pieces = 0ULL;
+    black_pieces = 0ULL;
+
+    empty = 0ULL;
+    occupied = 0ULL;
+    for(int i = 0; i < 9; i++){
+        file[i] = 0ULL;
+        rank[i] = 0ULL;
+    }
+    for(int i = 0; i < 15; i++){
+        l_diag[i] = 0ULL;
+        r_diag[i] = 0ULL;
+    }
+
+    square_a8 = 0ULL;
+
+    knight_span = 0ULL;
+    king_span = 0ULL;
+
+    file_ab = 0ULL;
+    file_gh = 0ULL;
+
+    unsafe_white = 0ULL;
+    unsafe_black = 0ULL;
+
+    white_check = false;
+    black_check = false;
+
+    num_pieces_delivering_check = 0;
+    blocking_squares = 0ULL;
+    for(int i = 0; i < 64; i++){
+        pinning_squares[i] = 0ULL;
+    }
+    en_passant_pinned = -1;
+
+    // piece id of the 4 rooks you can castle with
+    kingside_wR = EMPTY_SQUARE;
+    queenside_wR = EMPTY_SQUARE;
+    kingside_bR = EMPTY_SQUARE;
+    queenside_bR = EMPTY_SQUARE;
+
+    // number of times each of the 4 castling rooks has moved
+    kingside_wR_num_moves = 0;
+    queenside_wR_num_moves = 0;
+    kingside_bR_num_moves = 0;
+    queenside_bR_num_moves = 0;
+
+    // number of times each king has moved
+    wK_num_moves = 0;
+    bK_num_moves = 0;
+
+    for(int i = 0; i < 64; i++){
+        board[i] = EMPTY_SQUARE;
+    }
+
+    for(int i = 0; i < 256; i++){
+        piece_location[i] = -1;
+    }
+
+    for(int i = 0; i < 15; i++){
+        next_spec[i] = 0;
+    }
+}
+
+void init_fen(char *fen, size_t fen_length){
+    reset_board();
 
     int square = 63;
     char current = '_';
@@ -1591,7 +1671,7 @@ bool apply_move(int start, int end, int move_id){
     // not their turn to make a move
     if(white_turn != is_white_piece(moved_piece)){
         printf("Not your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n", white_turn, start, end, move_id);
-        draw_board();
+        //draw_board();
         update_game_possible_moves();
         print_legal_moves(game_possible_moves, &num_game_moves);
         return false;
@@ -2637,7 +2717,6 @@ void inputPosition(char* input){
     }
     else if(startswith(cmd, "fen ")){
         cmd += 4;
-        printf("info %s\n", cmd);
         init(cmd, strlen(cmd));
     }
     if(startswith(cmd, "moves ")){
@@ -2647,16 +2726,13 @@ void inputPosition(char* input){
 }
 
 void inputGo(char* input){
-    printf("info I'm here\n");
     char* cmd = input;
     cmd += 3;
-    printf("starting search\n");
-    draw_board();
     if(startswith(cmd, "depth ")){
         cmd += 6;
         int depth = atoi(cmd);
+        draw_board();
         struct Move result = calc_eng_move(depth);
-        printf("info %d %d\n", result.start, result.end);
         char* move_string = move_to_string(result);
         printf("bestmove %s\n", move_string);
     }
@@ -2669,26 +2745,20 @@ void uci_communication(){
 
     while (fgets(command, sizeof(command), stdin)) {
         // remove newline character from the command
-        printf("info %s\n", command);
+        //printf("info received command%s\n", command);
         command[strcspn(command, "\n")] = 0;
 
         if(str_equals(command, "uci")) {
-            printf("info uci\n");
             inputUCI();
         } else if(startswith(command, "setoption")) {
-            printf("info setoption\n");
             inputSetOption();
         } else if(str_equals(command, "isready")) {
-            printf("info isready\n");
             inputIsReady();
         } else if(str_equals(command, "ucinewgame")) {
-            printf("info ucinewgame\n");
             inputUCINewGame();
         } else if(startswith(command, "position")) {
-            printf("info position\n");
             inputPosition(command);
         } else if(startswith(command, "go")) {
-            printf("info go\n");
             inputGo(command);
         } else if(startswith(command, "quit")) {
             break;
@@ -2701,8 +2771,14 @@ void uci_communication(){
 }
 
 int main(){
-    //uci_communication();
-    //init(start_position, strlen(start_position));
+    uci_communication();
+    /*init(start_position, strlen(start_position));
+    draw_board();
+    printf("\n");
+    apply_move(11, 27, 0);
+    draw_board();
+    struct Move m = calc_eng_move(6);
+    print_move(m);*/
     //printf("%llu", detailed_perft(4));
     //detailed_perft(4);
     return 0;

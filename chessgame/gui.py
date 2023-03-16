@@ -429,7 +429,7 @@ def run_game(process):
                     send_command(process, 'position fen ' + fen)
 
                     white_turn = not white_turn
-                    print(fen)
+                    print('fen', fen)
                     send_command(process, 'go depth 6')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
