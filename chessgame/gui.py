@@ -177,7 +177,6 @@ def decode_notation(move):
 
     return start, end, promo
 
-
 def get_piece(square):
     return board[square]
 
@@ -355,9 +354,37 @@ def play_engine_move():
 
 def teleport_piece(start, end, promo_val):
     global board
+    print("this is promo val")
+    print(promo_val)
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
-    board_to_fen()
+    #casiling for white
+    if get_type(board[start]) == wK and start == 3:
+        if end == 1:
+            #this is moving the white rook for casaling king side
+            board[2] = board[0]
+            board[0] = EMPTY_SQUARE
+        elif end == 5:
+            #this is moving the rook casaling queen side
+            board[4] = board[7]
+            board[7] = EMPTY_SQUARE
+    elif get_type(board[start]) == bK and start == 59:
+        if end == 57:
+            #this is moving the black rook for casaling king side
+            board[58] = board[56]
+            board[56] = EMPTY_SQUARE
+        elif end == 61:
+            #this is moving the rook casaling queen side
+            board[60] = board[63]
+            board[63] = EMPTY_SQUARE
+    #promotion for white pawn
+    if get_type(board[start]) == wP and get_rank(start) == 6:
+        if get_rank(end) == 7:
+            board[end] = promo_val
+    #promo for black pawn
+    elif get_type(board[start]) == bP and get_rank(start) == 1:
+        if get_rank(end) == 0:
+            board[end] = promo_val
 
 def run_game(process):
     global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy
