@@ -112,6 +112,8 @@ black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = '1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
 
+best_move_castle = 'r3k3/pp4p1/2p3pp/7n/4P1q1/1QNP1Rb1/PP4BK/8 w q - 0 23'
+
 EMPTY_SQUARE = 0
 
 bP = 1
@@ -128,11 +130,26 @@ wR = 12
 wQ = 13
 wK = 14
 
-letter_to_piece = {'p': bP, 'n': bN, 'b': bB, 'r': bR, 'q': bQ, 'k': bK, 'P': wP, 'N': wN, 'B': wB, 'R': wR,'Q': wQ, 'K': wK}
-piece_to_letter = {bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k', wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K'}
+letter_to_piece = {'p': bP, 'n': bN, 'b': bB, 'r': bR, 'q': bQ, 'k': bK, 'P': wP, 'N': wN, 'B': wB, 'R': wR, 'Q': wQ,
+                   'K': wK}
+piece_to_letter = {bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k', wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q',
+                   wK: 'K'}
 
 white_promo = {'n': wN, 'b': wB, 'r': wR, 'q': wQ}
 black_promo = {'n': bN, 'b': bB, 'r': bR, 'q': bQ}
+
+kingside_wR = EMPTY_SQUARE
+queenside_wR = EMPTY_SQUARE
+kingside_bR = EMPTY_SQUARE
+queenside_bR = EMPTY_SQUARE
+
+kingside_wR_num_moves = 0
+queenside_wR_num_moves = 0
+kingside_bR_num_moves = 0
+queenside_bR_num_moves = 0
+
+wK_num_moves = 0
+bK_num_moves = 0
 
 show_spec = True
 
@@ -159,12 +176,7 @@ def decode_notation(move):
     start_rank = int(move[1])
     end_file = move[2]
     end_rank = int(move[3])
-    promo = None
-    if len(move) == 5:
-        if white_turn:
-            promo = white_promo[move[4]]
-        else:
-            promo = black_promo[move[4]]
+    promo_num = 0
 
     start_file_num = ord(start_file) - 97
     end_file_num = ord(end_file) - 97
@@ -175,7 +187,11 @@ def decode_notation(move):
     start = coords_to_num((start_file_num, start_rank))
     end = coords_to_num((end_file_num, end_rank))
 
-    return start, end, promo
+    if len(move) == 5:
+        promo_num = get_promo_num(is_white_piece(start), move[4])
+
+    return start, end, promo_num
+
 
 def get_piece(square):
     return board[square]
@@ -222,15 +238,13 @@ def init_board():
         piece_img[j] = pygame.transform.scale(piece_img[j], (50, 50))
 
 
-
-
-
 def get_type(piece_id):
     return piece_id >> 4
 
 
 def get_spec(piece_id):
     return piece_id & 15
+
 
 def board_to_fen():
     fen = ""
@@ -245,7 +259,7 @@ def board_to_fen():
                 fen += str(spaces)
                 spaces = 0
             fen += piece_to_letter[piece]
-        if (i%8 == 0):
+        if (i % 8 == 0):
             if (spaces != 0):
                 fen += str(spaces)
                 spaces = 0
@@ -255,6 +269,18 @@ def board_to_fen():
         fen += " w"
     else:
         fen += " b"
+    castling_rights = ""
+    if wK_num_moves == 0:
+        if kingside_wR_num_moves == 0:
+            castling_rights += "K"
+        if queenside_wR_num_moves == 0:
+            castling_rights += "Q"
+    if bK_num_moves == 0:
+        if kingside_bR_num_moves == 0:
+            castling_rights += "k"
+        if queenside_bR_num_moves == 0:
+            castling_rights += "q"
+    fen += " " + castling_rights
     return fen
 
 
@@ -354,37 +380,35 @@ def play_engine_move():
 
 def teleport_piece(start, end, promo_val):
     global board
-    print("this is promo val")
-    print(promo_val)
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
-    #casiling for white
-    if get_type(board[start]) == wK and start == 3:
+    # casiling for white
+    if get_type(board[end]) == wK and start == 3:
+        print("a")
         if end == 1:
-            #this is moving the white rook for casaling king side
+            # this is moving the white rook for casaling king side
             board[2] = board[0]
             board[0] = EMPTY_SQUARE
         elif end == 5:
-            #this is moving the rook casaling queen side
+            # this is moving the rook casaling queen side
             board[4] = board[7]
             board[7] = EMPTY_SQUARE
-    elif get_type(board[start]) == bK and start == 59:
+    elif get_type(board[end]) == bK and start == 59:
         if end == 57:
-            #this is moving the black rook for casaling king side
+            # this is moving the black rook for casaling king side
             board[58] = board[56]
             board[56] = EMPTY_SQUARE
         elif end == 61:
-            #this is moving the rook casaling queen side
+            # this is moving the rook casaling queen side
             board[60] = board[63]
             board[63] = EMPTY_SQUARE
-    #promotion for white pawn
-    if get_type(board[start]) == wP and get_rank(start) == 6:
-        if get_rank(end) == 7:
-            board[end] = promo_val
-    #promo for black pawn
-    elif get_type(board[start]) == bP and get_rank(start) == 1:
-        if get_rank(end) == 0:
-            board[end] = promo_val
+    # promotion for white pawn
+    if get_type(board[end]) == wP and get_rank(end) == 7:
+        set_piece(end, promo_val)
+    # promo for black pawn
+    elif get_type(board[end]) == bP and get_rank(end) == 0:
+        set_piece(end, promo_val)
+
 
 def run_game(process):
     global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy
@@ -395,7 +419,7 @@ def run_game(process):
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen(start_pos)
+    init_fen(best_move_castle)
     # lib.init(c_char_p(fen), len(fen))
 
     # lib.update_game_possible_moves()
@@ -456,8 +480,7 @@ def run_game(process):
                     send_command(process, 'position fen ' + fen)
 
                     white_turn = not white_turn
-                    print('fen', fen)
-                    send_command(process, 'go depth 6')
+                    send_command(process, 'go depth 1')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
@@ -519,14 +542,15 @@ def read_from_process(process):
         if output == b'':
             break
         response = output.decode().strip()
-        print(response)
         if response.startswith('bestmove'):
             cmd, move = response.split(' ')
+            print(move)
             start, end, promo = decode_notation(move)
             teleport_piece(start, end, promo)
             refresh_graphics()
         if response.startswith('info'):
-            pass
+            print(response)
+
 
 # def write_to_process(process):
 # while True:

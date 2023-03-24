@@ -1579,7 +1579,7 @@ void print_legal_moves(struct Move* moves, int *numElems){
         int s = move.start;
         int e = move.end;
         int m = move.move_id;
-        printf("%d:\t", i);
+        printf("info %d:\t", i);
 
         char file = file_letter(7 - get_file(s));
         int rank = get_rank(s) + 1;
@@ -2208,6 +2208,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     update_possible_moves(moves, &numElems);
     order_moves(moves, numElems, player);
+    if(depth == start_depth){
+        print_legal_moves(moves, &numElems);
+    }
     struct Move move;
 
     if(numElems == 0){
