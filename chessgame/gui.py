@@ -78,8 +78,11 @@ move_list_fen = []
 # lib.get_mat_eval.restype = c_int
 #
 # lib.get_pos_eval.restype = c_int
+# global var spot
 
 move_count = 0
+next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
 
 # fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
 start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -283,8 +286,12 @@ def board_to_fen():
     fen += " " + castling_rights
     return fen
 
+def add_piece(square, piece_type):
+    spec = next_spec[piece_type]
+    board[square] = (piece_type << 4) | spec
+    next_spec[piece_type] += 1
+    return board[square]
 
-# rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 def init_fen(fen):
     global board, white_turn
     board = [EMPTY_SQUARE for i in range(64)]
@@ -298,12 +305,25 @@ def init_fen(fen):
             index += 1
             continue
         elif char in letter_to_piece:
-            set_piece(square, letter_to_piece[char])
+            p_type = letter_to_piece[char]
+            p_ID = add_piece(square, letter_to_piece[char])
+            if p_type == wR:
+                if (square == 0):
+                    kingside_wR = p_ID
+                elif (square == 7):
+                    queenside_wR = p_ID
+            elif p_type == bR:
+                if (square == 56):
+                    kingside_bR = p_ID
+                elif (square == 63):
+                    queenside_bR = p_ID
+            #set_piece(square, letter_to_piece[char])
             square -= 1
         else:
             square -= int(char)
         index += 1
     white_turn = (turn == 'w')
+    print(bin(kingside_wR), bin(kingside_bR),bin(queenside_wR), bin(queenside_bR))
 
 
 def draw_board():
@@ -378,13 +398,28 @@ def play_engine_move():
     get_updated_board()
 
 
-def teleport_piece(start, end, promo_val):
+def apply_move(start, end, promo_val):
     global board
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
+    #check if pieces are moveing
+    p_type = get_type(board[end])
+    p_ID = board[end]
+    if get_type(board[end] == wK):
+        wK_num_moves += 1
+    if get_type(board[end] == bK):
+        bK_num_moves += 1
+    if p_ID == kingside_wR:
+        kingside_wR_num_moves += 1
+    if p_ID == queenside_wR:
+        queenside_wR_num_moves += 1
+    if p_ID == kingside_bR:
+        kingside_bR_num_moves += 1
+    if p_ID == queenside_bR:
+        queenside_bR_num_moves += 1
     # casiling for white
     if get_type(board[end]) == wK and start == 3:
-        print("a")
+
         if end == 1:
             # this is moving the white rook for casaling king side
             board[2] = board[0]
@@ -419,7 +454,7 @@ def run_game(process):
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen(best_move_castle)
+    init_fen(start_pos)
     # lib.init(c_char_p(fen), len(fen))
 
     # lib.update_game_possible_moves()
@@ -474,13 +509,13 @@ def run_game(process):
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
 
                     # human move
-                    teleport_piece(press_square, release_square, promo_num)
+                    apply_move(press_square, release_square, promo_num)
                     white_turn = not white_turn
                     fen = board_to_fen()
                     send_command(process, 'position fen ' + fen)
 
                     white_turn = not white_turn
-                    send_command(process, 'go depth 1')
+                    send_command(process, 'go depth 6')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
@@ -546,7 +581,7 @@ def read_from_process(process):
             cmd, move = response.split(' ')
             print(move)
             start, end, promo = decode_notation(move)
-            teleport_piece(start, end, promo)
+            apply_move(start, end, promo)
             refresh_graphics()
         if response.startswith('info'):
             print(response)
