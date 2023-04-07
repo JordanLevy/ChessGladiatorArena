@@ -8,6 +8,7 @@ import subprocess
 import pygame
 from pygame.locals import *
 
+
 # class Move(Structure):
 #     _fields_ = [('start', c_int),
 #                 ('end', c_int),
@@ -15,6 +16,18 @@ from pygame.locals import *
 #                 ('capture', c_int),
 #                 ('piece', c_int),
 #                 ('eval', c_int)]
+
+class Move:
+    def __init__(self, start, end, move_id, capture, piece_id, eval):
+        self.start = start
+        self.end = end
+        self.move_id = move_id
+        self.capture = capture
+        self.piece_id = piece_id
+        self.eval = eval
+
+    def __str__(self):
+        return '(' + str(self.start) + ', ' + str(self.end) + ') ' + str(self.move_id)
 
 
 screen = None
@@ -36,7 +49,7 @@ GRAY_GREEN = (118, 176, 151, 50)
 
 board = []
 white_turn = True
-move_list_fen = []
+move_list = []
 # lib = CDLL('./chess_game.so')
 #
 # lib.init.argtypes = [c_char_p, c_int]
@@ -112,6 +125,9 @@ black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 dont_know = '1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
 
+black_promo_mate = '8/8/8/8/8/8/PPP3kp/K7 w - - 0 1'
+black_ep_mate = '7b/8/8/8/p1p5/P7/KP4k1/RB6 w - - 0 1'
+
 best_move_castle = 'r3k3/pp4p1/2p3pp/7n/4P1q1/1QNP1Rb1/PP4BK/8 w q - 0 23'
 
 EMPTY_SQUARE = 0
@@ -152,6 +168,7 @@ wK_num_moves = 0
 bK_num_moves = 0
 
 show_spec = True
+engine_enabled = False
 
 path_to_exe = './ChessEngine/bin/Debug/ChessEngine.exe'
 
@@ -217,8 +234,14 @@ def get_promo_num(is_white, key):
     return black_promo[key]
 
 
-def update_move_list(move):
-    move_list_fen.append(move)
+def append_move(move):
+    move_list.append(move)
+
+
+def get_previous_move():
+    if not move_list:
+        return None
+    return move_list[-1]
 
 
 def init_board():
@@ -380,11 +403,28 @@ def play_engine_move():
 
 def teleport_piece(start, end, promo_val):
     global board
+    move_id = 0
+    piece_id = board[start]
+    piece_type = get_type(piece_id)
+    capture = board[end]
+    evaluation = 0
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
+    prev_move = get_previous_move()
+    # previous move was a double pawn push
+    if prev_move and prev_move.move_id == 16:
+        # capture en passant
+        if (piece_type == wP or piece_type == bP) and (start - 1 == prev_move.end or start + 1 == prev_move.end):
+            move_id = 17
+            board[prev_move.end] = EMPTY_SQUARE
+    # double pawn push
+    if piece_type == wP and get_rank(start) == 1 and get_rank(end) == 3 and get_file(start) == get_file(end):
+        move_id = 16
+    elif piece_type == bP and get_rank(start) == 6 and get_rank(end) == 4 and get_file(start) == get_file(end):
+        move_id = 16
     # casiling for white
-    if get_type(board[end]) == wK and start == 3:
-        print("a")
+    if piece_type == wK and start == 3:
+        move_id = 18
         if end == 1:
             # this is moving the white rook for casaling king side
             board[2] = board[0]
@@ -393,7 +433,8 @@ def teleport_piece(start, end, promo_val):
             # this is moving the rook casaling queen side
             board[4] = board[7]
             board[7] = EMPTY_SQUARE
-    elif get_type(board[end]) == bK and start == 59:
+    elif piece_type == bK and start == 59:
+        move_id = 18
         if end == 57:
             # this is moving the black rook for casaling king side
             board[58] = board[56]
@@ -403,11 +444,17 @@ def teleport_piece(start, end, promo_val):
             board[60] = board[63]
             board[63] = EMPTY_SQUARE
     # promotion for white pawn
-    if get_type(board[end]) == wP and get_rank(end) == 7:
+    if piece_type == wP and get_rank(end) == 7:
+        move_id = promo_val
         set_piece(end, promo_val)
     # promo for black pawn
-    elif get_type(board[end]) == bP and get_rank(end) == 0:
+    elif piece_type == bP and get_rank(end) == 0:
+        move_id = promo_val
         set_piece(end, promo_val)
+    new_move = Move(start, end, move_id, capture, piece_id, evaluation)
+    append_move(new_move)
+    for move in move_list:
+        print(move)
 
 
 def run_game(process):
@@ -419,7 +466,7 @@ def run_game(process):
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen(best_move_castle)
+    init_fen(start_pos)
     # lib.init(c_char_p(fen), len(fen))
 
     # lib.update_game_possible_moves()
@@ -476,11 +523,14 @@ def run_game(process):
                     # human move
                     teleport_piece(press_square, release_square, promo_num)
                     white_turn = not white_turn
-                    fen = board_to_fen()
-                    send_command(process, 'position fen ' + fen)
 
-                    white_turn = not white_turn
-                    send_command(process, 'go depth 1')
+                    if engine_enabled:
+                        fen = board_to_fen()
+                        print('fen sent to engine', fen)
+                        send_command(process, 'position fen ' + fen)
+
+                        white_turn = not white_turn
+                        send_command(process, 'go depth 6')
                     """
                     if lib.is_game_legal_move(press_square, release_square, promo_num):
                         play_human_move(press_square, release_square, promo_num)
