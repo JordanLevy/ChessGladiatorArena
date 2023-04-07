@@ -422,7 +422,7 @@ def play_engine_move():
 
 
 def apply_move(start, end, promo_val):
-    global board
+    global board, wK_num_moves, bK_num_moves, kingside_wR_num_moves, queenside_wR_num_moves, kingside_bR_num_moves, queenside_bR_num_moves
     move_id = 0
     piece_id = board[start]
     piece_type = get_type(piece_id)
