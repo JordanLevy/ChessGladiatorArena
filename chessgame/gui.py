@@ -171,20 +171,30 @@ wK_num_moves = 0
 bK_num_moves = 0
 
 show_spec = True
-engine_enabled = False
+engine_enabled = True
 
 path_to_exe = './ChessEngine/bin/Debug/ChessEngine.exe'
+
 
 
 # get what file you are on given an index 0-63
 def get_file(n):
     return n % 8
 
+def get_file_letter(n):
+    letter = chr(104 - get_file(n))
+    return letter
 
 # get what rank you are on given an index 0-63
 def get_rank(n):
     return n // 8
 
+
+# takes in a number and spits out the square in algabraic notation
+def square_num_to_notation(n):
+    all_notation = get_file_letter(n)
+    all_notation += str(get_rank(n) + 1)
+    return all_notation
 
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
@@ -307,6 +317,16 @@ def board_to_fen():
         if queenside_bR_num_moves == 0:
             castling_rights += "q"
     fen += " " + castling_rights
+    # this is for en passant right
+    last_move = get_previous_move()
+    if last_move.move_id == 16:
+        # if the doble pawn puch is wight
+        if is_white_piece(last_move.piece_id):
+            ep_square = square_num_to_notation(last_move.end - 8)
+        #black en square
+        else:
+            ep_square = square_num_to_notation(last_move.end + 8)
+        fen += " " + ep_square
     return fen
 
 def add_piece(square, piece_type):
@@ -346,7 +366,7 @@ def init_fen(fen):
             square -= int(char)
         index += 1
     white_turn = (turn == 'w')
-    print(bin(kingside_wR), bin(kingside_bR),bin(queenside_wR), bin(queenside_bR))
+    #print(bin(kingside_wR), bin(kingside_bR),bin(queenside_wR), bin(queenside_bR))
 
 
 def draw_board():
@@ -501,7 +521,7 @@ def run_game(process):
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen(start_pos)
+    init_fen(black_ep_mate)
     # lib.init(c_char_p(fen), len(fen))
 
     # lib.update_game_possible_moves()
@@ -558,7 +578,7 @@ def run_game(process):
                     # human move
                     apply_move(press_square, release_square, promo_num)
                     white_turn = not white_turn
-
+                    print(board_to_fen())
                     if engine_enabled:
                         fen = board_to_fen()
                         print('fen sent to engine', fen)
