@@ -323,7 +323,7 @@ def board_to_fen():
         # if the doble pawn puch is wight
         if is_white_piece(last_move.piece_id):
             ep_square = square_num_to_notation(last_move.end - 8)
-        #black en square
+        # black en square
         else:
             ep_square = square_num_to_notation(last_move.end + 8)
         fen += " " + ep_square

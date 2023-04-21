@@ -714,15 +714,19 @@ void init_fen(char *fen, size_t fen_length){
         else if (current == 'q'){
             queenside_bR_num_moves = 0;
         }
-        if(current == ' ' || current == '\0'){
+        if(current == ' '){
             i++;
             break;
+        }
+        if(current == '\0'){
+            return;
         }
     }
 
     current = fen[i];
     for(; i < fen_length; i++){
         current = fen[i];
+    }
     if(current == '-')
     {
     }
@@ -2803,7 +2807,6 @@ void uci_communication(){
         } else {
             printf("Invalid command.\n");
         }
-
         fflush(stdout);
     }
 }

@@ -17,13 +17,15 @@
 	<math.h>
 	<ctype.h>
 
-1668641181 source:c:\users\hp\documents\resume\chess engen with j\chess app with jorden\chessgladiatorarena\chessgame\chessengine\chess_game.c
+1682114641 source:c:\users\hp\documents\resume\chess engen with j\chess app with jorden\chessgladiatorarena\chessgame\chessengine\chess_game.c
 	<stdio.h>
 	<stdlib.h>
 	<stdbool.h>
 	<string.h>
 	<limits.h>
 	<time.h>
+	<math.h>
+	<ctype.h>
 
 1679007801 source:e:\desktop\coding\python 3.7\workspace\chessgladiatorarena\chessgame\chessengine\chess_game.c
 	<stdio.h>
