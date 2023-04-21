@@ -611,6 +611,27 @@ void reset_board(){
     }
 }
 
+// changes a letter num into a 0 to 63 num
+int nota_to_numb(char c, int i){
+    int file_num = c;
+    if (c >= 'A' && c <= 'H'){
+        file_num += 32;
+    }
+    file_num -= 97;
+
+    int square;
+
+    square = (i-1)*8+(7-file_num);
+
+    return square;
+
+}
+
+void append_move(struct Move* arr, struct Move m, int *i){
+    arr[*i] = m;
+    (*i)++;
+}
+
 void init_fen(char *fen, size_t fen_length){
     reset_board();
 
@@ -634,6 +655,9 @@ void init_fen(char *fen, size_t fen_length){
         else if(current == ' '){
             i++;
             break;
+        }
+        else if(current == '\0'){
+            return;
         }
         //placing a piece
         else{
@@ -690,17 +714,44 @@ void init_fen(char *fen, size_t fen_length){
         else if (current == 'q'){
             queenside_bR_num_moves = 0;
         }
-        if(current == ' '){
+        if(current == ' ' || current == '\0'){
             i++;
             break;
         }
     }
-}
 
-
-void append_move(struct Move* arr, struct Move m, int *i){
-    arr[*i] = m;
-    (*i)++;
+    current = fen[i];
+    for(; i < fen_length; i++){
+        current = fen[i];
+    if(current == '-')
+    {
+    }
+    else{
+        char en_passant_file = current;
+        printf("info fen %s\n", fen);
+        printf("info en_passant_file %c, %d\n", en_passant_file, i);
+        i += 1;
+        current = fen[i];
+        char en_passant_rank_char = current;
+        printf("info en_passant_rank_char %c, %d\n", en_passant_rank_char, i);
+        int en_passant_rank = (int)en_passant_rank_char;
+        printf("info en_passant_rank %d, %d\n", en_passant_rank, i);
+        struct Move double_pawn;
+        int square_num = nota_to_numb(en_passant_file, en_passant_rank);
+        double_pawn.move_id = DOUBLE_PAWN_PUSH;
+        printf("info rank %d\n", en_passant_rank);
+        if(en_passant_rank == 6){
+            double_pawn.start = square_num + 8;
+            double_pawn.end = square_num - 8;
+        }
+        else if(en_passant_rank == 3){
+            double_pawn.start = square_num - 8;
+            double_pawn.end = square_num + 8;
+        }
+        printf("info end %d\n", double_pawn.end);
+        //double_pawn.piece_id = get_piece(double_pawn.end);
+        //append_move(move_list, double_pawn, &num_moves);
+    }
 }
 
 int get_file(int n){
@@ -1909,22 +1960,6 @@ unsigned long long detailed_perft(int depth){
     free(moves);
 
     return num_positions;
-}
-
-// changes a letter num into a 0 to 63 num
-int nota_to_numb(char c, int i){
-    int file_num = c;
-    if (c >= 'A' && c <= 'H'){
-        file_num += 32;
-    }
-    file_num -= 97;
-
-    int square;
-
-    square = (i-1)*8+(7-file_num);
-
-    return square;
-
 }
 
 bool get_white_check(){
