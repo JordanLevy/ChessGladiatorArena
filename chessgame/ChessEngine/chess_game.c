@@ -634,127 +634,116 @@ void append_move(struct Move* arr, struct Move m, int *i){
 
 void init_fen(char *fen, size_t fen_length){
     reset_board();
-
     int square = 63;
     char current = '_';
-    int i = 0;
-    for(int i = 0; i < 256; i++){
-        piece_location[i] = -1;
-    }
-    for(; i < fen_length; i++){
-        current = fen[i];
-        //found a number, representing empty squares
-        if(current >= '0' && current <= '9'){
-            square -= (current - '0');
-        }
-        // found a slash, next row
-        else if(current == '/'){
-            continue;
-        }
-        //found a space, done placing pieces
-        else if(current == ' '){
-            i++;
-            break;
-        }
-        else if(current == '\0'){
-            return;
-        }
-        //placing a piece
-        else{
-            char lower = tolower(current);
-            unsigned char color = (current == lower)?BLACK:WHITE;
-            unsigned char role = letter_to_piece_type(lower);
-            unsigned char id = add_piece(color | role, square);
-            if(role == ROOK){
-                if(color == WHITE){
-                    if(square == 0){
-                        kingside_wR = id;
-                    }
-                    else if(square == 7){
-                        queenside_wR = id;
-                    }
-                }
-                else{
-                    if(square == 56){
-                        kingside_bR = id;
-                    }
-                    else if(square == 63){
-                        queenside_bR = id;
-                    }
-                }
-            }
-            square -= 1;
-        }
-    }
-    current = fen[i];
-    if(current == 'b'){
-        white_turn = false;
-    }
-    else{
-        white_turn = true;
-    }
-    i+= 2;
-
+    int fen_section = 0;
     kingside_wR_num_moves = 1;
     queenside_wR_num_moves = 1;
     kingside_bR_num_moves = 1;
     queenside_bR_num_moves = 1;
-
-    for(; i < fen_length; i++){
+    for(int i = 0; i < fen_length; i++){
         current = fen[i];
-        if (current == 'K'){
-            kingside_wR_num_moves = 0;
+        if (current == '\0'){
+            printf("info error we reched the null caractor\n");
         }
-        else if (current == 'Q'){
-            queenside_wR_num_moves = 0;
-        }
-        else if (current == 'k'){
-            kingside_bR_num_moves = 0;
-        }
-        else if (current == 'q'){
-            queenside_bR_num_moves = 0;
-        }
+        //found a space, done section
         if(current == ' '){
-            i++;
-            break;
+            fen_section += 1;
+            continue;
         }
-        if(current == '\0'){
-            return;
+        if (fen_section == 0){
+            //found a number, representing empty squares
+            if(current >= '0' && current <= '9'){
+                square -= (current - '0');
+            }
+            // found a slash, next row
+            else if(current == '/'){
+                continue;
+            }
+            //placing a piece
+            else{
+                char lower = tolower(current);
+                unsigned char color = (current == lower)?BLACK:WHITE;
+                unsigned char role = letter_to_piece_type(lower);
+                unsigned char id = add_piece(color | role, square);
+                if(role == ROOK){
+                    if(color == WHITE){
+                        if(square == 0){
+                            kingside_wR = id;
+                        }
+                        else if(square == 7){
+                            queenside_wR = id;
+                        }
+                    }
+                    else{
+                        if(square == 56){
+                            kingside_bR = id;
+                        }
+                        else if(square == 63){
+                            queenside_bR = id;
+                        }
+                    }
+                }
+                square -= 1;
+            }
         }
-    }
+        else if(fen_section == 1){
+            //this is section 1
+            if(current == 'b'){
+                white_turn = false;
+            }
+            else{
+                white_turn = true;
+            }
+            // this is the end of secton 1
 
-    current = fen[i];
-    for(; i < fen_length; i++){
-        current = fen[i];
-    }
-    if(current == '-')
-    {
-    }
-    else{
-        char en_passant_file = current;
-        printf("info fen %s\n", fen);
-        printf("info en_passant_file %c, %d\n", en_passant_file, i);
-        i += 1;
-        current = fen[i];
-        char en_passant_rank_char = current;
-        printf("info en_passant_rank_char %c, %d\n", en_passant_rank_char, i);
-        int en_passant_rank = (int)en_passant_rank_char;
-        printf("info en_passant_rank %d, %d\n", en_passant_rank, i);
-        struct Move double_pawn;
-        int square_num = nota_to_numb(en_passant_file, en_passant_rank);
-        double_pawn.move_id = DOUBLE_PAWN_PUSH;
-        printf("info rank %d\n", en_passant_rank);
-        if(en_passant_rank == 6){
-            double_pawn.start = square_num + 8;
-            double_pawn.end = square_num - 8;
         }
-        else if(en_passant_rank == 3){
-            double_pawn.start = square_num - 8;
-            double_pawn.end = square_num + 8;
+        //this is the start of section 2
+        //this section handals casaling rights
+        else if (fen_section == 2){
+            if (current == 'K'){
+                kingside_wR_num_moves = 0;
+            }
+            else if (current == 'Q'){
+                queenside_wR_num_moves = 0;
+            }
+            else if (current == 'k'){
+                kingside_bR_num_moves = 0;
+            }
+            else if (current == 'q'){
+                queenside_bR_num_moves = 0;
+            }
         }
-        printf("info end %d\n", double_pawn.end);
-        //double_pawn.piece_id = get_piece(double_pawn.end);
-        //append_move(move_list, double_pawn, &num_moves);
+        //end of section 2
+        else if (fen_section == 3){
+            //section 3 code
+            //this handels in enpasont casle
+            if(current != '-'){
+                char en_passant_file = current;
+                i += 1;
+                current = fen[i];
+                char en_passant_rank_char = current;
+
+                int en_passant_rank = (int)en_passant_rank_char - 48;
+
+                struct Move double_pawn;
+                //this is notation to num eg. a1 to 7
+                int square_num = nota_to_numb(en_passant_file, en_passant_rank);
+                double_pawn.move_id = DOUBLE_PAWN_PUSH;
+                printf("info file %c \n", en_passant_file);
+                printf("info rank %d %c \n", en_passant_rank, en_passant_rank_char);
+                if(en_passant_rank == 6){
+                    double_pawn.start = square_num + 8;
+                    double_pawn.end = square_num - 8;
+                }
+                else if(en_passant_rank == 3){
+                    double_pawn.start = square_num - 8;
+                    double_pawn.end = square_num + 8;
+                }
+                double_pawn.piece_id = get_piece(double_pawn.end);
+                append_move(move_list, double_pawn, &num_moves);
+            }
+        }
     }
 }
 
@@ -1634,7 +1623,7 @@ void print_legal_moves(struct Move* moves, int *numElems){
         int s = move.start;
         int e = move.end;
         int m = move.move_id;
-        printf("info %d:\t", i);
+        printf("%d:\t", i);
 
         char file = file_letter(7 - get_file(s));
         int rank = get_rank(s) + 1;
