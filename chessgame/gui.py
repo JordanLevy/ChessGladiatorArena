@@ -9,14 +9,6 @@ import pygame
 from pygame.locals import *
 
 
-# class Move(Structure):
-#     _fields_ = [('start', c_int),
-#                 ('end', c_int),
-#                 ('id', c_int),
-#                 ('capture', c_int),
-#                 ('piece', c_int),
-#                 ('eval', c_int)]
-
 class Move:
     def __init__(self, start, end, move_id, capture, piece_id, eval):
         self.start = start
@@ -50,88 +42,20 @@ GRAY_GREEN = (118, 176, 151, 50)
 board = []
 white_turn = True
 move_list = []
-# lib = CDLL('./chess_game.so')
-#
-# lib.init.argtypes = [c_char_p, c_int]
-#
-# lib.apply_move.restype = c_bool
-#
-# lib.try_undo_move.restype = c_bool
-#
-# lib.is_game_legal_move.restype = c_bool
-# lib.is_game_legal_move.argtypes = [c_int, c_int, c_int]
-#
-# lib.get_board_state.restype = POINTER(c_char * 64)
-#
-# lib.get_white_check.restype = c_bool
-#
-# lib.get_black_check.restype = c_bool
-#
-# lib.perft_test.restype = c_int
-# lib.perft_test.argtypes = [c_int]
-#
-# lib.detailed_perft.restype = c_int
-# lib.detailed_perft.argtypes = [c_int]
-#
-# lib.calc_eng_move.restype = c_int
-# lib.calc_eng_move.argtypes = [c_int]
-#
-# lib.calc_eng_move_with_test.restype = c_int
-# lib.calc_eng_move_with_test.argtypes = [c_int, c_int]
-#
-# lib.get_eng_move_start.restype = c_int
-# lib.get_eng_move_end.restype = c_int
-# lib.get_eng_move_eval.restype = c_int
-# lib.get_eng_move_id.restype = c_int
-#
-# lib.get_possible_moves.restype = POINTER(Move)
-#
-# lib.get_num_possible_moves.restype = c_int
-#
-# lib.get_mat_eval.restype = c_int
-#
-# lib.get_pos_eval.restype = c_int
-# global var spot
 
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+depth = 6
 
-# fen = b"6K1/q7/8/5n2/8/8/8/7k w - -"
 start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-test_pos1 = "r1bqkbnr/pppppppp/2n5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2"
-crash_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NbPP1/2RQK2R w Kkq -'
-ke2_fen = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NKPP1/2RQ3R b kq -'
-g5g4_fen = 'r3k2r/ppp2p2/2n2q1p/3p4/P2P2p1/2P1P1P1/3NKPP1/2RQ3R w kq -'
-e3e4_fen = 'r3k2r/ppp2p2/2n2q1p/3p4/P2PP1p1/2P3P1/3NKPP1/2RQ3R b kq -'
-Qf6f2_fen = 'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/2RQ3R w kq - 0 3'
 
-Qf6f2_fen_w_rook_on_b1 = 'r3k2r/ppp2p2/2n4p/3p4/P2PP1p1/2P3P1/3NKqP1/1R1Q3R w kq - 0 3'
-Qf6f2_fen_w_rook_on_b1_and_knight_b4 = 'r3k2r/ppp2p2/2n4p/3p4/PN1PP1p1/2P3P1/2N1KqP1/1R1Q3R w kq - 0 3'
-minimal = '4k3/8/8/8/8/8/4Kq2/1R1Q4 w - - 0 3'
-minimal_not_touching = '4k3/8/8/8/8/8/4K1q1/1R4Q w - - 0 3'
-minimal_diagonal = '4k3/8/8/8/8/8/4K3/1R1Q1q2 w - - 0 3'
-minimal_flipped = '3k4/8/8/8/8/8/2qK4/1Q4R1 w - - 0 3'
-minimal_3rd_rank = '4k3/8/8/8/8/4Kq2/8/1R1Q4 w - - 0 3'
-minimal_rook = '4k3/8/8/8/8/4Kr2/8/1R1Q4 w - - 0 3'
-
-start_e2e3 = 'rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
-start_h7h6 = 'rnbqkbnr/ppppppp1/7p/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
-start_d1h5 = 'rnbqkbnr/ppppppp1/7p/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2'  # f7f6 is pinned, but still counted
-
-crash_after_Qxe2 = 'r3k2r/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R b Kkq - 0 1'
-after_castles = 'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K2R w K - 0 1'
-after_f2f3 = 'r4rk1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R b K - 0 1'
-after_Rf8c8 = 'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1PPP1/3NQ1P1/2R1K2R w K - 1 2'
-after_g3g4 = 'r1r3k1/ppp2p2/2n2q1p/3p2p1/P2P2P1/2P1PP2/3NQ1P1/2R1K2R b K - 0 2'
 black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
-dont_know = '1r2k1r1/ppp2p2/2n2q1p/3p2p1/P2P4/2P1P1P1/3NQPP1/2R1K1R1 b Kkq - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
-
 black_promo_mate = '8/8/8/8/8/8/PPP3kp/K7 w - - 0 1'
 black_ep_mate = '7b/8/8/8/p1p5/P7/KP4k1/RB6 w - - 0 1'
-
 best_move_castle = 'r3k3/pp4p1/2p3pp/7n/4P1q1/1QNP1Rb1/PP4BK/8 w q - 0 23'
+white_bodies = 'rnbrkbnn/n7/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1'
 
 EMPTY_SQUARE = 0
 
@@ -176,14 +100,15 @@ engine_enabled = True
 path_to_exe = './ChessEngine/bin/Debug/ChessEngine.exe'
 
 
-
 # get what file you are on given an index 0-63
 def get_file(n):
     return n % 8
 
+
 def get_file_letter(n):
     letter = chr(104 - get_file(n))
     return letter
+
 
 # get what rank you are on given an index 0-63
 def get_rank(n):
@@ -195,6 +120,7 @@ def square_num_to_notation(n):
     all_notation = get_file_letter(n)
     all_notation += str(get_rank(n) + 1)
     return all_notation
+
 
 # turns a tuple n=(x, y) into an index from 0-63
 def coords_to_num(n):
@@ -329,14 +255,16 @@ def board_to_fen():
         fen += " " + ep_square
     return fen
 
+
 def add_piece(square, piece_type):
     spec = next_spec[piece_type]
     board[square] = (piece_type << 4) | spec
     next_spec[piece_type] += 1
     return board[square]
 
+
 def init_fen(fen):
-    global board, white_turn
+    global board, white_turn, kingside_wR, queenside_wR, kingside_bR, queenside_bR
     board = [EMPTY_SQUARE for i in range(64)]
     pieces, turn, castling_rights, en_passant, fifty_move_rule, turn_number = fen.split(' ')
     index = 0
@@ -360,13 +288,12 @@ def init_fen(fen):
                     kingside_bR = p_ID
                 elif (square == 63):
                     queenside_bR = p_ID
-            #set_piece(square, letter_to_piece[char])
+            # set_piece(square, letter_to_piece[char])
             square -= 1
         else:
             square -= int(char)
         index += 1
     white_turn = (turn == 'w')
-    #print(bin(kingside_wR), bin(kingside_bR),bin(queenside_wR), bin(queenside_bR))
 
 
 def draw_board():
@@ -374,6 +301,9 @@ def draw_board():
     b_check = False
 
     font = pygame.font.SysFont('Arial', 18, bold=True)
+    prev_move = None
+    if move_list:
+        prev_move = move_list[-1]
 
     for i in range(64):
         piece_id = get_piece(i)
@@ -388,6 +318,11 @@ def draw_board():
         # if a king is in check, color their square red
         if (w_check and piece_type == wK) or (b_check and piece_type == bK):
             square_color = RED
+        if prev_move:
+            if prev_move.start == i:
+                square_color = YELLOW
+            elif prev_move.end == i:
+                square_color = YELLOW
         # draw the squares on the board
         pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
         # if there is a piece on this square and it's not currently being held
@@ -410,35 +345,8 @@ def refresh_graphics():
     draw_board()
 
 
-def get_updated_board():
-    global board
-    board = [i for i in lib.get_board_state().contents]
-
-
 def print_move(m):
     print(m.piece, m.start, m.end)
-
-
-def play_human_move(start, end, promo):
-    global move_count
-    lib.apply_move(start, end, promo)
-    lib.update_game_possible_moves()
-    get_updated_board()
-    refresh_graphics()
-    move_count += 1
-
-
-def play_engine_move():
-    st = time.time()
-    evaluation = lib.calc_eng_move(6)
-    # evaluation = lib.calc_eng_move_with_test(4, 6)
-
-    start = lib.get_eng_move_start()
-    end = lib.get_eng_move_end()
-    move_id = lib.get_eng_move_id()
-    lib.apply_move(start, end, move_id)
-    lib.update_game_possible_moves()
-    get_updated_board()
 
 
 def apply_move(start, end, promo_val):
@@ -450,7 +358,7 @@ def apply_move(start, end, promo_val):
     evaluation = 0
     board[end] = board[start]
     board[start] = EMPTY_SQUARE
-    #check if pieces are moveing
+    # check if pieces are moveing
     p_type = get_type(board[end])
     p_ID = board[end]
     if get_type(board[end] == wK):
@@ -508,8 +416,6 @@ def apply_move(start, end, promo_val):
         set_piece(end, promo_val)
     new_move = Move(start, end, move_id, capture, piece_id, evaluation)
     append_move(new_move)
-    for move in move_list:
-        print(move)
 
 
 def run_game(process):
@@ -521,19 +427,13 @@ def run_game(process):
     pygame.font.init()
     clicking = False
     init_board()
-    init_fen(black_ep_mate)
-    # lib.init(c_char_p(fen), len(fen))
-
-    # lib.update_game_possible_moves()
-    # get_updated_board()
+    init_fen(start_pos)
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
     press_square = -1
     release_square = -1
     promo_key = ''
-
-    # lib.game_order_moves()
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -543,12 +443,10 @@ def run_game(process):
                 sys.exit()
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
-                    pass
-                    # lib.try_undo_move()
-                    # lib.update_game_possible_moves()
-                    # get_updated_board()
-                    # refresh_graphics()
-                if event.key == K_n:
+                    send_command(process, 'isready')
+                elif event.key == K_p:
+                    send_command(process, 'go perft 4')
+                elif event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
                     promo_key = 'b'
@@ -575,26 +473,17 @@ def run_game(process):
                     piece = get_piece(press_square)
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
 
-                    # human move
-                    apply_move(press_square, release_square, promo_num)
-                    white_turn = not white_turn
-                    print(board_to_fen())
-                    if engine_enabled:
-                        fen = board_to_fen()
-                        print('fen sent to engine', fen)
-                        send_command(process, 'position fen ' + fen)
-
+                    # can't start and end a move on the same square
+                    if not press_square == release_square:
+                        # human move
+                        apply_move(press_square, release_square, promo_num)
                         white_turn = not white_turn
-                        send_command(process, 'go depth 6')
-                    """
-                    if lib.is_game_legal_move(press_square, release_square, promo_num):
-                        play_human_move(press_square, release_square, promo_num)
-                        play_engine_move()
-                        # lib.game_order_moves()
-                    else:
-                        print('illegal', press_square, release_square, promo_num)
-                        pass
-                    """
+                        if engine_enabled:
+                            fen = board_to_fen()
+                            send_command(process, 'position fen ' + fen)
+                            white_turn = not white_turn
+                            send_command(process, 'go depth ' + str(depth))
+
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -605,13 +494,6 @@ def run_game(process):
 
         pygame.display.update()
         main_clock.tick(100)
-
-
-# def test():
-#     st = time.time()
-#     lib.init(c_char_p(fen), len(fen))
-#     print(lib.detailed_perft(5))
-#     print(time.time() - st)
 
 
 def init_process(path):
@@ -634,6 +516,7 @@ def open_communication():
     read_thread.join()
     # write_thread.join()
     game_thread.join()
+    print('close communication')
     close_communication(process)
 
 
@@ -649,19 +532,10 @@ def read_from_process(process):
         response = output.decode().strip()
         if response.startswith('bestmove'):
             cmd, move = response.split(' ')
-            print(move)
             start, end, promo = decode_notation(move)
             apply_move(start, end, promo)
             refresh_graphics()
-        if response.startswith('info'):
-            print(response)
-
-
-# def write_to_process(process):
-# while True:
-# cmd = input()
-# process.stdin.write((cmd + '\n').encode())
-# process.stdin.flush()
+        print(response)
 
 
 open_communication()

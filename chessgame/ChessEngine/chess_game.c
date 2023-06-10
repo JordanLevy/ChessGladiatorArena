@@ -730,8 +730,6 @@ void init_fen(char *fen, size_t fen_length){
                 //this is notation to num eg. a1 to 7
                 int square_num = nota_to_numb(en_passant_file, en_passant_rank);
                 double_pawn.move_id = DOUBLE_PAWN_PUSH;
-                printf("info file %c \n", en_passant_file);
-                printf("info rank %d %c \n", en_passant_rank, en_passant_rank_char);
                 if(en_passant_rank == 6){
                     double_pawn.start = square_num + 8;
                     double_pawn.end = square_num - 8;
@@ -1714,8 +1712,8 @@ bool apply_move(int start, int end, int move_id){
     unsigned char type = get_type(moved_piece);
     // not their turn to make a move
     if(white_turn != is_white_piece(moved_piece)){
-        printf("Not your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n", white_turn, start, end, move_id);
-        //draw_board();
+        printf("\n\nNot your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n\n", white_turn, start, end, move_id);
+        draw_board();
         update_game_possible_moves();
         print_legal_moves(game_possible_moves, &num_game_moves);
         return false;
@@ -2766,6 +2764,13 @@ void inputGo(char* input){
         struct Move result = calc_eng_move(depth);
         char* move_string = move_to_string(result);
         printf("bestmove %s\n", move_string);
+    }
+    else if(startswith(cmd, "perft ")){
+        cmd += 6;
+        int depth = atoi(cmd);
+        draw_board();
+        unsigned long long a = detailed_perft(depth);
+        printf("perft %llu\n", a);
     }
 }
 
