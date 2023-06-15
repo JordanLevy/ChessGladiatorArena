@@ -2228,7 +2228,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-
+    unsigned long long bb_befor;
+    unsigned long long bb_after;
     struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
@@ -2258,10 +2259,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int maxEval = INT_MIN;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
+            bb_befor = bitboards[wB];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
             undo_move();
+            bb_after = bitboards[wB];
+            if (bb_befor != bb_after){
+                printf("this is where it broke\n");
+            }
             decr_num_moves();
             flip_turns();
             if(evaluation > maxEval){
@@ -2287,10 +2293,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int minEval = INT_MAX;
         for(int i = 0; i < numElems; i++){
             move = moves[i];
+            bb_befor = bitboards[wB];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
             undo_move();
+            bb_after = bitboards[wB];
+            if (bb_befor != bb_after){
+                printf("broak at black");
+            }
             decr_num_moves();
             flip_turns();
             if(evaluation < minEval){
@@ -2793,8 +2804,10 @@ void uci_communication(){
         } else if(str_equals(command, "ucinewgame")) {
             inputUCINewGame();
         } else if(startswith(command, "position")) {
+            printf("%s\n", command);
             inputPosition(command);
         } else if(startswith(command, "go")) {
+            printf("%s\n", command);
             inputGo(command);
         } else if(startswith(command, "quit")) {
             break;

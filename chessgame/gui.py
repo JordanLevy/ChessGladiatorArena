@@ -445,7 +445,7 @@ def run_game(process):
                 if event.key == K_SPACE:
                     send_command(process, 'isready')
                 elif event.key == K_p:
-                    send_command(process, 'go perft 4')
+                    send_command(process, 'go perft 6')
                 elif event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
