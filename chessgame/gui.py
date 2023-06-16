@@ -42,6 +42,7 @@ GRAY_GREEN = (118, 176, 151, 50)
 board = []
 white_turn = True
 move_list = []
+position_list = []
 
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -264,9 +265,30 @@ def add_piece(square, piece_type):
 
 
 def init_fen(fen):
-    global board, white_turn, kingside_wR, queenside_wR, kingside_bR, queenside_bR
+    global board, white_turn, kingside_wR, queenside_wR, kingside_bR, queenside_bR, next_spec, wK_num_moves, bK_num_moves, kingside_wR_num_moves, queenside_wR_num_moves, kingside_bR_num_moves, queenside_bR_num_moves
+    next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     board = [EMPTY_SQUARE for i in range(64)]
-    pieces, turn, castling_rights, en_passant, fifty_move_rule, turn_number = fen.split(' ')
+    split = fen.split(' ')
+    n = len(split)
+    pieces = ''
+    turn = ''
+    castling_rights = ''
+    en_passant = ''
+    fifty_move_rule = ''
+    turn_number = ''
+    if n > 0:
+        pieces = split[0]
+    if n > 1:
+        turn = split[1]
+    if n > 2:
+        castling_rights = split[2]
+    if n > 3:
+        en_passant = split[3]
+    if n > 4:
+        fifty_move_rule = split[4]
+    if n > 5:
+        turn_number = split[5]
+
     index = 0
     square = 63
     n = len(pieces)
@@ -294,6 +316,20 @@ def init_fen(fen):
             square -= int(char)
         index += 1
     white_turn = (turn == 'w')
+
+    if castling_rights:
+        if 'K' in castling_rights:
+            wK_num_moves = 0
+            kingside_wR_num_moves = 0
+        if 'Q' in castling_rights:
+            wK_num_moves = 0
+            queenside_wR_num_moves = 0
+        if 'k' in castling_rights:
+            bK_num_moves = 0
+            kingside_bR_num_moves = 0
+        if 'q' in castling_rights:
+            bK_num_moves = 0
+            queenside_bR_num_moves = 0
 
 
 def draw_board():
@@ -428,6 +464,7 @@ def run_game(process):
     clicking = False
     init_board()
     init_fen(start_pos)
+    position_list.append(start_pos)
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
@@ -444,6 +481,14 @@ def run_game(process):
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     send_command(process, 'isready')
+                elif event.key == K_LEFT:
+                    # if there is a move to undo
+                    if len(position_list) > 1:
+                        position_list.pop()
+                        init_fen(position_list[-1])
+                        refresh_graphics()
+                    else:
+                        print("can't undo")
                 elif event.key == K_p:
                     send_command(process, 'go perft 6')
                 elif event.key == K_n:
@@ -478,8 +523,9 @@ def run_game(process):
                         # human move
                         apply_move(press_square, release_square, promo_num)
                         white_turn = not white_turn
+                        fen = board_to_fen()
+                        position_list.append(fen)
                         if engine_enabled:
-                            fen = board_to_fen()
                             send_command(process, 'position fen ' + fen)
                             white_turn = not white_turn
                             send_command(process, 'go depth ' + str(depth))
@@ -534,6 +580,8 @@ def read_from_process(process):
             cmd, move = response.split(' ')
             start, end, promo = decode_notation(move)
             apply_move(start, end, promo)
+            fen = board_to_fen()
+            position_list.append(fen)
             refresh_graphics()
         print(response)
 
