@@ -2233,9 +2233,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     update_possible_moves(moves, &numElems);
     order_moves(moves, numElems, player);
-    if(depth == start_depth){
-        print_legal_moves(moves, &numElems);
-    }
     struct Move move;
 
     if(numElems == 0){
@@ -2753,7 +2750,6 @@ void inputGo(char* input){
     if(startswith(cmd, "depth ")){
         cmd += 6;
         int depth = atoi(cmd);
-        draw_board();
         struct Move result = calc_eng_move(depth);
         char* move_string = move_to_string(result);
         printf("bestmove %s\n", move_string);
@@ -2761,7 +2757,6 @@ void inputGo(char* input){
     else if(startswith(cmd, "perft ")){
         cmd += 6;
         int depth = atoi(cmd);
-        draw_board();
         unsigned long long a = detailed_perft(depth);
         printf("perft %llu\n", a);
     }
