@@ -361,9 +361,9 @@ def apply_move(start, end, promo_val):
     # check if pieces are moveing
     p_type = get_type(board[end])
     p_ID = board[end]
-    if get_type(board[end] == wK):
+    if get_type(board[end]) == wK:
         wK_num_moves += 1
-    if get_type(board[end] == bK):
+    if get_type(board[end]) == bK:
         bK_num_moves += 1
     if p_ID == kingside_wR:
         kingside_wR_num_moves += 1
