@@ -576,14 +576,17 @@ def read_from_process(process):
         if output == b'':
             break
         response = output.decode().strip()
+        print(response)
         if response.startswith('bestmove'):
             cmd, move = response.split(' ')
+            if move == '(none)':
+                print('Human wins')
+                break
             start, end, promo = decode_notation(move)
             apply_move(start, end, promo)
             fen = board_to_fen()
             position_list.append(fen)
             refresh_graphics()
-        print(response)
 
 
 open_communication()

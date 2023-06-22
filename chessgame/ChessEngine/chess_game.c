@@ -2677,6 +2677,10 @@ char* move_to_string(struct Move move){
         promotion = 'q';
     }
 
+    if(move.start == -1){
+        return "(none)";
+    }
+
     snprintf(result, 6, "%c%d%c%d%c", start_file, start_rank, end_file, end_rank, promotion);
 
     return result;
