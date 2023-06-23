@@ -98,7 +98,7 @@ bK_num_moves = 0
 show_spec = True
 engine_enabled = True
 
-path_to_exe = './ChessEngine/bin/Debug/ChessEngine.exe'
+path_to_exe = './ChessEngine/chess_game.exe'
 
 
 # get what file you are on given an index 0-63
