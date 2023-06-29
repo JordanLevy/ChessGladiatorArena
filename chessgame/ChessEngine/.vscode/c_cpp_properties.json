@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:\\mingw64\\include"
+                "C:\\mingw64\\include",
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",
