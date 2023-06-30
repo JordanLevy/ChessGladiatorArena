@@ -7,54 +7,10 @@
 #include <math.h>
 #include <ctype.h>
 #include "values.h"
+#include "board.h"
+#include "piece.h"
 
-// returns the piece residing on a square (0-63)
-unsigned char get_piece(int square){
-    return board[square];
-}
 
-// turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
-unsigned char get_type(unsigned char id){
-    return id >> ROLE_BITS_OFFSET;
-}
-
-// returns the character associated with a given piece_id
-char piece_id_to_notation(unsigned char id){
-    unsigned char type = get_type(id);
-    if(type == wP) return 'P';
-    else if(type == wN) return 'N';
-    else if(type == wB) return 'B';
-    else if(type == wR) return 'R';
-    else if(type == wQ) return 'Q';
-    else if(type == wK) return 'K';
-    else if(type == bP) return 'p';
-    else if(type == bN) return 'n';
-    else if(type == bB) return 'b';
-    else if(type == bR) return 'r';
-    else if(type == bQ) return 'q';
-    else if(type == bK) return 'k';
-    return '_';
-}
-
-void draw_board(){
-    for(int i = 63; i >= 0; i--){
-        unsigned char id = get_piece(i);
-        printf("|");
-        printf("%c", piece_id_to_notation(id));
-        if(i % 8 == 0){
-            printf("|\n");
-        }
-    }
-}
-
-void print_piece_locations(){
-    for(int i = 0; i < 256; i++){
-        int location = piece_location[i];
-        if(location != -1){
-            printf("%d %d\n", i, location);
-        }
-    }
-}
 
 unsigned long long r_shift(unsigned long long x, int n){
     if(n <= 0){

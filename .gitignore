@@ -133,3 +133,4 @@ chessgame/.idea/
 .depend
 .layout
 chessgame/ChessEngine/ChessEngine.layout
+chessgame/ChessEngine/.vscode/c_cpp_properties.json
