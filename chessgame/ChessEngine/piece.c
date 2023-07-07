@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <ctype.h>
 #include "values.h"
 #include "piece.h"
@@ -391,6 +392,155 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         if(piece_location[kingside_bR] == 56 && kingside_bR_num_moves == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
+        }
+    }
+}
+
+void update_piece_masks(){
+    white_pieces = bitboards[wP] | bitboards[wN] | bitboards[wB] | bitboards[wR] | bitboards[wQ];
+    black_pieces = bitboards[bP] | bitboards[bN] | bitboards[bB] | bitboards[bR] | bitboards[bQ];
+    not_white_pieces = ~(white_pieces | bitboards[wK] | bitboards[bK]);
+    not_black_pieces = ~(black_pieces | bitboards[wK] | bitboards[bK]);
+    empty = ~(white_pieces | black_pieces | bitboards[wK] | bitboards[bK]);
+    occupied = ~empty;
+}
+
+void possible_moves_white(struct Move* moves, int *numElems){
+    update_piece_masks();
+    update_unsafe();
+    (*numElems) = 0;
+    possible_wP(bitboards[wP], moves, numElems);
+    possible_N(bitboards[wN], not_white_pieces, WHITE, moves, numElems);
+    possible_B(bitboards[wB], not_white_pieces, WHITE, moves, numElems);
+    possible_R(bitboards[wR], not_white_pieces, WHITE, moves, numElems);
+    possible_Q(bitboards[wQ], not_white_pieces, WHITE, moves, numElems);
+    possible_K(bitboards[wK], not_white_pieces, WHITE, moves, numElems);
+}
+
+void possible_moves_black(struct Move* moves, int *numElems){
+    update_piece_masks();
+    update_unsafe();
+    (*numElems) = 0;
+    possible_bP(bitboards[bP], moves, numElems);
+    possible_N(bitboards[bN], not_black_pieces, BLACK, moves, numElems);
+    possible_B(bitboards[bB], not_black_pieces, BLACK, moves, numElems);
+    possible_R(bitboards[bR], not_black_pieces, BLACK, moves, numElems);
+    possible_Q(bitboards[bQ], not_black_pieces, BLACK, moves, numElems);
+    possible_K(bitboards[bK], not_black_pieces, BLACK, moves, numElems);
+}
+
+void update_possible_moves(struct Move* moves, int *numElems){
+    if(white_turn){
+        possible_moves_white(moves, numElems);
+    }
+    else{
+        possible_moves_black(moves, numElems);
+    }
+}
+
+void update_game_possible_moves(){
+    update_possible_moves(game_possible_moves, &num_game_moves);
+}
+
+// if they moved one of the castling rooks, increment the number of moves it has made
+// given the id of the piece that was moved, and whose turn it was
+void apply_rook_move(unsigned char id){
+    if(white_turn){
+        if(id == kingside_wR){
+            kingside_wR_num_moves++;
+        }
+        else if(id == queenside_wR){
+            queenside_wR_num_moves++;
+        }
+    }
+    else{
+        if(id == kingside_bR){
+            kingside_bR_num_moves++;
+        }
+        else if(id == queenside_bR){
+            queenside_bR_num_moves++;
+        }
+    }
+}
+
+bool apply_castling(unsigned char id, int start, int end){
+    unsigned char type = get_type(id);
+    bool is_castling = false;
+    if(type == wK){
+        //white kingside castling
+        if(end - start == -2){
+            move_piece(kingside_wR, 0, 2);
+            piece_location[kingside_wR] = 2;
+            is_castling = true;
+        }
+        //white queenside castling
+        if(end - start == 2){
+            move_piece(queenside_wR, 7, 4);
+            piece_location[queenside_wR] = 4;
+            is_castling = true;
+        }
+        wK_num_moves++;
+    }
+    else if(type == bK){
+        //black kingside castling
+        if(end - start == -2){
+            move_piece(kingside_bR, 56, 58);
+            piece_location[kingside_bR] = 58;
+            is_castling = true;
+        }
+        //black queenside castling
+        if(end - start == 2){
+            move_piece(queenside_bR, 63, 60);
+            piece_location[queenside_bR] = 60;
+            is_castling = true;
+        }
+        bK_num_moves++;
+    }
+    return is_castling;
+}
+
+// if they moved one of the castling rooks, decrement the number of moves it has made
+// given the id of the piece that was moved, and whose turn it was
+void undo_rook_move(unsigned char id){
+    if(id == kingside_wR){
+        kingside_wR_num_moves--;
+    }
+    else if(id == queenside_wR){
+        queenside_wR_num_moves--;
+    }
+    else if(id == kingside_bR){
+        kingside_bR_num_moves--;
+    }
+    else if(id == queenside_bR){
+        queenside_bR_num_moves--;
+    }
+}
+
+/*
+Undoes the rook move from castling
+*/
+void undo_castling(unsigned char id, int start, int end){
+    unsigned char type = get_type(id);
+    // white king
+    if(type == wK){
+        //kingside
+        if(end - start == -2){
+            move_piece(kingside_wR, piece_location[kingside_wR], 0);
+        }
+        //queenside
+        if(end - start == 2){
+            move_piece(queenside_wR, piece_location[queenside_wR], 7);
+        }
+    }
+    // black king
+    else if(type == bK){
+        //kingside
+        if(end - start == -2){
+            move_piece(kingside_bR, piece_location[kingside_bR], 56);
+        }
+        //queenside
+        if(end - start == 2){
+            move_piece(queenside_bR, piece_location[queenside_bR], 63);
         }
     }
 }

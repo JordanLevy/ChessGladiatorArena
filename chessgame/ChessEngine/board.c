@@ -1,8 +1,10 @@
 #include <ctype.h>
+#include <stdlib.h>
 #include "values.h"
 #include "board.h"
 #include "piece.h"
 #include "bitwise.h"
+#include "testing.h"
 
 // returns the piece residing on a square (0-63)
 unsigned char get_piece(int square){
@@ -617,4 +619,240 @@ bool white_in_check(){
 
 bool black_in_check(){
     return (bitboards[bK] & unsafe_black) > 0ULL;
+}
+
+void update_unsafe(){
+    unsafe_white = unsafe_for_white();
+    white_check = white_in_check();
+    unsafe_black = unsafe_for_black();
+    black_check = black_in_check();
+}
+
+bool white_in_checkmate(int numElems){
+    // can't be in checkmate if it's not your turn
+    if(!white_turn){
+        return false;
+    }
+    // can't be in checkmate if you're not in check
+    if(!white_check){
+        return false;
+    }
+    // can't be in checkmate if you have legal moves
+    if(numElems > 0){
+        return false;
+    }
+    return true;
+}
+
+bool black_in_checkmate(int numElems){
+    if(white_turn){
+        return false;
+    }
+    if(!black_check){
+        return false;
+    }
+    if(numElems > 0){
+        return false;
+    }
+    return true;
+}
+
+void init_board(char* fen, size_t len){
+    init_fen(fen, len);
+    init_masks();
+}
+
+bool is_legal_move(int start, int end, int promo, struct Move* moves, size_t n){
+    struct Move move;
+    for(int i = 0; i < n; i++){
+        move = moves[i];
+        if(move.start == start && move.end == end && move.move_id == promo){
+            return true;
+        }
+    }
+    return false;
+}
+
+void incr_num_moves(){
+    num_moves++;
+}
+
+void decr_num_moves(){
+    num_moves--;
+}
+
+void flip_turns(){
+    white_turn = !white_turn;
+}
+
+bool apply_move(int start, int end, int move_id){
+    unsigned char moved_piece = get_piece(start);
+    unsigned char type = get_type(moved_piece);
+    // not their turn to make a move
+    if(white_turn != is_white_piece(moved_piece)){
+        printf("\n\nNot your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n\n", white_turn, start, end, move_id);
+        draw_board();
+        update_game_possible_moves();
+        print_legal_moves(game_possible_moves, &num_game_moves);
+        return false;
+    }
+    unsigned char captured_piece = get_piece(end);
+    int new_s = start;
+    int new_e = end;
+    int new_m = move_id;
+    unsigned char new_c = captured_piece;
+    if(captured_piece > 0){
+        remove_piece(captured_piece, end);
+    }
+    move_piece(moved_piece, start, end);
+    apply_rook_move(moved_piece);
+    if(apply_castling(moved_piece, start, end)){
+        new_m = CASTLING;
+    }
+    // this is for promotion
+    if(1 <= move_id && move_id <= 15){
+        remove_piece(moved_piece, end);
+        add_piece(move_id << ROLE_BITS_OFFSET, end);
+    }
+    if((type == wP || type == bP) && (abs(end - start) == 16)){
+        // double pawn push
+        new_m = DOUBLE_PAWN_PUSH;
+        // move_list.append((start, end, 13, 0))
+    }
+    // if the move was castling
+    else if((type == wK || type == bK) && (abs(end - start) == 2)){
+    }
+    else{
+        // previous move start, end, and move_id
+        if(num_moves > 0){
+            struct Move prev_move = move_list[num_moves - 1];
+            int e = prev_move.end;
+            int m = prev_move.move_id;
+            unsigned char ep_pawn = get_piece(e);  // pawn that was captured en passant
+            unsigned char ep_pawn_type = get_type(ep_pawn);
+            // white capturing en passant
+            if(m == DOUBLE_PAWN_PUSH && type == wP && ep_pawn_type == bP && end - e == 8){
+                remove_piece(ep_pawn, e);
+                new_m = EN_PASSANT_CAPTURE;
+                new_c = ep_pawn;
+            }
+            // black capturing en passant
+            else if(m == DOUBLE_PAWN_PUSH && type == bP && ep_pawn_type == wP && end - e == -8){
+                remove_piece(ep_pawn, e);
+                new_m = EN_PASSANT_CAPTURE;
+                new_c = ep_pawn;
+            }
+        }
+    }
+    struct Move move;
+    move.start = new_s;
+    move.end = new_e;
+    move.move_id = new_m;
+    move.piece_id = moved_piece;
+    move.capture = new_c;
+    move_list[num_moves] = move;
+    incr_num_moves();
+    flip_turns();
+    return true;
+}
+
+void undo_move(){
+    // can't undo if nothing has been played
+    if(num_moves == 0){
+        return;
+    }
+
+    //previous move (the one we're undoing)
+    struct Move move = move_list[num_moves - 1];
+    int start = move.start;
+    int end = move.end;
+    int move_id = move.move_id;
+    int capture = move.capture;
+    // the piece that was moved
+    unsigned char moved_piece = get_piece(end);
+    unsigned char type = get_type(moved_piece);
+    bool is_white = is_white_piece(moved_piece);
+    move_piece(moved_piece, end, start);
+    undo_rook_move(moved_piece);
+    // last move was a capture
+    if(capture > 0){
+        // last move was en passant
+        if(move_id == EN_PASSANT_CAPTURE){
+            // en passant is the only case where the captured piece isn't on the end square
+            if(is_white){
+                revive_piece(capture, end - 8);
+            }
+            else{
+                revive_piece(capture, end + 8);
+            }
+        }
+        else{
+            revive_piece(capture, end);
+        }
+    }
+    if(move_id == 0){
+    }
+    // last move was pawn promotion
+    else if(1 <= move_id && move_id <= 15){
+        destroy_piece(moved_piece, start);
+        unsigned char promoted_pawn = move.piece_id;
+        revive_piece(promoted_pawn, start);
+    }
+    // last move was double pawn push
+    else if(move_id == DOUBLE_PAWN_PUSH){
+    }
+    // last move was castling
+    else if(move_id == CASTLING){
+        undo_castling(moved_piece, start, end);
+    }
+    // if we're undoing a white king move
+    if(type == wK){
+        wK_num_moves -= 1;
+    }
+    // if we're undoing a black king move
+    else if(type == bK){
+        bK_num_moves -= 1;
+    }
+}
+
+bool get_white_check(){
+    return white_check;
+}
+
+bool get_black_check(){
+    return black_check;
+}
+
+bool try_undo_move(){
+    if(num_moves > 0){
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+        return true;
+    }
+    return false;
+}
+
+bool is_game_legal_move(int start, int end, int promo){
+    return is_legal_move(start, end, promo, game_possible_moves, num_game_moves);
+}
+
+char piece_letter(int piece_id, bool caps){
+    char letters[] = "_PNBRQK__pnbrqk";
+    unsigned char type = get_type(piece_id);
+    if(caps && (type > 8)){
+        type -= 8;
+    }
+    return letters[type];
+}
+
+char file_letter(int n){
+    char letter[] = "abcdefgh";
+    return letter[n];
+}
+
+void init(char* fen, int len){
+    game_possible_moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    num_game_moves = 0;
+    init_board(fen, len);
 }

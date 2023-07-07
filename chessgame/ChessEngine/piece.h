@@ -1,6 +1,8 @@
 #ifndef PIECE_H_INCLUDED
 #define PIECE_H_INCLUDED
 
+#include <stdbool.h>
+
 unsigned char get_type(unsigned char id);
 
 char piece_id_to_notation(unsigned char id);
@@ -38,5 +40,23 @@ void possible_R(unsigned long long bb, unsigned long long mask, unsigned char co
 void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
 
 void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+
+void update_piece_masks();
+
+void possible_moves_white(struct Move *moves, int *numElems);
+
+void possible_moves_black(struct Move *moves, int *numElems);
+
+void update_possible_moves(struct Move *moves, int *numElems);
+
+void update_game_possible_moves();
+
+void apply_rook_move(unsigned char id);
+
+bool apply_castling(unsigned char id, int start, int end);
+
+void undo_rook_move(unsigned char id);
+
+void undo_castling(unsigned char id, int start, int end);
 
 #endif

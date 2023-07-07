@@ -47,4 +47,38 @@ bool white_in_check();
 
 bool black_in_check();
 
+void update_unsafe();
+
+bool white_in_checkmate(int numElems);
+
+bool black_in_checkmate(int numElems);
+
+void init_board(char *fen, size_t len);
+
+bool is_legal_move(int start, int end, int promo, struct Move *moves, size_t n);
+
+void incr_num_moves();
+
+void decr_num_moves();
+
+void flip_turns();
+
+bool apply_move(int start, int end, int move_id);
+
+void undo_move();
+
+bool get_white_check();
+
+bool get_black_check();
+
+bool try_undo_move();
+
+bool is_game_legal_move(int start, int end, int promo);
+
+char piece_letter(int piece_id, bool caps);
+
+char file_letter(int n);
+
+void init(char *fen, int len);
+
 #endif
