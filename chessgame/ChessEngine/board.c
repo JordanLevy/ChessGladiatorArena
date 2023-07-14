@@ -5,6 +5,7 @@
 #include "piece.h"
 #include "bitwise.h"
 #include "testing.h"
+#include "transposition.h"
 
 // returns the piece residing on a square (0-63)
 unsigned char get_piece(int square){
@@ -30,7 +31,9 @@ void remove_piece(unsigned char id, int square){
     unsigned long long remove_mask = ~(1ULL << square);
     bitboards[type] &= remove_mask;
     mat_eval -= values[type];
+    zobrist_hash ^= zobrist_keys[square][type];
     pos_eval -= square_incentive[type][square];
+
 }
 
 // remove a piece from the board, and unassign its spec
@@ -44,6 +47,7 @@ void destroy_piece(unsigned char id, int square){
     unsigned long long remove_mask = ~(1ULL << square);
     bitboards[type] &= remove_mask;
     mat_eval -= values[type];
+    zobrist_hash ^= zobrist_keys[square][type];
     pos_eval -= square_incentive[type][square];
 }
 
@@ -58,6 +62,7 @@ unsigned char add_piece(unsigned char id, int square){
     unsigned long long add_mask = 1ULL << square;
     bitboards[type] |= add_mask;
     mat_eval += values[type];
+    zobrist_hash ^= zobrist_keys[square][type];
     pos_eval += square_incentive[type][square];
     return new_id;
 }
@@ -70,6 +75,7 @@ void revive_piece(unsigned char id, int square){
     unsigned long long add_mask = 1ULL << square;
     bitboards[type] |= add_mask;
     mat_eval += values[type];
+    zobrist_hash ^= zobrist_keys[square][type];
     pos_eval += square_incentive[type][square];
 }
 
@@ -127,8 +133,10 @@ void reset_board(){
 
     mat_eval = 0;
     pos_eval = 0;
+    zobrist_hash = 0;
     num_moves = 0;
     white_turn = true;
+
 
     for(int i = 0; i < 15; i++){
         bitboards[i] = 0ULL;
@@ -334,6 +342,7 @@ void init_fen(char *fen, size_t fen_length){
             }
         }
     }
+    printf("hash %ull\n", zobrist_hash);
 }
 
 int get_file(int n){

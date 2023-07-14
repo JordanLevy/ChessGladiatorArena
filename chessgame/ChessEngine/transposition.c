@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 unsigned long long zobrist_keys[64][15];
+unsigned long long zobrist_hash;
 
 // pseudo random number state
 unsigned int random_state = 1804289383;

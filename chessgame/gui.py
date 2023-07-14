@@ -96,7 +96,7 @@ wK_num_moves = 0
 bK_num_moves = 0
 
 show_spec = True
-engine_enabled = True
+engine_enabled = False
 
 path_to_exe = './ChessEngine/main.exe'
 
@@ -529,7 +529,8 @@ def run_game(process):
                             send_command(process, 'position fen ' + fen)
                             white_turn = not white_turn
                             send_command(process, 'go depth ' + str(depth))
-
+                        else:
+                            send_command(process, 'position fen ' + fen)
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1

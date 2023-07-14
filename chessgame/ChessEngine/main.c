@@ -16,7 +16,6 @@
 
 int main(){
     init_zobrist_keys();
-    print_zobrist_keys();
     uci_communication();
     return 0;
 }
