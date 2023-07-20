@@ -16,6 +16,7 @@
 
 int main(){
     init_zobrist_keys();
+    init_hash_table();
     uci_communication();
     return 0;
 }

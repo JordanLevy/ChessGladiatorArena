@@ -3,8 +3,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define TABLE_SIZE 1000000
+
 unsigned long long zobrist_keys[64][15];
 unsigned long long zobrist_hash;
+HashPosition hash_table[TABLE_SIZE];
+Move best_move;
 
 // pseudo random number state
 unsigned int random_state = 1804289383;
@@ -14,6 +18,14 @@ void init_zobrist_keys(){
         for(int j = 0; j < 15; j++){
             zobrist_keys[i][j] = get_random_U64_number();
         }
+    }
+}
+
+void init_hash_table(){
+    for(int i = 0; i > TABLE_SIZE; i++){
+        HashPosition hash;
+        hash.flag = UNASSIGNED_FLAG;
+        hash_table[i] = hash;
     }
 }
 
@@ -57,4 +69,42 @@ unsigned long long get_random_U64_number()
     
     // return random number
     return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
+}
+
+NullableInt ProbeHash(int depth, int alpha, int beta, Move move){
+    NullableInt result;
+    result.isNull = false;
+    HashPosition *hash = &hash_table[zobrist_hash % TABLE_SIZE];
+    if(hash->flag != UNASSIGNED_FLAG && hash->key == zobrist_hash){
+        if(hash->depth >= depth){
+            if(hash->flag == EXACT_FLAG){
+                result.value = hash->value;
+                return result;
+            }
+            if(hash->flag == ALPHA_FLAG && hash->value <= alpha){
+                result.value = alpha;
+                return result;
+            }
+            if(hash->flag == BETA_FLAG && hash->value >= beta){
+                result.value = beta;
+                return result;
+            }
+        }
+        SetBestMove(move);
+    }
+    result.isNull = true;
+    return result;
+}
+
+void RecordHash(int depth, int value, int flag){
+    HashPosition *hash = &hash_table[zobrist_hash % TABLE_SIZE];
+    hash->key = zobrist_hash;
+    hash->best = best_move;
+    hash->value = value;
+    hash->flag = flag;
+    hash->depth = depth;
+}
+
+void SetBestMove(Move move){
+    best_move = move;
 }

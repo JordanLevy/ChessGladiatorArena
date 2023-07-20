@@ -2,6 +2,8 @@
 #include "values.h"
 #include "piece.h"
 #include "board.h"
+#include "testing.h"
+#include "transposition.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -148,8 +150,18 @@ void game_order_moves(){
 
 // this is what does the pruning
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
+    int hash_flag = ALPHA_FLAG;
+    NullableInt hash_result = ProbeHash(depth, alpha, beta, best_line[depth]);
+    int evaluation = 0;
+    if(!hash_result.isNull){
+        evaluation = hash_result.value;
+        return evaluation;
+    }
+    
     if(depth == 0 && !white_check && !black_check){
-        return static_eval();
+        evaluation = static_eval();
+        RecordHash(depth, evaluation, EXACT_FLAG);
+        return evaluation;
     }
     Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
@@ -170,7 +182,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     }
     if(depth == 0){
         free(moves);
-        return static_eval();
+        evaluation = static_eval();
+        RecordHash(depth, evaluation, EXACT_FLAG);
+        return evaluation;
     }
     // white making a move
     if (player){
@@ -179,13 +193,21 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
+            evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = move;
+            }
+            if(evaluation >= beta){
+                RecordHash(depth, beta, BETA_FLAG);
+                return beta;
+            }
+            if(evaluation > alpha){
+                hash_flag = EXACT_FLAG;
+                alpha = evaluation;
             }
             alpha = max(alpha, evaluation);
             if(depth <= 1){
@@ -196,7 +218,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
         }
         free(moves);
-        return maxEval;
+        RecordHash(depth, alpha, hash_flag);
+        return alpha;
     }
 
     else{
@@ -205,7 +228,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
+            evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
