@@ -119,16 +119,16 @@ list of 64 move list
 Engine debugging tool
 */
 
-struct Move {
+typedef struct Move {
     int start;
     int end;
     int move_id;
     unsigned char capture;
     unsigned char piece_id;
     int eval;
-};
+} Move;
 
-extern struct Move engine_move;
+extern Move engine_move;
 
 // best test alpha and beta
 extern int best_alpha;
@@ -145,7 +145,7 @@ extern int num_moves;
 extern bool white_turn;
 
 extern unsigned long long bitboards[15];
-extern struct Move move_list[256];
+extern Move move_list[256];
 
 extern unsigned long long not_black_pieces;
 extern unsigned long long not_white_pieces;
@@ -169,7 +169,7 @@ extern unsigned long long king_span;
 extern unsigned long long file_ab;
 extern unsigned long long file_gh;
 
-//struct Move moves[256];
+//Move moves[256];
 //int num_legal_moves;
 
 extern unsigned long long unsafe_white;
@@ -211,7 +211,7 @@ extern int next_spec[15];
 
 extern char *start_position;
 
-extern struct Move *game_possible_moves;
+extern Move *game_possible_moves;
 extern int num_game_moves;
 
 #endif

@@ -226,7 +226,7 @@ int notation_to_number(char c, int i){
 
 }
 
-void append_move(struct Move* arr, struct Move m, int *i){
+void append_move(Move* arr, Move m, int *i){
     arr[*i] = m;
     (*i)++;
 }
@@ -325,7 +325,7 @@ void init_fen(char *fen, size_t fen_length){
 
                 int en_passant_rank = (int)en_passant_rank_char - 48;
 
-                struct Move double_pawn;
+                Move double_pawn;
                 //this is notation to num eg. a1 to 7
                 int square_num = notation_to_number(en_passant_file, en_passant_rank);
                 double_pawn.move_id = DOUBLE_PAWN_PUSH;
@@ -435,8 +435,8 @@ bool resolves_check(int start, int end, int move_id){
     return true;
 }
 
-void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move* moves, int *numElems){
-    struct Move move;
+void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, Move* moves, int *numElems){
+    Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
@@ -453,8 +453,8 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
     }
 }
 
-void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move* moves, int *numElems){
-    struct Move move;
+void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, Move* moves, int *numElems){
+    Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
             for(int j = min_id; j <= max_id; j++){
@@ -671,8 +671,8 @@ void init_board(char* fen, size_t len){
     init_masks();
 }
 
-bool is_legal_move(int start, int end, int promo, struct Move* moves, size_t n){
-    struct Move move;
+bool is_legal_move(int start, int end, int promo, Move* moves, size_t n){
+    Move move;
     for(int i = 0; i < n; i++){
         move = moves[i];
         if(move.start == start && move.end == end && move.move_id == promo){
@@ -734,7 +734,7 @@ bool apply_move(int start, int end, int move_id){
     else{
         // previous move start, end, and move_id
         if(num_moves > 0){
-            struct Move prev_move = move_list[num_moves - 1];
+            Move prev_move = move_list[num_moves - 1];
             int e = prev_move.end;
             int m = prev_move.move_id;
             unsigned char ep_pawn = get_piece(e);  // pawn that was captured en passant
@@ -753,7 +753,7 @@ bool apply_move(int start, int end, int move_id){
             }
         }
     }
-    struct Move move;
+    Move move;
     move.start = new_s;
     move.end = new_e;
     move.move_id = new_m;
@@ -772,7 +772,7 @@ void undo_move(){
     }
 
     //previous move (the one we're undoing)
-    struct Move move = move_list[num_moves - 1];
+    Move move = move_list[num_moves - 1];
     int start = move.start;
     int end = move.end;
     int move_id = move.move_id;
@@ -861,7 +861,7 @@ char file_letter(int n){
 }
 
 void init(char* fen, int len){
-    game_possible_moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    game_possible_moves = (Move*)malloc(80 * sizeof(Move));
     num_game_moves = 0;
     init_board(fen, len);
 }

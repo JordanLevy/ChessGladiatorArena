@@ -25,29 +25,29 @@ bool is_black_piece(int id);
 
 unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb);
 
-void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, struct Move *moves, int *numElems);
+void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, Move *moves, int *numElems);
 
-void possible_wP(unsigned long long bb, struct Move *moves, int *numElems);
+void possible_wP(unsigned long long bb, Move *moves, int *numElems);
 
-void possible_bP(unsigned long long bb, struct Move *moves, int *numElems);
+void possible_bP(unsigned long long bb, Move *moves, int *numElems);
 
-void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, Move *moves, int *numElems);
 
-void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, Move *moves, int *numElems);
 
-void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, Move *moves, int *numElems);
 
-void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, Move *moves, int *numElems);
 
-void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move *moves, int *numElems);
+void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, Move *moves, int *numElems);
 
 void update_piece_masks();
 
-void possible_moves_white(struct Move *moves, int *numElems);
+void possible_moves_white(Move *moves, int *numElems);
 
-void possible_moves_black(struct Move *moves, int *numElems);
+void possible_moves_black(Move *moves, int *numElems);
 
-void update_possible_moves(struct Move *moves, int *numElems);
+void update_possible_moves(Move *moves, int *numElems);
 
 void update_game_possible_moves();
 

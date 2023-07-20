@@ -5,11 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct Move;
-
-void print_legal_moves(struct Move* moves, int *numElems){
+void print_legal_moves(Move* moves, int *numElems){
     for(int i = 0; i < (*numElems); i++){
-        struct Move move = moves[i];
+        Move move = moves[i];
         int s = move.start;
         int e = move.end;
         int m = move.move_id;
@@ -25,7 +23,7 @@ void print_legal_moves(struct Move* moves, int *numElems){
     }
 }
 
-void print_move(struct Move move){
+void print_move(Move move){
     int s = move.start;
     /*if(s == -1){
         return;
@@ -47,13 +45,13 @@ unsigned long long perft_test(int depth){
         return 1ULL;
     }
 
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
 
     unsigned long long num_positions = 0ULL;
-    struct Move move;
+    Move move;
 
     for(int i = 0; i < numElems; i++){
         move = moves[i];
@@ -71,13 +69,13 @@ unsigned long long perft_test(int depth){
 }
 
 unsigned long long detailed_perft(int depth){
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
 
     unsigned long long num_positions = 0ULL;
-    struct Move move;
+    Move move;
     int n;
     int s;
     int e;
@@ -191,7 +189,7 @@ void run_game(){
     }
 }
 
-void print_line(struct Move* line, size_t n){
+void print_line(Move* line, size_t n){
     for(int i = 1; i <= n; i++){
         print_move(line[i]);
         printf(" ");

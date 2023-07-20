@@ -13,11 +13,11 @@ int search_moves(int depth, int start_depth){
     if(depth == 0){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
-    struct Move move;
+    Move move;
 
     if(numElems == 0){
         if(white_check || black_check){
@@ -46,7 +46,7 @@ int search_moves(int depth, int start_depth){
 }
 
 // this is to do stuf like chking i fyou are capteringa a good pece
-int calc_static_move_eval(struct Move move, bool is_white_turn){
+int calc_static_move_eval(Move move, bool is_white_turn){
     int value = 0;
     unsigned char moved_piece = get_type(move.piece_id);
     unsigned char capture = get_type(move.capture);
@@ -65,17 +65,17 @@ int calc_static_move_eval(struct Move move, bool is_white_turn){
 }
 
 // swaps the vals at the indexis
-void swap(int* scores, struct Move* legal_moves, int val1, int val2){
+void swap(int* scores, Move* legal_moves, int val1, int val2){
     int temp_int = scores[val1];
     scores[val1] = scores[val2];
     scores[val2] = temp_int;
 
-    struct Move temp_move = legal_moves[val1];
+    Move temp_move = legal_moves[val1];
     legal_moves[val1] = legal_moves[val2];
     legal_moves[val2] = temp_move;
 }
 
-int median_of_three(int* scores, struct Move* legal_moves, int low, int hi){
+int median_of_three(int* scores, Move* legal_moves, int low, int hi){
     int mid = (low + hi) / 2;
     if(scores[mid] < scores[low]){
         swap(scores, legal_moves, low, mid);
@@ -89,7 +89,7 @@ int median_of_three(int* scores, struct Move* legal_moves, int low, int hi){
     return mid;
 }
 
-int partition(int* scores, struct Move* legal_moves, int low, int hi){
+int partition(int* scores, Move* legal_moves, int low, int hi){
     int pivotIndex = median_of_three(scores, legal_moves, low, hi);
     int pivot = -scores[pivotIndex];
     swap(scores, legal_moves, low, pivotIndex);
@@ -115,7 +115,7 @@ int partition(int* scores, struct Move* legal_moves, int low, int hi){
     return j;
 }
 
-void quick_sort(int* scores, struct Move* legal_moves, int low, int hi){
+void quick_sort(int* scores, Move* legal_moves, int low, int hi){
     if (hi <= low){
         return;
     }
@@ -126,7 +126,7 @@ void quick_sort(int* scores, struct Move* legal_moves, int low, int hi){
 
 // this function should order the moves that we search
 // best moves at the start of the list
-void order_moves(struct Move* ordered, int size, bool is_white_turn){
+void order_moves(Move* ordered, int size, bool is_white_turn){
     int* move_val = (int*)malloc(size * sizeof(int));
     for(int i = 0; i < size; i++){
         move_val[i] = calc_static_move_eval(ordered[i], is_white_turn);
@@ -147,16 +147,16 @@ void game_order_moves(){
 
 
 // this is what does the pruning
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
     order_moves(moves, numElems, player);
-    struct Move move;
+    Move move;
 
     if(numElems == 0){
         free(moves);
@@ -226,16 +226,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     }
 }
 // copy of search moves pruning
-int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
+int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
 
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
-    struct Move move;
+    Move move;
 
     if(numElems == 0){
         free(moves);
@@ -334,15 +334,15 @@ int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool
 }
 
 // this is the test for the depth 4
-int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, struct Move* line, int* best_line, struct Move* best_line_actual_moves){
+int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, Move* line, int* best_line, Move* best_line_actual_moves){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
-    struct Move move;
+    Move move;
 
     if(numElems == 0){
         free(moves);
@@ -408,8 +408,8 @@ int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool pl
     }
 }
 
-struct Move calc_eng_move(int depth){
-    struct Move nm;
+Move calc_eng_move(int depth){
+    Move nm;
     nm.capture = -1;
     nm.end = -1;
     nm.eval = -1;
@@ -417,12 +417,12 @@ struct Move calc_eng_move(int depth){
     nm.piece_id = -1;
     nm.start = -1;
 
-    struct Move* line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    Move* line = (Move*)malloc((depth + 1) * sizeof(Move));
     for(int i = 0; i <= depth; i++){
         line[i] = nm;
     }
 
-    struct Move* best_line = (struct Move*)malloc((depth + 1) * sizeof(struct Move));
+    Move* best_line = (Move*)malloc((depth + 1) * sizeof(Move));
     for(int i = 1; i <= depth; i++){
         best_line[i] = nm;
     }
@@ -434,7 +434,7 @@ struct Move calc_eng_move(int depth){
     return engine_move;
 }
 
-bool move_equal(struct Move a, struct Move b){
+bool move_equal(Move a, Move b){
     if(a.move_id != b.move_id) return false;
     if(a.capture != b.capture) return false;
     if(a.start != b.start) return false;
@@ -443,8 +443,8 @@ bool move_equal(struct Move a, struct Move b){
     return true;
 }
 
-struct Move calc_eng_move_with_test(int test_depth, int total_depth){
-    struct Move nm;
+Move calc_eng_move_with_test(int test_depth, int total_depth){
+    Move nm;
     nm.capture = -1;
     nm.end = -1;
     nm.eval = -1;
@@ -456,13 +456,13 @@ struct Move calc_eng_move_with_test(int test_depth, int total_depth){
     best_beta = INT_MAX;
 
     // initializing to a empty list
-    struct Move* line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         line[i] = nm;
     }
 
     // initializing to a empty list
-    struct Move* best_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* best_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         best_line[i] = nm;
     }
@@ -474,13 +474,13 @@ struct Move calc_eng_move_with_test(int test_depth, int total_depth){
     }
 
     // initializing to a empty list
-    struct Move* best_test_line_actual = (struct Move*)malloc((test_depth + 1) * sizeof(struct Move));
+    Move* best_test_line_actual = (Move*)malloc((test_depth + 1) * sizeof(Move));
     for(int i = 0; i <= test_depth; i++){
         best_test_line_actual[i] = nm;
     }
 
     // initializing to a empty list
-    struct Move* best_final_line = (struct Move*)malloc((total_depth + 1) * sizeof(struct Move));
+    Move* best_final_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
     for(int i = 0; i <= total_depth; i++){
         best_final_line[i] = nm;
     }

@@ -21,7 +21,7 @@ void reset_board();
 
 int notation_to_number(char c, int i);
 
-void append_move(struct Move *arr, struct Move m, int *i);
+void append_move(Move *arr, Move m, int *i);
 
 void init_fen(char *fen, size_t fen_length);
 
@@ -35,9 +35,9 @@ int get_l_diag(int n);
 
 bool resolves_check(int start, int end, int move_id);
 
-void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, struct Move *moves, int *numElems);
+void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, Move *moves, int *numElems);
 
-void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, struct Move *moves, int *numElems);
+void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, Move *moves, int *numElems);
 
 unsigned long long unsafe_for_white();
 
@@ -55,7 +55,7 @@ bool black_in_checkmate(int numElems);
 
 void init_board(char *fen, size_t len);
 
-bool is_legal_move(int start, int end, int promo, struct Move *moves, size_t n);
+bool is_legal_move(int start, int end, int promo, Move *moves, size_t n);
 
 void incr_num_moves();
 

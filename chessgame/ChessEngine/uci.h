@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "values.h"
 
-char *move_to_string(struct Move move);
+char *move_to_string(Move move);
 
 bool str_equals(const char *a, const char *b);
 

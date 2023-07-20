@@ -116,7 +116,7 @@ list of 64 move list
 Engine debugging tool
 */
 
-struct Move engine_move;
+Move engine_move;
 
 // best test alpha and beta
 int best_alpha = INT_MIN;
@@ -284,7 +284,7 @@ int num_moves = 0;
 bool white_turn = true;
 
 unsigned long long bitboards[15] = {0ULL};
-struct Move move_list[256];
+Move move_list[256];
 
 unsigned long long not_black_pieces = 0ULL;
 unsigned long long not_white_pieces = 0ULL;
@@ -308,7 +308,7 @@ unsigned long long king_span = 0ULL;
 unsigned long long file_ab = 0ULL;
 unsigned long long file_gh = 0ULL;
 
-//struct Move moves[256];
+//Move moves[256];
 //int num_legal_moves = 0;
 
 unsigned long long unsafe_white = 0ULL;
@@ -350,5 +350,5 @@ int next_spec[15] = {0};
 
 char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
-struct Move *game_possible_moves;
+Move *game_possible_moves;
 int num_game_moves;

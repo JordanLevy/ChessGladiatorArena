@@ -211,7 +211,7 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
                     // and this isn't the first move of the game
                     if(num_moves > 0){
                         // get the previous move
-                        struct Move move = move_list[num_moves - 1];
+                        Move move = move_list[num_moves - 1];
                         // and the previous move was a double pawn push
                         if(move.move_id == 13){
                             // we only care about this en passant pinning situation horizontally
@@ -236,11 +236,11 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
     return squares;
 }
 
-void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, struct Move* moves, int *numElems){
+void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, Move* moves, int *numElems){
     bool is_white = (color == WHITE);
     int e = 0;
     int m = 0;
-    struct Move prev_move;
+    Move prev_move;
     if(num_moves > 0){
         prev_move = move_list[num_moves - 1];
         e = prev_move.end;
@@ -299,15 +299,15 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
     }
 }
 
-void possible_wP(unsigned long long bb, struct Move* moves, int *numElems){
+void possible_wP(unsigned long long bb, Move* moves, int *numElems){
     possible_P(bb, black_pieces, rank[8], bitboards[bP], rank[4], 1, WHITE, moves, numElems);
 }
 
-void possible_bP(unsigned long long bb, struct Move* moves, int *numElems){
+void possible_bP(unsigned long long bb, Move* moves, int *numElems){
     possible_P(bb, white_pieces, rank[1], bitboards[wP], rank[5], -1, BLACK, moves, numElems);
 }
 
-void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
     unsigned char type = get_type(color | KNIGHT);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | KNIGHT | i;
@@ -317,7 +317,7 @@ void possible_N(unsigned long long bb, unsigned long long mask, unsigned char co
     }
 }
 
-void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
     unsigned char type = get_type(color | BISHOP);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | BISHOP | i;
@@ -327,7 +327,7 @@ void possible_B(unsigned long long bb, unsigned long long mask, unsigned char co
     }
 }
 
-void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
     unsigned char type = get_type(color | ROOK);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | ROOK | i;
@@ -337,7 +337,7 @@ void possible_R(unsigned long long bb, unsigned long long mask, unsigned char co
     }
 }
 
-void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
     unsigned char type = get_type(color | QUEEN);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | QUEEN | i;
@@ -347,7 +347,7 @@ void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char co
     }
 }
 
-void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, struct Move* moves, int *numElems){
+void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
     unsigned long long squares = 0ULL;
     unsigned long long safe = ~unsafe_white;
     bool is_white = color == WHITE;
@@ -405,7 +405,7 @@ void update_piece_masks(){
     occupied = ~empty;
 }
 
-void possible_moves_white(struct Move* moves, int *numElems){
+void possible_moves_white(Move* moves, int *numElems){
     update_piece_masks();
     update_unsafe();
     (*numElems) = 0;
@@ -417,7 +417,7 @@ void possible_moves_white(struct Move* moves, int *numElems){
     possible_K(bitboards[wK], not_white_pieces, WHITE, moves, numElems);
 }
 
-void possible_moves_black(struct Move* moves, int *numElems){
+void possible_moves_black(Move* moves, int *numElems){
     update_piece_masks();
     update_unsafe();
     (*numElems) = 0;
@@ -429,7 +429,7 @@ void possible_moves_black(struct Move* moves, int *numElems){
     possible_K(bitboards[bK], not_black_pieces, BLACK, moves, numElems);
 }
 
-void update_possible_moves(struct Move* moves, int *numElems){
+void update_possible_moves(Move* moves, int *numElems){
     if(white_turn){
         possible_moves_white(moves, numElems);
     }

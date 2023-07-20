@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-char* move_to_string(struct Move move){
+char* move_to_string(Move move){
     char* result = (char*)malloc(sizeof(char) * 5);
     int s = move.start;
 
@@ -115,7 +115,7 @@ void inputGo(char* input){
     if(startswith(cmd, "depth ")){
         cmd += 6;
         int depth = atoi(cmd);
-        struct Move result = calc_eng_move(depth);
+        Move result = calc_eng_move(depth);
         char* move_string = move_to_string(result);
         printf("bestmove %s\n", move_string);
     }

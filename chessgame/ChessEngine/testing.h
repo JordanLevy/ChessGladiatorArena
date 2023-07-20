@@ -3,9 +3,9 @@
 
 #include "values.h"
 
-void print_legal_moves(struct Move *moves, int *numElems);
+void print_legal_moves(Move *moves, int *numElems);
 
-void print_move(struct Move move);
+void print_move(Move move);
 
 unsigned long long perft_test(int depth);
 
@@ -13,6 +13,6 @@ unsigned long long detailed_perft(int depth);
 
 void run_game();
 
-void print_line(struct Move *line, size_t n);
+void print_line(Move *line, size_t n);
 
 #endif

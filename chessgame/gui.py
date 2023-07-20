@@ -96,7 +96,7 @@ wK_num_moves = 0
 bK_num_moves = 0
 
 show_spec = True
-engine_enabled = False
+engine_enabled = True
 
 path_to_exe = './ChessEngine/main.exe'
 
