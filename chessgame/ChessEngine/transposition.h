@@ -1,24 +1,17 @@
 #ifndef TRANSPOSITION_H_INCLUDED
 #define TRANSPOSITION_H_INCLUDED
 
-#include "values.h"
-
-#define UNASSIGNED_FLAG -1
+#define TABLE_SIZE 4000000
+#define NO_HASH_ENTRY 100000
 #define EXACT_FLAG 0
 #define ALPHA_FLAG 1
 #define BETA_FLAG 2
-
-typedef struct NullableInt {
-    bool isNull;
-    int value;
-} NullableInt;
 
 typedef struct HashPosition {
     unsigned long long key;
     int depth;
     int flag;
     int value;
-    Move best;
 } HashPosition;
 
 extern unsigned long long zobrist_hash;
@@ -34,10 +27,8 @@ unsigned int get_random_U32_number();
 
 unsigned long long get_random_U64_number();
 
-NullableInt ProbeHash(int depth, int alpha, int beta, Move move);
+int ReadHash(int depth, int alpha, int beta);
 
-void RecordHash(int depth, int value, int flag);
-
-void SetBestMove(Move move);
+void WriteHash(int depth, int value, int flag);
 
 #endif

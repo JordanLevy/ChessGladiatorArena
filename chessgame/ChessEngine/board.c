@@ -342,7 +342,6 @@ void init_fen(char *fen, size_t fen_length){
             }
         }
     }
-    printf("hash %ull\n", zobrist_hash);
 }
 
 int get_file(int n){

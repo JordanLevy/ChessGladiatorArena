@@ -151,16 +151,11 @@ void game_order_moves(){
 // this is what does the pruning
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
     int hash_flag = ALPHA_FLAG;
-    NullableInt hash_result = ProbeHash(depth, alpha, beta, best_line[depth]);
-    int evaluation = 0;
-    if(!hash_result.isNull){
-        evaluation = hash_result.value;
-        return evaluation;
-    }
+    int evaluation = ReadHash(depth, alpha, beta);
     
     if(depth == 0 && !white_check && !black_check){
         evaluation = static_eval();
-        RecordHash(depth, evaluation, EXACT_FLAG);
+        WriteHash(depth, evaluation, EXACT_FLAG);
         return evaluation;
     }
     Move* moves = (Move*)malloc(80 * sizeof(Move));
@@ -183,7 +178,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(depth == 0){
         free(moves);
         evaluation = static_eval();
-        RecordHash(depth, evaluation, EXACT_FLAG);
+        WriteHash(depth, evaluation, EXACT_FLAG);
         return evaluation;
     }
     // white making a move
@@ -202,7 +197,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 best_line[depth] = move;
             }
             if(evaluation >= beta){
-                RecordHash(depth, beta, BETA_FLAG);
+                free(moves);
+                WriteHash(depth, beta, BETA_FLAG);
                 return beta;
             }
             if(evaluation > alpha){
@@ -218,7 +214,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
         }
         free(moves);
-        RecordHash(depth, alpha, hash_flag);
+        WriteHash(depth, alpha, hash_flag);
         return alpha;
     }
 
@@ -236,6 +232,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 minEval = evaluation;
                 best_line[depth] = move;
             }
+            if(evaluation <= alpha){
+                free(moves);
+                WriteHash(depth, alpha, ALPHA_FLAG);
+                return alpha;
+            }
+            if(evaluation < beta){
+                hash_flag = EXACT_FLAG;
+                beta = evaluation;
+            }
             beta = min(beta, evaluation);
             if(depth <= 1){
                 best_beta = min(best_beta, beta);
@@ -245,7 +250,8 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
         }
         free(moves);
-        return minEval;
+        WriteHash(depth, beta, hash_flag);
+        return beta;
     }
 }
 // copy of search moves pruning

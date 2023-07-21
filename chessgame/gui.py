@@ -22,6 +22,8 @@ class Move:
         return '(' + str(self.start) + ', ' + str(self.end) + ') ' + str(self.move_id)
 
 
+clock_start = 0
+
 screen = None
 piece_img = []
 
@@ -382,7 +384,17 @@ def refresh_graphics():
 
 
 def print_move(m):
-    print(m.piece, m.start, m.end)
+    letter = piece_to_letter[get_type(m.piece_id)]
+    start = square_num_to_notation(m.start)
+    end = square_num_to_notation(m.end)
+    move = letter+start+end
+    print(move, end=' ')
+
+
+def print_move_list():
+    for m in move_list:
+        print_move(m)
+    print()
 
 
 def apply_move(start, end, promo_val):
@@ -452,10 +464,11 @@ def apply_move(start, end, promo_val):
         set_piece(end, promo_val)
     new_move = Move(start, end, move_id, capture, piece_id, evaluation)
     append_move(new_move)
+    print_move_list()
 
 
 def run_game(process):
-    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy
+    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
     screen = pygame.display.set_mode((400, 400), 0, 32)
     main_clock = pygame.time.Clock()
     pygame.display.init()
@@ -529,6 +542,7 @@ def run_game(process):
                             send_command(process, 'position fen ' + fen)
                             white_turn = not white_turn
                             send_command(process, 'go depth ' + str(depth))
+                            clock_start = time.time()
                         else:
                             send_command(process, 'position fen ' + fen)
                     press_xy = (-1, -1)
@@ -577,8 +591,8 @@ def read_from_process(process):
         if output == b'':
             break
         response = output.decode().strip()
-        print(response)
         if response.startswith('bestmove'):
+            print('time: ', time.time() - clock_start)
             cmd, move = response.split(' ')
             if move == '(none)':
                 print('Human wins')
@@ -591,3 +605,5 @@ def read_from_process(process):
 
 
 open_communication()
+
+#Pe2e4 pd7d5 Pe4d5 qd8d5 Nb1c3 qd5e6 Bf1e2 nb8c6 Pf2f4 nc6d4 Pd2d4 qe6g6 Be2f3 nc6b4 Bf3e4 pf7f5 Be4d3 qg6g2 Bd3f5 qg2h1
