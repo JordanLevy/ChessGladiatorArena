@@ -591,6 +591,7 @@ def read_from_process(process):
         if output == b'':
             break
         response = output.decode().strip()
+        print(response)
         if response.startswith('bestmove'):
             print('time: ', time.time() - clock_start)
             cmd, move = response.split(' ')

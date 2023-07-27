@@ -7,6 +7,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+int pv_length[64];
+Move pv_table[64][64];
+int ply;
+
+
 int static_eval(){
     return mat_eval + pos_eval;
 }
@@ -256,6 +261,7 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
 }
 
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
+    pv_length[ply] = ply;
     int hash_flag = ALPHA_FLAG;
 
     int val = ReadHash(depth, alpha, beta);
@@ -278,7 +284,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         move = moves[i];
         apply_move(move.start, move.end, move.move_id);
         line[depth] = move;
+        ply++;
         val = -search_moves_pruning(depth - 1, start_depth, -beta, -alpha, false, line, best_line);
+        ply--;
         undo_move();
         decr_num_moves();
         flip_turns();
@@ -287,6 +295,11 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             return beta;
         }
         if(val > alpha){
+            pv_table[ply][ply] = move;
+            for (int j = ply + 1; j < pv_length[ply + 1]; j++){
+                pv_table[ply][j] = pv_table[ply + 1][j]; 
+            }
+            pv_length[ply] = pv_length[ply + 1];
             hash_flag = EXACT_FLAG;
             alpha = val;
         }
@@ -498,8 +511,14 @@ Move calc_eng_move(int depth){
     }
 
     int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
-
-    engine_move = best_line[depth];
+    printf("pv_talbe\n");
+    for (int i = 0; i <= 6; i++){
+        for (int j = 0; j <= 6; j++){
+            print_move(pv_table[i][j]);
+        }
+        printf("\n");
+    }
+    engine_move = pv_table[0][0];
     engine_move.eval = eval;
     return engine_move;
 }
