@@ -149,7 +149,7 @@ void game_order_moves(){
 
 
 // this is what does the pruning
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
+int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
     int hash_flag = ALPHA_FLAG;
     int evaluation = ReadHash(depth, alpha, beta);
     
@@ -254,6 +254,47 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         return beta;
     }
 }
+
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
+    int hash_flag = ALPHA_FLAG;
+
+    int val = ReadHash(depth, alpha, beta);
+    if(val != NO_HASH_ENTRY){
+        return val;
+    }
+    if(depth == 0){
+        val = static_eval();
+        WriteHash(depth, val, EXACT_FLAG);
+        return val;
+    }
+    Move* moves = (Move*)malloc(80 * sizeof(Move));
+    int numElems = 0;
+
+    update_possible_moves(moves, &numElems);
+    order_moves(moves, numElems, player);
+    Move move;
+
+    for(int i = 0; i < numElems; i++){
+        move = moves[i];
+        apply_move(move.start, move.end, move.move_id);
+        line[depth] = move;
+        val = -search_moves_pruning(depth - 1, start_depth, -beta, -alpha, false, line, best_line);
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+        if(val >= beta){
+            WriteHash(depth, beta, BETA_FLAG);
+            return beta;
+        }
+        if(val > alpha){
+            hash_flag = EXACT_FLAG;
+            alpha = val;
+        }
+    }
+    WriteHash(depth, alpha, hash_flag);
+    return alpha;
+}
+
 // copy of search moves pruning
 int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
     if(depth == 0 && !white_check && !black_check){
