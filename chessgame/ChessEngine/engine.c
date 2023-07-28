@@ -7,6 +7,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define START_ALPHA -1000001
+#define START_BETA 1000000
+
 int pv_length[64];
 Move pv_table[64][64];
 int ply;
@@ -264,13 +267,17 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     pv_length[ply] = ply;
     int hash_flag = ALPHA_FLAG;
 
-    int val = ReadHash(depth, alpha, beta);
+    /*int val = ReadHash(depth, alpha, beta);
     if(val != NO_HASH_ENTRY){
+        printf("we are geting val \n");
         return val;
     }
+    */
+    int val = 0;
     if(depth == 0){
         val = static_eval();
         WriteHash(depth, val, EXACT_FLAG);
+        //printf("apples and bannanas \n");
         return val;
     }
     Move* moves = (Move*)malloc(80 * sizeof(Move));
@@ -282,16 +289,25 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     for(int i = 0; i < numElems; i++){
         move = moves[i];
+        /*
+        for(int j = start_depth; j > depth; j--){
+            printf("-");
+        }
+        print_move(move);
+        printf(" %d, %d", alpha, beta);
+        printf("\n");
+        */
         apply_move(move.start, move.end, move.move_id);
         line[depth] = move;
         ply++;
-        val = -search_moves_pruning(depth - 1, start_depth, -beta, -alpha, false, line, best_line);
+        val = -search_moves_pruning(depth - 1, start_depth, -beta, -alpha, !player, line, best_line);
         ply--;
         undo_move();
         decr_num_moves();
         flip_turns();
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
+            //printf("get the beta cuk baka \n");
             return beta;
         }
         if(val > alpha){
@@ -510,7 +526,7 @@ Move calc_eng_move(int depth){
         best_line[i] = nm;
     }
 
-    int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
+    int eval = search_moves_pruning(depth, depth, START_ALPHA, START_BETA, false, line, best_line);
     printf("pv_talbe\n");
     for (int i = 0; i <= 6; i++){
         for (int j = 0; j <= 6; j++){
