@@ -13,6 +13,8 @@
 int pv_length[64];
 Move pv_table[64][64];
 int ply;
+int num_positions = 0;
+int num_no_hash_entry = 0;
 
 
 int static_eval(){
@@ -269,15 +271,18 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     /*int val = ReadHash(depth, alpha, beta);
     if(val != NO_HASH_ENTRY){
-        printf("we are geting val \n");
+        num_no_hash_entry++;
         return val;
-    }
-    */
+    }*/
+
     int val = 0;
     if(depth == 0){
+        num_positions++;
         val = static_eval();
+        if(!player){
+            val = -val;
+        }
         WriteHash(depth, val, EXACT_FLAG);
-        //printf("apples and bannanas \n");
         return val;
     }
     Move* moves = (Move*)malloc(80 * sizeof(Move));
@@ -289,14 +294,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     for(int i = 0; i < numElems; i++){
         move = moves[i];
-        /*
-        for(int j = start_depth; j > depth; j--){
-            printf("-");
-        }
-        print_move(move);
-        printf(" %d, %d", alpha, beta);
-        printf("\n");
-        */
         apply_move(move.start, move.end, move.move_id);
         line[depth] = move;
         ply++;
@@ -307,7 +304,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         flip_turns();
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
-            //printf("get the beta cuk baka \n");
             return beta;
         }
         if(val > alpha){
@@ -536,6 +532,8 @@ Move calc_eng_move(int depth){
     }
     engine_move = pv_table[0][0];
     engine_move.eval = eval;
+    printf("num_positions %d\n", num_positions);
+    printf("num_no_hash_entry %d\n", num_no_hash_entry);
     return engine_move;
 }
 
