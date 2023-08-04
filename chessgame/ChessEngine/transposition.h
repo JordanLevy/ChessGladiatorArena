@@ -29,6 +29,8 @@ unsigned long long get_random_U64_number();
 
 int ReadHash(int depth, int alpha, int beta);
 
+void print_table_entry();
+
 void WriteHash(int depth, int value, int flag);
 
 #endif

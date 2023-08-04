@@ -133,7 +133,7 @@ void reset_board(){
 
     mat_eval = 0;
     pos_eval = 0;
-    zobrist_hash = 0;
+    zobrist_hash = 0ULL;
     num_moves = 0;
     white_turn = true;
 

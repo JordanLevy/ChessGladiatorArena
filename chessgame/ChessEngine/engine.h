@@ -22,7 +22,7 @@ void order_moves(Move *ordered, int size, bool is_white_turn);
 
 void game_order_moves();
 
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line);
+int search_moves_transposition(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line);
 
 int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line, int *hint_line, int hint_depth, bool *applying_hint);
 

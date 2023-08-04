@@ -8,6 +8,9 @@ import subprocess
 import pygame
 from pygame.locals import *
 
+#Pc2c4 pe7e6 Nb1c3 ng8f6 Pd2d4 bf8b4 Bc1d2 nb8c6 Pe2e4 bb4c3 Bd2c3 nf6e4 Bf1d3 ne4c3 Pb2c3 pd7d6 Ng1f3 ke8g8 Ke1g1 qd8f6
+# Qd1c2 pd6d5 Bd3h7 kg8h8 Bh7d3 pd5c4 Bd3c4 pa7a6 Qc2e4 kh8g8 Bc4d3 qf6f5 Qe4c6 pb7c6 Bd3f5 pe6f5 Nf3e5 bc8e6 Ne5c6 pf5f4
+# Nc6e7 kg8h8 Pf2f3 ra8e8 Pd4d5 re8e7 Pd4d5 re8e7 Pd5e6 re7e6
 
 class Move:
     def __init__(self, start, end, move_id, capture, piece_id, eval):

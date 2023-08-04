@@ -1,5 +1,6 @@
 #include "transposition.h"
 #include "values.h"
+#include "board.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -85,6 +86,15 @@ int ReadHash(int depth, int alpha, int beta){
         }
     }
     return NO_HASH_ENTRY;
+}
+
+void print_table_entry(){
+    HashPosition hash = hash_table[zobrist_hash % TABLE_SIZE];
+    printf("%llu %llu %d\n", hash.key, 6525126488758278968ULL, hash.key==6525126488758278968ULL);
+    if(hash.key==6525126488758278968ULL){
+        draw_board();
+    }
+    //printf("key: %d\nflag: %d\nvalue: %d\ndepth: %d\n", hash->key, hash->flag, hash->value, hash->depth);
 }
 
 void WriteHash(int depth, int value, int flag){

@@ -10,6 +10,7 @@
 #define START_ALPHA -1000001
 #define START_BETA 1000000
 
+bool is_using_transposition = true;
 int pv_length[64];
 Move pv_table[64][64];
 int ply;
@@ -159,21 +160,16 @@ void game_order_moves(){
 
 
 // this is what does the pruning
-int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
-    int hash_flag = ALPHA_FLAG;
-    int evaluation = ReadHash(depth, alpha, beta);
-    
+int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
     if(depth == 0 && !white_check && !black_check){
-        evaluation = static_eval();
-        WriteHash(depth, evaluation, EXACT_FLAG);
-        return evaluation;
+        return static_eval();
     }
-    Move* moves = (Move*)malloc(80 * sizeof(Move));
+    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
     int numElems = 0;
 
     update_possible_moves(moves, &numElems);
     order_moves(moves, numElems, player);
-    Move move;
+    struct Move move;
 
     if(numElems == 0){
         free(moves);
@@ -187,9 +183,7 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
     }
     if(depth == 0){
         free(moves);
-        evaluation = static_eval();
-        WriteHash(depth, evaluation, EXACT_FLAG);
-        return evaluation;
+        return static_eval();
     }
     // white making a move
     if (player){
@@ -198,22 +192,13 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
+            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = move;
-            }
-            if(evaluation >= beta){
-                free(moves);
-                WriteHash(depth, beta, BETA_FLAG);
-                return beta;
-            }
-            if(evaluation > alpha){
-                hash_flag = EXACT_FLAG;
-                alpha = evaluation;
             }
             alpha = max(alpha, evaluation);
             if(depth <= 1){
@@ -224,8 +209,7 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
             }
         }
         free(moves);
-        WriteHash(depth, alpha, hash_flag);
-        return alpha;
+        return maxEval;
     }
 
     else{
@@ -234,22 +218,13 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
             move = moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
-            evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
+            int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
             undo_move();
             decr_num_moves();
             flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
                 best_line[depth] = move;
-            }
-            if(evaluation <= alpha){
-                free(moves);
-                WriteHash(depth, alpha, ALPHA_FLAG);
-                return alpha;
-            }
-            if(evaluation < beta){
-                hash_flag = EXACT_FLAG;
-                beta = evaluation;
             }
             beta = min(beta, evaluation);
             if(depth <= 1){
@@ -260,22 +235,23 @@ int search_moves_pruning_old(int depth, int start_depth, int alpha, int beta, bo
             }
         }
         free(moves);
-        WriteHash(depth, beta, hash_flag);
-        return beta;
+        return minEval;
     }
 }
 
-int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
+int search_moves_transposition(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line){
     pv_length[ply] = ply;
     int hash_flag = ALPHA_FLAG;
 
-    /*int val = ReadHash(depth, alpha, beta);
+    int val = ReadHash(depth, alpha, beta);
     if(val != NO_HASH_ENTRY){
         num_no_hash_entry++;
+        print_table_entry();
+        //printf("\n");
         return val;
-    }*/
+    }
 
-    int val = 0;
+    //int val = 0;
     if(depth == 0){
         num_positions++;
         val = static_eval();
@@ -297,7 +273,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         apply_move(move.start, move.end, move.move_id);
         line[depth] = move;
         ply++;
-        val = -search_moves_pruning(depth - 1, start_depth, -beta, -alpha, !player, line, best_line);
+        val = -search_moves_transposition(depth - 1, start_depth, -beta, -alpha, !player, line, best_line);
         ply--;
         undo_move();
         decr_num_moves();
@@ -522,18 +498,26 @@ Move calc_eng_move(int depth){
         best_line[i] = nm;
     }
 
-    int eval = search_moves_pruning(depth, depth, START_ALPHA, START_BETA, false, line, best_line);
-    printf("pv_talbe\n");
-    for (int i = 0; i <= 6; i++){
-        for (int j = 0; j <= 6; j++){
-            print_move(pv_table[i][j]);
+    if(is_using_transposition){
+        int eval = search_moves_transposition(depth, depth, START_ALPHA, START_BETA, false, line, best_line);
+        printf("pv_talbe\n");
+        for (int i = 0; i <= 6; i++){
+            for (int j = 0; j <= 6; j++){
+                print_move(pv_table[i][j]);
+            }
+            printf("\n");
         }
-        printf("\n");
+        engine_move = pv_table[0][0];
+        engine_move.eval = eval;
+        printf("num_positions %d\n", num_positions);
+        printf("num_no_hash_entry %d\n", num_no_hash_entry);
+        return engine_move;
     }
-    engine_move = pv_table[0][0];
+    
+
+    int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
+    engine_move = best_line[depth];
     engine_move.eval = eval;
-    printf("num_positions %d\n", num_positions);
-    printf("num_no_hash_entry %d\n", num_no_hash_entry);
     return engine_move;
 }
 
