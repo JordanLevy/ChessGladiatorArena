@@ -89,6 +89,8 @@ void move_piece(unsigned char id, int start, int end){
     bitboards[type] &= remove_mask;
     unsigned long long add_mask = 1ULL << end;
     bitboards[type] |= add_mask;
+    zobrist_hash ^= zobrist_keys[start][type];
+    zobrist_hash ^= zobrist_keys[end][type];
     pos_eval += square_incentive[type][end];
     pos_eval -= square_incentive[type][start];
 }
@@ -133,7 +135,7 @@ void reset_board(){
 
     mat_eval = 0;
     pos_eval = 0;
-    zobrist_hash = 0ULL;
+    zobrist_hash = 0;
     num_moves = 0;
     white_turn = true;
 

@@ -15,7 +15,7 @@ int pv_length[64];
 Move pv_table[64][64];
 int ply;
 int num_positions = 0;
-int num_no_hash_entry = 0;
+int num_with_hash_entry = 0;
 
 
 int static_eval(){
@@ -245,9 +245,7 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
 
     int val = ReadHash(depth, alpha, beta);
     if(val != NO_HASH_ENTRY){
-        num_no_hash_entry++;
-        print_table_entry();
-        //printf("\n");
+        num_with_hash_entry++;
         return val;
     }
 
@@ -500,17 +498,10 @@ Move calc_eng_move(int depth){
 
     if(is_using_transposition){
         int eval = search_moves_transposition(depth, depth, START_ALPHA, START_BETA, false, line, best_line);
-        printf("pv_talbe\n");
-        for (int i = 0; i <= 6; i++){
-            for (int j = 0; j <= 6; j++){
-                print_move(pv_table[i][j]);
-            }
-            printf("\n");
-        }
         engine_move = pv_table[0][0];
         engine_move.eval = eval;
         printf("num_positions %d\n", num_positions);
-        printf("num_no_hash_entry %d\n", num_no_hash_entry);
+        printf("num_with_hash_entry %d\n", num_with_hash_entry);
         return engine_move;
     }
     
