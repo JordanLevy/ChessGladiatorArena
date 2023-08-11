@@ -11,9 +11,6 @@ char* move_to_string(Move move){
     char* result = (char*)malloc(sizeof(char) * 5);
     int s = move.start;
 
-    /*if(s == -1){
-        return;
-    }*/
     int e = move.end;
     int m = move.move_id;
 
@@ -39,6 +36,7 @@ char* move_to_string(Move move){
     }
 
     if(move.start == -1){
+        free(result);
         return "(none)";
     }
 

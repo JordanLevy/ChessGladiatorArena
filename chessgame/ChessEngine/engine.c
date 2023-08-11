@@ -9,6 +9,7 @@
 
 #define START_ALPHA -1000001
 #define START_BETA 1000000
+#define MATE_SCORE 1000000
 
 bool is_using_transposition = true;
 int pv_length[64];
@@ -20,42 +21,6 @@ int num_with_hash_entry = 0;
 
 int static_eval(){
     return mat_eval + pos_eval;
-}
-
-int search_moves(int depth, int start_depth){
-    if(depth == 0){
-        return static_eval();
-    }
-    Move* moves = (Move*)malloc(80 * sizeof(Move));
-    int numElems = 0;
-
-    update_possible_moves(moves, &numElems);
-    Move move;
-
-    if(numElems == 0){
-        if(white_check || black_check){
-            return INT_MAX;
-        }
-        return 0;
-    }
-    int bestEvaluation = INT_MAX;
-
-    for(int i = 0; i < numElems; i++){
-        move = moves[i];
-        apply_move(move.start, move.end, move.move_id);
-        int evaluation = -search_moves(depth - 1, depth);
-        if(evaluation < bestEvaluation){
-            bestEvaluation = evaluation;
-            if(depth == start_depth){
-
-                engine_move = move;
-            }
-        }
-        undo_move();
-        decr_num_moves();
-        flip_turns();
-    }
-    return bestEvaluation;
 }
 
 // this is to do stuf like chking i fyou are capteringa a good pece
@@ -147,6 +112,7 @@ void order_moves(Move* ordered, int size, bool is_white_turn){
         //printf(" %d\n", move_val[i]);
     }
     quick_sort(move_val, ordered, 0, size - 1);
+    free(move_val);
     /*printf("\n\nSorted\n\n");
     for(int i = 0; i < size; i++){
         print_move(ordered[i]);
@@ -278,6 +244,7 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
         flip_turns();
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
+            free(moves);
             return beta;
         }
         if(val > alpha){
@@ -290,7 +257,15 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
             alpha = val;
         }
     }
+    if(numElems == 0){
+        free(moves);
+        if(white_in_check || black_in_check){
+            return -MATE_SCORE + ply;
+        }
+        return 0;
+    }
     WriteHash(depth, alpha, hash_flag);
+    free(moves);
     return alpha;
 }
 
@@ -502,6 +477,8 @@ Move calc_eng_move(int depth){
         engine_move.eval = eval;
         printf("num_positions %d\n", num_positions);
         printf("num_with_hash_entry %d\n", num_with_hash_entry);
+        free(line);
+        free(best_line);
         return engine_move;
     }
     
@@ -509,6 +486,8 @@ Move calc_eng_move(int depth){
     int eval = search_moves_pruning(depth, depth, INT_MIN, INT_MAX, false, line, best_line);
     engine_move = best_line[depth];
     engine_move.eval = eval;
+    free(line);
+    free(best_line);
     return engine_move;
 }
 

@@ -6,8 +6,6 @@
 
 int static_eval();
 
-int search_moves(int depth, int start_depth);
-
 int calc_static_move_eval(Move move, bool is_white_turn);
 
 void swap(int *scores, Move *legal_moves, int val1, int val2);

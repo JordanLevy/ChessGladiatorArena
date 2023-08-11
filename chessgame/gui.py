@@ -8,10 +8,6 @@ import subprocess
 import pygame
 from pygame.locals import *
 
-#Pc2c4 pe7e6 Nb1c3 ng8f6 Pd2d4 bf8b4 Bc1d2 nb8c6 Pe2e4 bb4c3 Bd2c3 nf6e4 Bf1d3 ne4c3 Pb2c3 pd7d6 Ng1f3 ke8g8 Ke1g1 qd8f6
-# Qd1c2 pd6d5 Bd3h7 kg8h8 Bh7d3 pd5c4 Bd3c4 pa7a6 Qc2e4 kh8g8 Bc4d3 qf6f5 Qe4c6 pb7c6 Bd3f5 pe6f5 Nf3e5 bc8e6 Ne5c6 pf5f4
-# Nc6e7 kg8h8 Pf2f3 ra8e8 Pd4d5 re8e7 Pd4d5 re8e7 Pd5e6 re7e6
-
 class Move:
     def __init__(self, start, end, move_id, capture, piece_id, eval):
         self.start = start
@@ -51,9 +47,8 @@ position_list = []
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-depth = 8
+depth = 6
 
-start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
@@ -61,6 +56,11 @@ black_promo_mate = '8/8/8/8/8/8/PPP3kp/K7 w - - 0 1'
 black_ep_mate = '7b/8/8/8/p1p5/P7/KP4k1/RB6 w - - 0 1'
 best_move_castle = 'r3k3/pp4p1/2p3pp/7n/4P1q1/1QNP1Rb1/PP4BK/8 w q - 0 23'
 white_bodies = 'rnbrkbnn/n7/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1'
+queen_promo_crash = '8/K1P3k1/8/8/1P6/6P1/P6P/8 w - - 0 1'
+black_mate_in_4 = 'k2r4/pp4Qp/2n2p2/8/2Pb4/1PN2P2/PBq3PP/K6R w - - 0 1'
+knight_blunder = 'r1bqkbnr/pppp1ppp/2n5/3p4/4P3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1'
+
+start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 EMPTY_SQUARE = 0
 
