@@ -141,6 +141,7 @@ extern int square_incentive[15][64];
 extern int values[15];
 extern int mat_eval;
 extern int pos_eval;
+extern int castling_rights;
 extern int num_moves;
 extern bool white_turn;
 

@@ -1,6 +1,11 @@
 #ifndef BOARD_H_INCLUDED
 #define BOARD_H_INCLUDED
 
+#define CAN_CASTLE_WK 1
+#define CAN_CASTLE_WQ 2
+#define CAN_CASTLE_BK 4
+#define CAN_CASTLE_BQ 8
+
 unsigned char get_piece(int square);
 
 void draw_board();

@@ -248,6 +248,7 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
             return beta;
         }
         if(val > alpha){
+            move.eval = val;
             pv_table[ply][ply] = move;
             for (int j = ply + 1; j < pv_length[ply + 1]; j++){
                 pv_table[ply][j] = pv_table[ply + 1][j]; 
@@ -475,8 +476,15 @@ Move calc_eng_move(int depth){
         int eval = search_moves_transposition(depth, depth, START_ALPHA, START_BETA, false, line, best_line);
         engine_move = pv_table[0][0];
         engine_move.eval = eval;
+        printf("pv_table\n");
+        for (int i = 0; i < pv_length[0]; i++){
+            print_move(pv_table[0][i]);
+            printf(" %d\n", pv_table[0][i].eval);
+        }
+        printf("\n");
         printf("num_positions %d\n", num_positions);
         printf("num_with_hash_entry %d\n", num_with_hash_entry);
+        
         free(line);
         free(best_line);
         return engine_move;

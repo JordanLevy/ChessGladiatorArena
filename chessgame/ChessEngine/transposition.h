@@ -14,8 +14,11 @@ typedef struct HashPosition {
     int value;
 } HashPosition;
 
+extern unsigned long long piece_keys[64][15];
+extern unsigned long long side_key;
+extern unsigned long long en_passant_keys[64];
+extern unsigned long long castle_keys[16];
 extern unsigned long long zobrist_hash;
-extern unsigned long long zobrist_keys[64][15];
 
 void init_zobrist_keys();
 

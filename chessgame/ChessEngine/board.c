@@ -31,7 +31,7 @@ void remove_piece(unsigned char id, int square){
     unsigned long long remove_mask = ~(1ULL << square);
     bitboards[type] &= remove_mask;
     mat_eval -= values[type];
-    zobrist_hash ^= zobrist_keys[square][type];
+    zobrist_hash ^= piece_keys[square][type];
     pos_eval -= square_incentive[type][square];
 
 }
@@ -47,7 +47,7 @@ void destroy_piece(unsigned char id, int square){
     unsigned long long remove_mask = ~(1ULL << square);
     bitboards[type] &= remove_mask;
     mat_eval -= values[type];
-    zobrist_hash ^= zobrist_keys[square][type];
+    zobrist_hash ^= piece_keys[square][type];
     pos_eval -= square_incentive[type][square];
 }
 
@@ -62,7 +62,7 @@ unsigned char add_piece(unsigned char id, int square){
     unsigned long long add_mask = 1ULL << square;
     bitboards[type] |= add_mask;
     mat_eval += values[type];
-    zobrist_hash ^= zobrist_keys[square][type];
+    zobrist_hash ^= piece_keys[square][type];
     pos_eval += square_incentive[type][square];
     return new_id;
 }
@@ -75,7 +75,7 @@ void revive_piece(unsigned char id, int square){
     unsigned long long add_mask = 1ULL << square;
     bitboards[type] |= add_mask;
     mat_eval += values[type];
-    zobrist_hash ^= zobrist_keys[square][type];
+    zobrist_hash ^= piece_keys[square][type];
     pos_eval += square_incentive[type][square];
 }
 
@@ -89,8 +89,8 @@ void move_piece(unsigned char id, int start, int end){
     bitboards[type] &= remove_mask;
     unsigned long long add_mask = 1ULL << end;
     bitboards[type] |= add_mask;
-    zobrist_hash ^= zobrist_keys[start][type];
-    zobrist_hash ^= zobrist_keys[end][type];
+    zobrist_hash ^= piece_keys[start][type];
+    zobrist_hash ^= piece_keys[end][type];
     pos_eval += square_incentive[type][end];
     pos_eval -= square_incentive[type][start];
 }
@@ -242,6 +242,7 @@ void init_fen(char *fen, size_t fen_length){
     queenside_wR_num_moves = 1;
     kingside_bR_num_moves = 1;
     queenside_bR_num_moves = 1;
+    castling_rights = 0;
     for(int i = 0; i < fen_length; i++){
         current = fen[i];
         if (current == '\0'){
@@ -303,15 +304,19 @@ void init_fen(char *fen, size_t fen_length){
         //this section handals casaling rights
         else if (fen_section == 2){
             if (current == 'K'){
+                castling_rights |= CAN_CASTLE_WK;
                 kingside_wR_num_moves = 0;
             }
             else if (current == 'Q'){
+                castling_rights |= CAN_CASTLE_WQ;
                 queenside_wR_num_moves = 0;
             }
             else if (current == 'k'){
+                castling_rights |= CAN_CASTLE_BK;
                 kingside_bR_num_moves = 0;
             }
             else if (current == 'q'){
+                castling_rights |= CAN_CASTLE_BQ;
                 queenside_bR_num_moves = 0;
             }
         }
@@ -696,6 +701,9 @@ void flip_turns(){
 }
 
 bool apply_move(int start, int end, int move_id){
+    if (white_turn){
+        zobrist_hash ^= side_key;
+    }
     unsigned char moved_piece = get_piece(start);
     unsigned char type = get_type(moved_piece);
     // not their turn to make a move
@@ -770,6 +778,10 @@ void undo_move(){
     // can't undo if nothing has been played
     if(num_moves == 0){
         return;
+    }
+
+    if (!white_turn){
+        zobrist_hash ^= side_key;
     }
 
     //previous move (the one we're undoing)

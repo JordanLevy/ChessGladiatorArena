@@ -280,6 +280,7 @@ int square_incentive[15][64] =
 int values[15] = {0, -100, -300, -330, -500, -900, -9000, 0, 0, 100, 300, 330, 500, 900, 9000};
 int mat_eval = 0;
 int pos_eval = 0;
+int castling_rights = 15;
 int num_moves = 0;
 bool white_turn = true;
 

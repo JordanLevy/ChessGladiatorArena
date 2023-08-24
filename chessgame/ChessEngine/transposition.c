@@ -5,7 +5,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-unsigned long long zobrist_keys[64][15];
+unsigned long long piece_keys[64][15];
+unsigned long long side_key;
+unsigned long long en_passant_keys[64];
+unsigned long long castle_keys[16];
 unsigned long long zobrist_hash;
 HashPosition hash_table[TABLE_SIZE];
 
@@ -15,8 +18,15 @@ unsigned int random_state = 1804289383;
 void init_zobrist_keys(){
     for(int i = 0; i < 64; i++){
         for(int j = 0; j < 15; j++){
-            zobrist_keys[i][j] = get_random_U64_number();
+            piece_keys[i][j] = get_random_U64_number();
         }
+    }
+    side_key = get_random_U64_number();
+    for(int i = 0; i < 64; i++){
+        en_passant_keys[i] = get_random_U64_number();
+    }
+    for(int i = 0; i < 16; i++){
+        castle_keys[i] = get_random_U64_number();
     }
 }
 
@@ -32,7 +42,7 @@ void init_hash_table(){
 void print_zobrist_keys(){
     for(int i = 0; i < 64; i++){
         for(int j = 0; j < 15; j++){
-            printf("%llu,\n", zobrist_keys[i][j]);
+            printf("%llu,\n", piece_keys[i][j]);
         }
     }
 }
