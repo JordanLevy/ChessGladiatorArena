@@ -441,7 +441,7 @@ bool resolves_check(int start, int end, int move_id){
     return true;
 }
 
-void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, Move* moves, int *numElems){
+void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, MoveList* move_lists){
     Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
@@ -452,14 +452,14 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
                     move.move_id = j;
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
-                    append_move(moves, move, numElems);
+                    append_move(move_lists[0].moves, move, &move_lists[0].size);
                 }
             }
         }
     }
 }
 
-void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, Move* moves, int *numElems){
+void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, MoveList* move_lists){
     Move move;
     for(int i = 0; i < 64; i++){
         if((1ULL << i) & mask){
@@ -470,7 +470,10 @@ void add_moves_position(unsigned long long mask, int start_position, int min_id,
                     move.move_id = j;
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
-                    append_move(moves, move, numElems);
+                    append_move(move_lists[0].moves, move, &move_lists[0].size);
+                    if(move.capture > 0){
+                        //append_move(captures, move, numCaptures);
+                    }
                 }
             }
         }
@@ -643,7 +646,7 @@ void update_unsafe(){
     black_check = black_in_check();
 }
 
-bool white_in_checkmate(int numElems){
+bool white_in_checkmate(int numMoves){
     // can't be in checkmate if it's not your turn
     if(!white_turn){
         return false;
@@ -653,20 +656,20 @@ bool white_in_checkmate(int numElems){
         return false;
     }
     // can't be in checkmate if you have legal moves
-    if(numElems > 0){
+    if(numMoves > 0){
         return false;
     }
     return true;
 }
 
-bool black_in_checkmate(int numElems){
+bool black_in_checkmate(int numMoves){
     if(white_turn){
         return false;
     }
     if(!black_check){
         return false;
     }
-    if(numElems > 0){
+    if(numMoves > 0){
         return false;
     }
     return true;
@@ -710,8 +713,6 @@ bool apply_move(int start, int end, int move_id){
     if(white_turn != is_white_piece(moved_piece)){
         printf("\n\nNot your turn\nwhite_turn:%d\nstart:%d\nend:%d\nmove_id:%d\n\n", white_turn, start, end, move_id);
         draw_board();
-        update_game_possible_moves();
-        print_legal_moves(game_possible_moves, &num_game_moves);
         return false;
     }
     unsigned char captured_piece = get_piece(end);
@@ -855,10 +856,6 @@ bool try_undo_move(){
     return false;
 }
 
-bool is_game_legal_move(int start, int end, int promo){
-    return is_legal_move(start, end, promo, game_possible_moves, num_game_moves);
-}
-
 char piece_letter(int piece_id, bool caps){
     char letters[] = "_PNBRQK__pnbrqk";
     unsigned char type = get_type(piece_id);
@@ -874,7 +871,5 @@ char file_letter(int n){
 }
 
 void init(char* fen, int len){
-    game_possible_moves = (Move*)malloc(80 * sizeof(Move));
-    num_game_moves = 0;
     init_board(fen, len);
 }

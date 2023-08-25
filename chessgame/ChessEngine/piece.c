@@ -236,7 +236,7 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
     return squares;
 }
 
-void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, Move* moves, int *numElems){
+void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, MoveList* move_lists){
     bool is_white = (color == WHITE);
     int e = 0;
     int m = 0;
@@ -259,31 +259,31 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
 
     // capture right
     unsigned long long mask = l_shift(bb, fwd * 8 - 1) & can_capture & not_promo_rank & ~file[1];
-    add_moves_offset(mask, -(fwd * 8 - 1), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 - 1), 0, 0, 0, move_lists);
 
     // capture left
     mask = l_shift(bb, fwd * 8 + 1) & can_capture & not_promo_rank & ~file[8];
-    add_moves_offset(mask, -(fwd * 8 + 1), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 + 1), 0, 0, 0, move_lists);
 
     // one forward
     mask = l_shift(bb, fwd * 8) & empty & not_promo_rank;
-    add_moves_offset(mask, -fwd * 8, 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -fwd * 8, 0, 0, 0, move_lists);
 
     // two forward
     mask = l_shift(bb, 2 * fwd * 8) & empty & l_shift(empty, fwd * 8) & double_push_rank;
-    add_moves_offset(mask, -(2 * fwd * 8), 0, 0, 0, moves, numElems);
+    add_moves_offset(mask, -(2 * fwd * 8), 0, 0, 0, move_lists);
 
     // promotion by capture right
     mask = l_shift(bb, fwd * 8 - 1) & can_capture & promo_rank & ~file[1];
-    add_moves_offset(mask, -(fwd * 8 - 1), 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 - 1), 0, promo_min, promo_max, move_lists);
 
     // promotion by capture left
     mask = l_shift(bb, fwd * 8 + 1) & can_capture & promo_rank & ~file[8];
-    add_moves_offset(mask, -(fwd * 8 + 1), 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -(fwd * 8 + 1), 0, promo_min, promo_max, move_lists);
 
     // promotion by one forward
     mask = l_shift(bb, fwd * 8) & empty & promo_rank;
-    add_moves_offset(mask, -fwd * 8, 0, promo_min, promo_max, moves, numElems);
+    add_moves_offset(mask, -fwd * 8, 0, promo_min, promo_max, move_lists);
 
     // if the previous move was a double pawn push, en passant might be possible
     if(m == DOUBLE_PAWN_PUSH){
@@ -291,63 +291,63 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
 
         // left en passant
         mask = l_shift(bb, 1) & enemy_pawns & not_promo_rank & ~file[8] & pushed_pawn_location;
-        add_moves_offset(mask, -1, fwd * 8, 0, 0, moves, numElems);
+        add_moves_offset(mask, -1, fwd * 8, 0, 0, move_lists);
 
         // right en passant
         mask = l_shift(bb, -1) & enemy_pawns & not_promo_rank & ~file[1] & pushed_pawn_location;
-        add_moves_offset(mask, 1, fwd * 8, 0, 0, moves, numElems);
+        add_moves_offset(mask, 1, fwd * 8, 0, 0, move_lists);
     }
 }
 
-void possible_wP(unsigned long long bb, Move* moves, int *numElems){
-    possible_P(bb, black_pieces, rank[8], bitboards[bP], rank[4], 1, WHITE, moves, numElems);
+void possible_wP(unsigned long long bb, MoveList* move_lists){
+    possible_P(bb, black_pieces, rank[8], bitboards[bP], rank[4], 1, WHITE, move_lists);
 }
 
-void possible_bP(unsigned long long bb, Move* moves, int *numElems){
-    possible_P(bb, white_pieces, rank[1], bitboards[wP], rank[5], -1, BLACK, moves, numElems);
+void possible_bP(unsigned long long bb, MoveList* move_lists){
+    possible_P(bb, white_pieces, rank[1], bitboards[wP], rank[5], -1, BLACK, move_lists);
 }
 
-void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
+void possible_N(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | KNIGHT);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | KNIGHT | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(span_piece(mask, location, knight_span, 18, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(span_piece(mask, location, knight_span, 18, 0ULL), location, 0, 0, move_lists);
     }
 }
 
-void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
+void possible_B(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | BISHOP);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | BISHOP | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, move_lists);
     }
 }
 
-void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
+void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | ROOK);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | ROOK | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, move_lists);
     }
 }
 
-void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
+void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | QUEEN);
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | QUEEN | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, move_lists);
     }
 }
 
-void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, Move* moves, int *numElems){
+void possible_K(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned long long squares = 0ULL;
     unsigned long long safe = ~unsafe_white;
     bool is_white = color == WHITE;
@@ -361,7 +361,7 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | KING | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(span_piece((mask & safe), location, king_span, 9, 0ULL), location, 0, 0, moves, numElems);
+        add_moves_position(span_piece((mask & safe), location, king_span, 9, 0ULL), location, 0, 0, move_lists);
     }
 
     // if the king is in check, king cannot castle
@@ -373,12 +373,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         // white queenside castle
         if(piece_location[queenside_wR] == 7 && queenside_wR_num_moves == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
-            add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, -2, 0, 0, 0, move_lists);
         }
         // white kingside castle
         if(piece_location[kingside_wR] == 0 && kingside_wR_num_moves == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
-            add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, 2, 0, 0, 0, move_lists);
         }
     }
     // this is black king, hasn't moved yet
@@ -386,12 +386,12 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         // black queenside castle
         if(piece_location[queenside_bR] == 63 && queenside_bR_num_moves == 0){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
-            add_moves_offset(squares, -2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, -2, 0, 0, 0, move_lists);
         }
         // black kingside castle
         if(piece_location[kingside_bR] == 56 && kingside_bR_num_moves == 0){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
-            add_moves_offset(squares, 2, 0, 0, 0, moves, numElems);
+            add_moves_offset(squares, 2, 0, 0, 0, move_lists);
         }
     }
 }
@@ -405,41 +405,45 @@ void update_piece_masks(){
     occupied = ~empty;
 }
 
-void possible_moves_white(Move* moves, int *numElems){
+void possible_moves_white(MoveList* move_lists){
     update_piece_masks();
     update_unsafe();
-    (*numElems) = 0;
-    possible_wP(bitboards[wP], moves, numElems);
-    possible_N(bitboards[wN], not_white_pieces, WHITE, moves, numElems);
-    possible_B(bitboards[wB], not_white_pieces, WHITE, moves, numElems);
-    possible_R(bitboards[wR], not_white_pieces, WHITE, moves, numElems);
-    possible_Q(bitboards[wQ], not_white_pieces, WHITE, moves, numElems);
-    possible_K(bitboards[wK], not_white_pieces, WHITE, moves, numElems);
+    //2 is jenarick because we have 2 lists right now 
+    //this could change in the futcher
+    for(int i = 0; i < 2; i++){
+        move_lists[i].size = 0;
+    }
+    possible_wP(bitboards[wP], move_lists);
+    possible_N(bitboards[wN], not_white_pieces, WHITE, move_lists);
+    possible_B(bitboards[wB], not_white_pieces, WHITE, move_lists);
+    possible_R(bitboards[wR], not_white_pieces, WHITE, move_lists);
+    possible_Q(bitboards[wQ], not_white_pieces, WHITE, move_lists);
+    possible_K(bitboards[wK], not_white_pieces, WHITE, move_lists);
 }
 
-void possible_moves_black(Move* moves, int *numElems){
+void possible_moves_black(MoveList* move_lists){
     update_piece_masks();
     update_unsafe();
-    (*numElems) = 0;
-    possible_bP(bitboards[bP], moves, numElems);
-    possible_N(bitboards[bN], not_black_pieces, BLACK, moves, numElems);
-    possible_B(bitboards[bB], not_black_pieces, BLACK, moves, numElems);
-    possible_R(bitboards[bR], not_black_pieces, BLACK, moves, numElems);
-    possible_Q(bitboards[bQ], not_black_pieces, BLACK, moves, numElems);
-    possible_K(bitboards[bK], not_black_pieces, BLACK, moves, numElems);
+    //2 is jenarick because we have 2 lists right now 
+    //this could change in the futcher
+    for(int i = 0; i < 2; i++){
+        move_lists[i].size = 0;
+    }
+    possible_bP(bitboards[bP], move_lists);
+    possible_N(bitboards[bN], not_black_pieces, BLACK, move_lists);
+    possible_B(bitboards[bB], not_black_pieces, BLACK, move_lists);
+    possible_R(bitboards[bR], not_black_pieces, BLACK, move_lists);
+    possible_Q(bitboards[bQ], not_black_pieces, BLACK, move_lists);
+    possible_K(bitboards[bK], not_black_pieces, BLACK, move_lists);
 }
 
-void update_possible_moves(Move* moves, int *numElems){
+void update_possible_moves(MoveList* move_lists){
     if(white_turn){
-        possible_moves_white(moves, numElems);
+        possible_moves_white(move_lists);
     }
     else{
-        possible_moves_black(moves, numElems);
+        possible_moves_black(move_lists);
     }
-}
-
-void update_game_possible_moves(){
-    update_possible_moves(game_possible_moves, &num_game_moves);
 }
 
 // if they moved one of the castling rooks, increment the number of moves it has made

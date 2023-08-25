@@ -40,9 +40,9 @@ int get_l_diag(int n);
 
 bool resolves_check(int start, int end, int move_id);
 
-void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, Move *moves, int *numElems);
+void add_moves_offset(unsigned long long mask, int start_offset, int end_offset, int min_id, int max_id, MoveList* move_lists);
 
-void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, Move *moves, int *numElems);
+void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, MoveList* move_lists);
 
 unsigned long long unsafe_for_white();
 
@@ -54,9 +54,9 @@ bool black_in_check();
 
 void update_unsafe();
 
-bool white_in_checkmate(int numElems);
+bool white_in_checkmate(int numMoves);
 
-bool black_in_checkmate(int numElems);
+bool black_in_checkmate(int numMoves);
 
 void init_board(char *fen, size_t len);
 

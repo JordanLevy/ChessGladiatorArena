@@ -3,7 +3,7 @@
 
 #include "values.h"
 
-void print_legal_moves(Move *moves, int *numElems);
+void print_legal_moves(Move *moves, int *numMoves);
 
 void print_move(Move move);
 

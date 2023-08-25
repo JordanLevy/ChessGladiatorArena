@@ -128,6 +128,11 @@ typedef struct Move {
     int eval;
 } Move;
 
+typedef struct MoveList{
+    Move* moves;
+    int size;
+} MoveList;
+
 extern Move engine_move;
 
 // best test alpha and beta

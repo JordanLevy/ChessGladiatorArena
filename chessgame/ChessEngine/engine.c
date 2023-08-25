@@ -120,25 +120,29 @@ void order_moves(Move* ordered, int size, bool is_white_turn){
     }*/
 }
 
-void game_order_moves(){
-    order_moves(game_possible_moves, num_game_moves, white_turn);
-}
-
-
 // this is what does the pruning
 int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool player, struct Move* line, struct Move* best_line){
     if(depth == 0 && !white_check && !black_check){
         return static_eval();
     }
-    struct Move* moves = (struct Move*)malloc(80 * sizeof(struct Move));
-    int numElems = 0;
 
-    update_possible_moves(moves, &numElems);
-    order_moves(moves, numElems, player);
-    struct Move move;
+    //makes the move_list
+    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    move_lists[0].size = 0; 
+    move_lists[0].moves = (Move*)malloc(80 * sizeof(Move));
+    move_lists[1].size = 0; 
+    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
-    if(numElems == 0){
-        free(moves);
+    update_possible_moves(move_lists);
+    order_moves(move_lists[0].moves, move_lists[0].size, player);
+    Move move;
+
+    if(move_lists[0].size == 0){
+
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
+
         if(white_check){
             return INT_MIN + (start_depth - depth);
         }
@@ -148,14 +152,17 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         return 0;
     }
     if(depth == 0){
-        free(moves);
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
+
         return static_eval();
     }
     // white making a move
     if (player){
         int maxEval = INT_MIN;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+        for(int i = 0; i < move_lists[0].size; i++){
+            move = move_lists[0].moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
@@ -166,22 +173,24 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 maxEval = evaluation;
                 best_line[depth] = move;
             }
-            alpha = max(alpha, evaluation);
+            alpha = max_val(alpha, evaluation);
             if(depth <= 1){
-                best_alpha = max(best_alpha, alpha);
+                best_alpha = max_val(best_alpha, alpha);
             }
             if (beta <= alpha){
                 break;
             }
         }
-        free(moves);
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
         return maxEval;
     }
 
     else{
         int minEval = INT_MAX;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
+        for(int i = 0; i < move_lists[0].size; i++){
+            move = move_lists[0].moves[i];
             apply_move(move.start, move.end, move.move_id);
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
@@ -192,15 +201,17 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
                 minEval = evaluation;
                 best_line[depth] = move;
             }
-            beta = min(beta, evaluation);
+            beta = min_val(beta, evaluation);
             if(depth <= 1){
-                best_beta = min(best_beta, beta);
+                best_beta = min_val(best_beta, beta);
             }
             if (beta <= alpha){
                 break;
             }
         }
-        free(moves);
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
         return minEval;
     }
 }
@@ -225,15 +236,18 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
         WriteHash(depth, val, EXACT_FLAG);
         return val;
     }
-    Move* moves = (Move*)malloc(80 * sizeof(Move));
-    int numElems = 0;
+    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    move_lists[0].size = 0; 
+    move_lists[0].moves = (Move*)malloc(80 * sizeof(Move));
+    move_lists[1].size = 0; 
+    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
-    update_possible_moves(moves, &numElems);
-    order_moves(moves, numElems, player);
+    update_possible_moves(move_lists);
+    order_moves(move_lists[0].moves, move_lists[0].size, player);
     Move move;
 
-    for(int i = 0; i < numElems; i++){
-        move = moves[i];
+    for(int i = 0; i < move_lists[0].size; i++){
+        move = move_lists[0].moves[i];
         apply_move(move.start, move.end, move.move_id);
         line[depth] = move;
         ply++;
@@ -244,7 +258,9 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
         flip_turns();
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
-            free(moves);
+            free(move_lists[0].moves);
+            free(move_lists[1].moves);
+            free(move_lists);
             return beta;
         }
         if(val > alpha){
@@ -258,199 +274,20 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
             alpha = val;
         }
     }
-    if(numElems == 0){
-        free(moves);
+    if(move_lists[0].size == 0){
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
         if(white_in_check || black_in_check){
             return -MATE_SCORE + ply;
         }
         return 0;
     }
     WriteHash(depth, alpha, hash_flag);
-    free(moves);
+        free(move_lists[0].moves);
+        free(move_lists[1].moves);
+        free(move_lists);
     return alpha;
-}
-
-// copy of search moves pruning
-int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move* line, Move* best_line, int* hint_line,int hint_depth, bool* applying_hint){
-    if(depth == 0 && !white_check && !black_check){
-        return static_eval();
-    }
-
-    Move* moves = (Move*)malloc(80 * sizeof(Move));
-    int numElems = 0;
-
-    update_possible_moves(moves, &numElems);
-    Move move;
-
-    if(numElems == 0){
-        free(moves);
-        if(white_check){
-            return INT_MIN + start_depth - depth;
-        }
-        else if(black_check){
-            return INT_MAX - start_depth + depth;
-        }
-        return 0;
-    }
-    if(depth == 0){
-        free(moves);
-        return static_eval();
-    }
-    // white making a move
-    int hint_location = -1;
-    if (*applying_hint){
-        int current_hint = depth - (start_depth - hint_depth);
-        printf("%d = %d - (%d - %d)\n", current_hint, depth, start_depth, hint_depth);
-        hint_location = hint_line[current_hint];
-        if (current_hint == 1){
-            *applying_hint = false;
-        }
-    }
-    if (player){
-        int maxEval = INT_MIN;
-
-        for(int i = 0; i < numElems; i++){
-            if (i == 0 && hint_location >= 0){
-                move = moves[hint_location];
-            }
-            // swap the location later in the list
-            else if(hint_location == i){
-                move = moves[0];
-            }
-            else{
-                move = moves[i];
-            }
-            apply_move(move.start, move.end, move.move_id);
-            line[depth] = move;
-            int evaluation = search_moves_with_hint(depth - 1, start_depth, alpha, beta, false, line, best_line, hint_line, hint_depth, applying_hint);
-            undo_move();
-            decr_num_moves();
-            flip_turns();
-            if(evaluation > maxEval){
-                maxEval = evaluation;
-                best_line[depth] = move;
-            }
-            alpha = max(alpha, evaluation);
-            if(depth <= 1){
-                best_alpha = max(best_alpha, alpha);
-            }
-            if (beta <= alpha){
-                break;
-            }
-        }
-        free(moves);
-        return maxEval;
-    }
-
-    else{
-        int minEval = INT_MAX;
-        for(int i = 0; i < numElems; i++){
-            if (i == 0 && hint_location >= 0){
-                move = moves[hint_location];
-            }
-            // swap the location later in the list
-            else if(hint_location == i){
-                move = moves[0];
-            }
-            else{
-                move = moves[i];
-            }
-            apply_move(move.start, move.end, move.move_id);
-            line[depth] = move;
-            int evaluation = search_moves_with_hint(depth - 1, start_depth, alpha, beta, true, line, best_line, hint_line, hint_depth, applying_hint);
-            undo_move();
-            decr_num_moves();
-            flip_turns();
-            if(evaluation < minEval){
-                minEval = evaluation;
-                best_line[depth] = move;
-            }
-            beta = min(beta, evaluation);
-            if(depth <= 1){
-                best_beta = min(best_beta, beta);
-            }
-            if (beta <= alpha){
-                break;
-            }
-        }
-        free(moves);
-        return minEval;
-    }
-}
-
-// this is the test for the depth 4
-int test_depth_pruning(int depth , int start_depth, int alpha, int beta, bool player, Move* line, int* best_line, Move* best_line_actual_moves){
-    if(depth == 0 && !white_check && !black_check){
-        return static_eval();
-    }
-    Move* moves = (Move*)malloc(80 * sizeof(Move));
-    int numElems = 0;
-
-    update_possible_moves(moves, &numElems);
-    Move move;
-
-    if(numElems == 0){
-        free(moves);
-        if(white_check){
-            return INT_MIN + start_depth - depth;
-        }
-        else if(black_check){
-            return INT_MAX - start_depth + depth;
-        }
-        return 0;
-    }
-    if(depth == 0){
-        free(moves);
-        return static_eval();
-    }
-    // white making a move
-    if (player){
-        int maxEval = INT_MIN;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
-            apply_move(move.start, move.end, move.move_id);
-            line[depth] = move;
-            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line, best_line_actual_moves);
-            undo_move();
-            decr_num_moves();
-            flip_turns();
-            if(evaluation > maxEval){
-                maxEval = evaluation;
-                best_line[depth] = i;
-                best_line_actual_moves[depth] = move;
-            }
-            alpha = max(alpha, evaluation);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        free(moves);
-        return maxEval;
-    }
-
-    else{
-        int minEval = INT_MAX;
-        for(int i = 0; i < numElems; i++){
-            move = moves[i];
-            apply_move(move.start, move.end, move.move_id);
-            line[depth] = move;
-            int evaluation = test_depth_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line, best_line_actual_moves);
-            undo_move();
-            decr_num_moves();
-            flip_turns();
-            if(evaluation < minEval){
-                minEval = evaluation;
-                best_line[depth] = i;
-                best_line_actual_moves[depth] = move;
-            }
-            beta = min(beta, evaluation);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        free(moves);
-        return minEval;
-    }
 }
 
 Move calc_eng_move(int depth){
@@ -508,66 +345,7 @@ bool move_equal(Move a, Move b){
     return true;
 }
 
-Move calc_eng_move_with_test(int test_depth, int total_depth){
-    Move nm;
-    nm.capture = -1;
-    nm.end = -1;
-    nm.eval = -1;
-    nm.move_id = -1;
-    nm.piece_id = -1;
-    nm.start = -1;
-
-    best_alpha = INT_MIN;
-    best_beta = INT_MAX;
-
-    // initializing to a empty list
-    Move* line = (Move*)malloc((total_depth + 1) * sizeof(Move));
-    for(int i = 0; i <= total_depth; i++){
-        line[i] = nm;
-    }
-
-    // initializing to a empty list
-    Move* best_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
-    for(int i = 0; i <= total_depth; i++){
-        best_line[i] = nm;
-    }
-
-    // initializing to a empty list
-    int* best_test_line = (int*)malloc((test_depth + 1) * sizeof(int));
-    for(int i = 0; i <= test_depth; i++){
-        best_test_line[i] = -1;
-    }
-
-    // initializing to a empty list
-    Move* best_test_line_actual = (Move*)malloc((test_depth + 1) * sizeof(Move));
-    for(int i = 0; i <= test_depth; i++){
-        best_test_line_actual[i] = nm;
-    }
-
-    // initializing to a empty list
-    Move* best_final_line = (Move*)malloc((total_depth + 1) * sizeof(Move));
-    for(int i = 0; i <= total_depth; i++){
-        best_final_line[i] = nm;
-    }
-
-    // gets best line at test depth and assigns it to best_test_line
-    test_depth_pruning(test_depth, test_depth, INT_MIN, INT_MAX, false, line, best_test_line, best_test_line_actual);
-
-    for(int i = 0; i <= test_depth; i++){
-        printf("%d: %d\n", i, best_test_line[i]);
-    }
-
-    bool applying_hint = true;
-
-    int eval = search_moves_with_hint(total_depth, total_depth, INT_MIN, INT_MAX, false, line, best_final_line, best_test_line, test_depth, &applying_hint);
-
-    // find the best line and play the first move
-    engine_move = best_final_line[total_depth];
-    engine_move.eval = eval;
-    return engine_move;
-}
-
-int max(int a, int b){
+int max_val(int a, int b){
     if (a>b){
         return a;
     }
@@ -576,7 +354,7 @@ int max(int a, int b){
     }
 }
 
-int min(int a, int b){
+int min_val(int a, int b){
     if (a<b){
         return a;
     }

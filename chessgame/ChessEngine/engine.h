@@ -22,18 +22,12 @@ void game_order_moves();
 
 int search_moves_transposition(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line);
 
-int search_moves_with_hint(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line, int *hint_line, int hint_depth, bool *applying_hint);
-
-int test_depth_pruning(int depth, int start_depth, int alpha, int beta, bool player, Move *line, int *best_line, Move *best_line_actual_moves);
-
 Move calc_eng_move(int depth);
 
 bool move_equal(Move a, Move b);
 
-Move calc_eng_move_with_test(int test_depth, int total_depth);
+int max_val(int a, int b);
 
-int max(int a, int b);
-
-int min(int a, int b);
+int min_val(int a, int b);
 
 #endif
