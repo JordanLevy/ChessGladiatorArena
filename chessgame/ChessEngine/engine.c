@@ -11,7 +11,7 @@
 #define START_BETA 1000000
 #define MATE_SCORE 1000000
 
-bool is_using_transposition = true;
+bool is_using_transposition = false;
 int pv_length[64];
 Move pv_table[64][64];
 int ply;

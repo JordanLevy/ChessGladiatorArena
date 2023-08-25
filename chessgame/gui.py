@@ -534,7 +534,7 @@ def run_game(process):
                     promo_num = get_promo_num(is_white_piece(piece), promo_key)
 
                     # can't start and end a move on the same square
-                    if not press_square == release_square:
+                    if press_square != release_square and piece != 0:
                         # human move
                         apply_move(press_square, release_square, promo_num)
                         white_turn = not white_turn
