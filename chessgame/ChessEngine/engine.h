@@ -22,6 +22,8 @@ void game_order_moves();
 
 int search_moves_transposition(int depth, int start_depth, int alpha, int beta, bool player, Move *line, Move *best_line);
 
+int search_moves_captures(int alpha, int beta, bool player);
+
 Move calc_eng_move(int depth);
 
 bool move_equal(Move a, Move b);

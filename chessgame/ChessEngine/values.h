@@ -51,6 +51,9 @@
 
 #define CAPTURE_PIECE_VALUE_MULTIPLIER 10
 
+#define ALL 0
+#define CAPTS 1
+
 /* move_ids are as follows:
 0: normal move
 1-15 (wP-bK): promotion to the specified type
@@ -217,7 +220,7 @@ extern int next_spec[15];
 
 extern char *start_position;
 
-extern Move *game_possible_moves;
-extern int num_game_moves;
+
+
 
 #endif

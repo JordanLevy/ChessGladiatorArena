@@ -46,8 +46,8 @@ unsigned long long perft_test(int depth){
     }
 
     MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
-    move_lists[0].size = 0; 
-    move_lists[0].moves = (Move*)malloc(80 * sizeof(Move));
+    move_lists[ALL].size = 0; 
+    move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
     move_lists[1].size = 0; 
     move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
@@ -56,8 +56,8 @@ unsigned long long perft_test(int depth){
     unsigned long long num_positions = 0ULL;
     Move move;
 
-    for(int i = 0; i < move_lists[0].size; i++){
-        move = move_lists[0].moves[i];
+    for(int i = 0; i < move_lists[ALL].size; i++){
+        move = move_lists[ALL].moves[i];
         apply_move(move.start, move.end, move.move_id);
         num_positions += perft_test(depth - 1);
         undo_move();
@@ -66,7 +66,7 @@ unsigned long long perft_test(int depth){
         update_piece_masks();
     }
 
-        free(move_lists[0].moves);
+        free(move_lists[ALL].moves);
         free(move_lists[1].moves);
         free(move_lists);
 
@@ -76,8 +76,8 @@ unsigned long long perft_test(int depth){
 unsigned long long detailed_perft(int depth){
 
     MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
-    move_lists[0].size = 0; 
-    move_lists[0].moves = (Move*)malloc(80 * sizeof(Move));
+    move_lists[ALL].size = 0; 
+    move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
     move_lists[1].size = 0; 
     move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));   
 
@@ -92,9 +92,9 @@ unsigned long long detailed_perft(int depth){
     char file;
     int rank;
 
-    for(int i = 0; i < move_lists[0].size; i++){
+    for(int i = 0; i < move_lists[ALL].size; i++){
 
-        move = move_lists[0].moves[i];
+        move = move_lists[ALL].moves[i];
         apply_move(move.start, move.end, move.move_id);
         n = perft_test(depth - 1);
         num_positions += n;
@@ -114,7 +114,7 @@ unsigned long long detailed_perft(int depth){
         flip_turns();
     }
 
-        free(move_lists[0].moves);
+        free(move_lists[ALL].moves);
         free(move_lists[1].moves);
         free(move_lists);
 
