@@ -453,9 +453,6 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
                     append_move(move_lists[ALL].moves, move, &move_lists[ALL].size);
-                    if(move.capture != EMPTY_SQUARE){
-                        append_move(move_lists[CAPTS].moves, move, &move_lists[CAPTS].size);
-                    } 
                 }
             }
         }
@@ -474,9 +471,6 @@ void add_moves_position(unsigned long long mask, int start_position, int min_id,
                     move.piece_id = get_piece(move.start);
                     move.capture = get_piece(move.end);
                     append_move(move_lists[ALL].moves, move, &move_lists[ALL].size);
-                    if(move.capture != EMPTY_SQUARE){
-                        append_move(move_lists[CAPTS].moves, move, &move_lists[CAPTS].size);
-                    }
                 }
             }
         }

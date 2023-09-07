@@ -410,9 +410,7 @@ void possible_moves_white(MoveList* move_lists){
     update_unsafe();
     //2 is jenarick because we have 2 lists right now 
     //this could change in the futcher
-    for(int i = 0; i < 2; i++){
-        move_lists[i].size = 0;
-    }
+    move_lists[ALL].size = 0;
     possible_wP(bitboards[wP], move_lists);
     possible_N(bitboards[wN], not_white_pieces, WHITE, move_lists);
     possible_B(bitboards[wB], not_white_pieces, WHITE, move_lists);
@@ -426,9 +424,7 @@ void possible_moves_black(MoveList* move_lists){
     update_unsafe();
     //2 is jenarick because we have 2 lists right now 
     //this could change in the futcher
-    for(int i = 0; i < 2; i++){
-        move_lists[i].size = 0;
-    }
+    move_lists[ALL].size = 0;
     possible_bP(bitboards[bP], move_lists);
     possible_N(bitboards[bN], not_black_pieces, BLACK, move_lists);
     possible_B(bitboards[bB], not_black_pieces, BLACK, move_lists);

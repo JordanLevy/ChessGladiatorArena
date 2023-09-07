@@ -45,11 +45,9 @@ unsigned long long perft_test(int depth){
         return 1ULL;
     }
 
-    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
-    move_lists[1].size = 0; 
-    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
     update_possible_moves(move_lists);
 
@@ -67,7 +65,6 @@ unsigned long long perft_test(int depth){
     }
 
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
 
     return num_positions;
@@ -75,11 +72,9 @@ unsigned long long perft_test(int depth){
 
 unsigned long long detailed_perft(int depth){
 
-    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
-    move_lists[1].size = 0; 
-    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));   
 
     update_possible_moves(move_lists);
 
@@ -115,7 +110,6 @@ unsigned long long detailed_perft(int depth){
     }
 
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
 
     return num_positions;

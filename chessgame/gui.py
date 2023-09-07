@@ -47,7 +47,7 @@ position_list = []
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-depth = 3
+depth = 6
 
 
 black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
@@ -269,7 +269,8 @@ def add_piece(square, piece_type):
 
 
 def init_fen(fen):
-    global board, white_turn, kingside_wR, queenside_wR, kingside_bR, queenside_bR, next_spec, wK_num_moves, bK_num_moves, kingside_wR_num_moves, queenside_wR_num_moves, kingside_bR_num_moves, queenside_bR_num_moves
+    global board, white_turn, kingside_wR, queenside_wR, kingside_bR, queenside_bR, next_spec, wK_num_moves
+    global bK_num_moves, kingside_wR_num_moves, queenside_wR_num_moves, kingside_bR_num_moves, queenside_bR_num_moves
     next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     board = [EMPTY_SQUARE for i in range(64)]
     split = fen.split(' ')

@@ -127,11 +127,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     }
 
     //makes the move_list
-    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
-    move_lists[1].size = 0; 
-    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
     update_possible_moves(move_lists);
     order_moves(move_lists[ALL].moves, move_lists[ALL].size, player);
@@ -140,7 +138,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     if(move_lists[ALL].size == 0){
 
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
 
         if(white_check){
@@ -153,7 +150,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     }
     if(depth == 0){
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
 
         return static_eval();
@@ -182,7 +178,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
         }
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
         return maxEval;
     }
@@ -210,7 +205,6 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
         }
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
         return minEval;
     }
@@ -230,11 +224,9 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
     if(depth == 0){
         return search_moves_captures(alpha, beta, player);
     }
-    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
-    move_lists[CAPTS].size = 0; 
-    move_lists[1].moves = (Move*)malloc(80 * sizeof(Move));
 
     update_possible_moves(move_lists);
     order_moves(move_lists[ALL].moves, move_lists[ALL].size, player);
@@ -253,7 +245,6 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
             free(move_lists[ALL].moves);
-            free(move_lists[1].moves);
             free(move_lists);
             return beta;
         }
@@ -270,7 +261,6 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
     }
     if(move_lists[ALL].size == 0){
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
         if(white_in_check || black_in_check){
             return -MATE_SCORE + ply;
@@ -279,7 +269,6 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
     }
     WriteHash(depth, alpha, hash_flag);
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
     return alpha;
 }
@@ -297,18 +286,19 @@ int search_moves_captures(int alpha, int beta, bool player){
     if(val > alpha){
         alpha = val;
     }
-    MoveList* move_lists = (MoveList*)malloc(2 * sizeof(MoveList));
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
-    move_lists[CAPTS].size = 0; 
-    move_lists[CAPTS].moves = (Move*)malloc(80 * sizeof(Move));
 
     update_possible_moves(move_lists);
 
     Move move;
 
-    for(int i = 0; i < move_lists[CAPTS].size; i++){
-        move = move_lists[CAPTS].moves[i];
+    for(int i = 0; i < move_lists[ALL].size; i++){
+        move = move_lists[ALL].moves[i];
+        if(move.capture == EMPTY_SQUARE){
+            continue;
+        }
         apply_move(move.start, move.end, move.move_id);
         ply++;
         val = -search_moves_captures(-beta, -alpha, !player);
@@ -318,7 +308,6 @@ int search_moves_captures(int alpha, int beta, bool player){
         flip_turns();
         if(val >= beta){
             free(move_lists[ALL].moves);
-            free(move_lists[CAPTS].moves);
             free(move_lists);
             return beta;
         }
@@ -329,7 +318,6 @@ int search_moves_captures(int alpha, int beta, bool player){
     }
     if(move_lists[ALL].size == 0){
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
         if(white_in_check || black_in_check){
             return -MATE_SCORE + ply;
@@ -337,7 +325,6 @@ int search_moves_captures(int alpha, int beta, bool player){
         return 0;
     }
         free(move_lists[ALL].moves);
-        free(move_lists[1].moves);
         free(move_lists);
     return alpha;
 }

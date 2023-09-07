@@ -52,7 +52,6 @@
 #define CAPTURE_PIECE_VALUE_MULTIPLIER 10
 
 #define ALL 0
-#define CAPTS 1
 
 /* move_ids are as follows:
 0: normal move
