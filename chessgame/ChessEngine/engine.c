@@ -385,19 +385,9 @@ bool move_equal(Move a, Move b){
 }
 
 int max_val(int a, int b){
-    if (a>b){
-        return a;
-    }
-    else{
-        return b;
-    }
+   return (a > b) ? a : b;
 }
 
 int min_val(int a, int b){
-    if (a<b){
-        return a;
-    }
-    else{
-        return b;
-    }
+    return (a < b) ? a : b;
 }
