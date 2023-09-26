@@ -124,3 +124,13 @@ void print_line(Move* line, size_t n){
     printf("\n");
 }
 
+unsigned long long rook_moves_single_square(int square, unsigned long long blockers){
+    return sliding_piece(~0ULL, square, blockers, true, false, 0ULL);
+}
+
+
+
+unsigned long long* get_blockers_rook_single_square(unsigned long long movment){
+    
+
+}
