@@ -128,9 +128,25 @@ unsigned long long rook_moves_single_square(int square, unsigned long long block
     return sliding_piece(~0ULL, square, blockers, true, false, 0ULL);
 }
 
+unsigned long long* get_blockers_rook_single_square(unsigned long long movement){
+    int* moveSquares = (int*)calloc(14, sizeof(int));
+    int numMoveSquares = 0;
+    for(int i = 0; i < 64; i++){
+        if(((movement >> i) & 1) == 1){
+            moveSquares[numMoveSquares] = i;
+            numMoveSquares++;
+        }
+    }
 
+    int numPatterns = 1 << numMoveSquares;
+    unsigned long long* blockerBitboards = (unsigned long long*)calloc(numPatterns, sizeof(unsigned long long));
 
-unsigned long long* get_blockers_rook_single_square(unsigned long long movment){
-    
+    for(int i = 0; i < numPatterns; i++){
+        for(int j = 0; j < numMoveSquares; j++){
+            unsigned long long bit = (i >> j) & 1ULL;
+            blockerBitboards[i] |= bit << moveSquares[j];
+        }
+    }
 
+    return blockerBitboards;
 }

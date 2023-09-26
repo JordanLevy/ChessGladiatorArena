@@ -18,5 +18,13 @@ int main(){
     init_zobrist_keys();
     init_hash_table();
     uci_communication();
+    /*unsigned long long movement = file[2] ^ rank[4];
+    print_bitboard(movement);
+    printf("\n");
+    unsigned long long* square_blockers = get_blockers_rook_single_square(movement);
+    for(int i = 0; i < (1 << 12); i++){
+        printf("%d\n", i);
+        print_bitboard(square_blockers[i]);
+    }*/
     return 0;
 }

@@ -15,4 +15,8 @@ void run_game();
 
 void print_line(Move *line, size_t n);
 
+unsigned long long rook_moves_single_square(int square, unsigned long long blockers);
+
+unsigned long long *get_blockers_rook_single_square(unsigned long long movement);
+
 #endif
