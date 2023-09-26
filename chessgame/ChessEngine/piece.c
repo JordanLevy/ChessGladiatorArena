@@ -113,11 +113,11 @@ bool is_black_piece(int id){
     return id & BLACK;
 }
 
-unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
+unsigned long long sliding_piece(unsigned long long mask, int location, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
     // squares this piece threatens, as a bitboard
     unsigned long long squares = 0ULL;
     // bitboard representing this piece's location
-    unsigned long long slider = 1ULL << i;
+    unsigned long long slider = 1ULL << location;
     // int 0-63 of which square the enemy king is on
     int king_square = 64 - leading_zeros(king_bb) - 1;
     // whether or not the king is white
@@ -127,13 +127,13 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
     unsigned long long directions[4] = { 0ULL };
     // if it moves like a rook, it can move along the rank and file it's on
     if(rook_moves){
-        directions[0] = rank[get_rank(i) + 1];
-        directions[1] = file[8 - get_file(i)];
+        directions[0] = rank[get_rank(location) + 1];
+        directions[1] = file[8 - get_file(location)];
     }
     // if it moves like a bishop, it can move along the left and right diagonals it's on
     if(bishop_moves){
-        directions[2] = l_diag[get_l_diag(i)];
-        directions[3] = r_diag[get_r_diag(i)];
+        directions[2] = l_diag[get_l_diag(location)];
+        directions[3] = r_diag[get_r_diag(location)];
     }
 
     unsigned long long d = 0ULL;
@@ -164,13 +164,13 @@ unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long l
         if(new_squares & king_bb){
             //printf("%d looking at king in direction %d\n", i, k);
             num_pieces_delivering_check++;
-            blocking_squares |= line_between_pieces(d, i, king_square);
+            blocking_squares |= line_between_pieces(d, location, king_square);
             blocking_squares |= slider;
         }
         // if this function was called with the king_bb parameter (checking for pins)
         else if(king_square >= 0){
             // draw a line from this piece to the enemy king
-            king_line = line_between_pieces(d, i, king_square);
+            king_line = line_between_pieces(d, location, king_square);
             // if there is no such line, continue. Piece doesn't pin in this direction
             if(!king_line){
                 continue;
