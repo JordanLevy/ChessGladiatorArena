@@ -129,31 +129,33 @@ void uci_communication(){
     char command[256];
 
     init(start_position, strlen(start_position));
+    if(uci_enabled){
+        while (fgets(command, sizeof(command), stdin)) {
+            // remove newline character from the command
+            //printf("info received command%s\n", command);
+            command[strcspn(command, "\n")] = 0;
 
-    while (fgets(command, sizeof(command), stdin)) {
-        // remove newline character from the command
-        //printf("info received command%s\n", command);
-        command[strcspn(command, "\n")] = 0;
-
-        if(str_equals(command, "uci")) {
-            inputUCI();
-        } else if(startswith(command, "setoption")) {
-            inputSetOption();
-        } else if(str_equals(command, "isready")) {
-            inputIsReady();
-        } else if(str_equals(command, "ucinewgame")) {
-            inputUCINewGame();
-        } else if(startswith(command, "position")) {
-            printf("%s\n", command);
-            inputPosition(command);
-        } else if(startswith(command, "go")) {
-            printf("%s\n", command);
-            inputGo(command);
-        } else if(startswith(command, "quit")) {
-            break;
-        } else {
-            printf("Invalid command.\n");
+            if(str_equals(command, "uci")) {
+                inputUCI();
+            } else if(startswith(command, "setoption")) {
+                inputSetOption();
+            } else if(str_equals(command, "isready")) {
+                inputIsReady();
+            } else if(str_equals(command, "ucinewgame")) {
+                inputUCINewGame();
+            } else if(startswith(command, "position")) {
+                printf("%s\n", command);
+                inputPosition(command);
+            } else if(startswith(command, "go")) {
+                printf("%s\n", command);
+                inputGo(command);
+            } else if(startswith(command, "quit")) {
+                break;
+            } else {
+                printf("Invalid command.\n");
+            }
+            fflush(stdout);
         }
-        fflush(stdout);
     }
+    
 }

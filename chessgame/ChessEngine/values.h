@@ -219,6 +219,9 @@ extern int next_spec[15];
 
 extern char *start_position;
 
+//this is for UCI COMAND TO TERN ON AND OFF THE COMUNICATION
+extern bool uci_enabled;
+
 
 
 

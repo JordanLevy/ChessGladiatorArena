@@ -26,5 +26,10 @@ int main(){
         printf("%d\n", i);
         print_bitboard(square_blockers[i]);
     }*/
+    for(int i = 0; i < 64; i++){
+        unsigned long long test_rook = get_rook_masks(i);
+        printf("%d\n", i);
+        print_bitboard(test_rook);
+    }
     return 0;
 }

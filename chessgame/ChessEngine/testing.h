@@ -19,4 +19,6 @@ unsigned long long rook_moves_single_square(int square, unsigned long long block
 
 unsigned long long *get_blockers_rook_single_square(unsigned long long movement);
 
+unsigned long long get_rook_masks(int square);
+
 #endif
