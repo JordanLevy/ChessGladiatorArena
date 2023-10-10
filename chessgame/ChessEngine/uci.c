@@ -125,6 +125,25 @@ void inputGo(char* input){
     }
 }
 
+void inputBlockers(char* input){
+    int rook_pos;
+    int blocker_index;
+    sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
+    unsigned long long movement_mask = get_rook_masks(rook_pos);
+    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+    printf("blockers %llu\n", blockers[blocker_index]);
+}
+
+void inputRookLegalMoves(char* input){
+    int rook_pos;
+    int blocker_index;
+    sscanf(input, "get_rook_legal_moves %d %d", &rook_pos, &blocker_index);
+    unsigned long long movement_mask = get_rook_masks(rook_pos);
+    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+    unsigned long long rook_legal_moves = rook_moves_single_square(rook_pos, blockers[blocker_index]);
+    printf("rook_legal_moves %llu\n", rook_legal_moves);
+}
+
 void uci_communication(){
     char command[256];
 
@@ -151,7 +170,14 @@ void uci_communication(){
                 inputGo(command);
             } else if(startswith(command, "quit")) {
                 break;
-            } else {
+            } else if(startswith(command, "get_blockers")) {
+                printf("%s\n", command);
+                inputBlockers(command);
+            } else if(startswith(command, "get_rook_legal_moves")) {
+                printf("%s\n", command);
+                inputRookLegalMoves(command);
+            }
+            else {
                 printf("Invalid command.\n");
             }
             fflush(stdout);

@@ -353,5 +353,5 @@ int next_spec[15] = {0};
 char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 
 //this is to set in UCI
-bool uci_enabled = false;
+bool uci_enabled = true;
 

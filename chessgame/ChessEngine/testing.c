@@ -156,5 +156,7 @@ unsigned long long get_rook_masks(int square){
     unsigned long long rook_rank = rank[get_rank(square) + 1];
     rook_file = rook_file & ~(rank[1] | rank[8]);
     rook_rank = rook_rank & ~(file[1] | file[8]);
-    return rook_file ^ rook_rank;
+    unsigned long long result = rook_file ^ rook_rank;
+    result &= ~(1ULL << square);
+    return result;
 }

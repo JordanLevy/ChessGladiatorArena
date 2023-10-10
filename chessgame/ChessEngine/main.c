@@ -26,10 +26,23 @@ int main(){
         printf("%d\n", i);
         print_bitboard(square_blockers[i]);
     }*/
-    for(int i = 0; i < 64; i++){
-        unsigned long long test_rook = get_rook_masks(i);
-        printf("%d\n", i);
-        print_bitboard(test_rook);
-    }
+    /*for(int i = 0; i < 64; i++){
+        unsigned long long movement_mask = get_rook_masks(i);
+        unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+        for(int j = 0; j < 1 << 14; j++){
+            printf("%d %d\n", i, j);
+            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
+            printf("movement_mask\n");
+            print_bitboard(movement_mask);
+            printf("blockers\n");
+            print_bitboard(blockers[j]);
+            printf("rook_legal_moves\n");
+            print_bitboard(rook_legal_moves);
+            printf("%d\n", i);
+        }
+    }*/
     return 0;
 }
+//get_blockers [rook_pos] [blocker_index]
+//get_num_blockers [rook_pos]
+//get_rook_legal_moves [rook_pos] [blocker_index]
