@@ -583,24 +583,33 @@ def rook_magic_squares_view(process):
 
     rook_pos = 0
     blocker_index = 0
-    blocker_interval = 128
+    blocker_interval = 1
+    blocker_max = 12
+    wait_time = 200
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
+        keys = pygame.key.get_pressed()
+        if keys[K_LSHIFT]:
+            wait_time = 0
+        else:
+            wait_time = 200
+        if keys[K_LEFT]:
+            blocker_index -= blocker_interval
+            blocker_index = max(blocker_index, 0)
+            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
+            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
+            pygame.time.wait(wait_time)
+        if keys[K_RIGHT]:
+            blocker_index += blocker_interval
+            blocker_index = min(blocker_index, 2**blocker_max - 1)
+            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
+            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
+            pygame.time.wait(wait_time)
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_LEFT:
-                    blocker_index -= blocker_interval
-                    blocker_index = max(blocker_index, 0)
-                    send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
-                if event.key == K_RIGHT:
-                    blocker_index += blocker_interval
-                    send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
@@ -619,6 +628,12 @@ def rook_magic_squares_view(process):
                     if press_square != release_square and piece != 0:
                         # human move
                         rook_pos = release_square
+                        blocker_max = 10
+                        if get_rank(release_square) in [0, 7]:
+                            blocker_max += 1
+                        if get_file(release_square) in [0, 7]:
+                            blocker_max += 1
+                        blocker_index = min(blocker_index, 2 ** blocker_max - 1)
                         apply_move(press_square, release_square, 0)
                         send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
                         send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
