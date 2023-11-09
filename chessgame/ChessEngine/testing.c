@@ -132,6 +132,7 @@ unsigned long long rook_moves_single_square(int square, unsigned long long block
 
 unsigned long long* get_blockers_rook_single_square(unsigned long long movement){
     int* moveSquares = (int*)calloc(14, sizeof(int));
+    //the number of squares that a bloker could take up
     int numMoveSquares = 0;
     for(int i = 0; i < 64; i++){
         if(((movement >> i) & 1) == 1){
@@ -149,7 +150,7 @@ unsigned long long* get_blockers_rook_single_square(unsigned long long movement)
             blockerBitboards[i] |= bit << moveSquares[j];
         }
     }
-
+    free(moveSquares);
     return blockerBitboards;
 }
 
@@ -175,14 +176,20 @@ void write_rook_moves_lookup_to_file(){
     for(int i = 0; i < 1; i++){//64; i++){
         unsigned long long movement_mask = get_rook_masks(i);
         unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+        //fprintf(file, "%d,", 1 << 14);
+        print_bitboard(movement_mask);
         for(int j = 0; j < 1 << 14; j++){
-            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
-            fprintf(file, "%d,", i);
-            fprintf(file, "%llu,", blockers[j]);
-            fprintf(file, "%llu\n", rook_legal_moves);
-        }
-    }
+            fprintf(file, "%d,", j);
+            fprintf(file, "%llu\n", movement_mask);
+            //unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
+            //fprintf(file, "%d,", i);
+            //fprintf(file, "%llu\n", blockers[j]);
+            //fprintf(file, "%llu\n", rook_legal_moves);
 
+        }
+        //this is for get_blockers_rook_single_square
+        free(blockers);
+    }
     printf("Done\n");
 
     fclose(file);

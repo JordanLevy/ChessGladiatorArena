@@ -1,1 +1,1 @@
-s
+fprintf(file, "%llu,", movement_mask
