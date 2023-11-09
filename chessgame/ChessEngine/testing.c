@@ -2,8 +2,10 @@
 #include "piece.h"
 #include "values.h"
 #include "board.h"
+#include "bitwise.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void print_legal_moves(Move* moves, int *numMoves){
     for(int i = 0; i < (*numMoves); i++){
@@ -159,4 +161,29 @@ unsigned long long get_rook_masks(int square){
     unsigned long long result = rook_file ^ rook_rank;
     result &= ~(1ULL << square);
     return result;
+}
+
+void write_rook_moves_lookup_to_file(){
+    FILE *file = fopen("rook_moves.txt", "w");
+
+    // Check if the file was opened successfully
+    if (file == NULL) {
+        printf("Error opening the file.\n");
+        return;
+    }
+
+    for(int i = 0; i < 1; i++){//64; i++){
+        unsigned long long movement_mask = get_rook_masks(i);
+        unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+        for(int j = 0; j < 1 << 14; j++){
+            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
+            fprintf(file, "%d,", i);
+            fprintf(file, "%llu,", blockers[j]);
+            fprintf(file, "%llu\n", rook_legal_moves);
+        }
+    }
+
+    printf("Done\n");
+
+    fclose(file);
 }

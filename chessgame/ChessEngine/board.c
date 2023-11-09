@@ -675,6 +675,7 @@ bool black_in_checkmate(int numMoves){
 void init_board(char* fen, size_t len){
     init_fen(fen, len);
     init_masks();
+    init_magic();
 }
 
 bool is_legal_move(int start, int end, int promo, Move* moves, size_t n){

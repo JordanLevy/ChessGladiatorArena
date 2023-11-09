@@ -3,6 +3,7 @@
 #include "board.h"
 #include "testing.h"
 #include "engine.h"
+#include "piece.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -141,7 +142,7 @@ void inputRookLegalMoves(char* input){
     unsigned long long movement_mask = get_rook_masks(rook_pos);
     unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
     unsigned long long rook_legal_moves = rook_moves_single_square(rook_pos, blockers[blocker_index]);
-    printf("rook_legal_moves %llu\n", rook_legal_moves);
+    printf("rook_legal_moves %llu\n", rook_moves_lookup[rook_pos][blockers[blocker_index]]);
 }
 
 void uci_communication(){
@@ -176,6 +177,9 @@ void uci_communication(){
             } else if(startswith(command, "get_rook_legal_moves")) {
                 printf("%s\n", command);
                 inputRookLegalMoves(command);
+            } else if(startswith(command, "write_rook_moves_lookup_to_file")){
+                printf("%s\n", command);
+                write_rook_moves_lookup_to_file();
             }
             else {
                 printf("Invalid command.\n");

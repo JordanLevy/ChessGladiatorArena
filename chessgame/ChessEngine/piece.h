@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+extern unsigned long long rook_moves_lookup[64][100];
+
 unsigned char get_type(unsigned char id);
 
 char piece_id_to_notation(unsigned char id);
@@ -22,6 +24,8 @@ unsigned long long line_attack(unsigned long long o, unsigned long long m, unsig
 bool is_white_piece(int id);
 
 bool is_black_piece(int id);
+
+void init_magic();
 
 unsigned long long sliding_piece(unsigned long long mask, int i, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb);
 

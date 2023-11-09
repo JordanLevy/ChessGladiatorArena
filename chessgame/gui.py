@@ -8,6 +8,7 @@ import subprocess
 import pygame
 from pygame.locals import *
 
+
 class Move:
     def __init__(self, start, end, move_id, capture, piece_id, eval):
         self.start = start
@@ -47,8 +48,7 @@ position_list = []
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-depth = 8
-
+depth = 6
 
 black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'
@@ -361,7 +361,8 @@ def draw_board():
         else:
             square_color = WHITE
         # if a king is in check, color their square red
-        if (w_check and piece_type == wK) or (b_check and piece_type == bK) or (blocker_mode_enabled and rook_legal_moves & (1 << i)):
+        if (w_check and piece_type == wK) or (b_check and piece_type == bK) or (
+                blocker_mode_enabled and rook_legal_moves & (1 << i)):
             square_color = RED
         if prev_move and not blocker_mode_enabled:
             if prev_move.start == i:
@@ -387,6 +388,7 @@ def draw_board():
             img = font.render(str(piece_spec), True, pygame.Color(WHITE), pygame.Color(GRAY_GREEN))
             screen.blit(img, (mouse_xy[0] - 25, mouse_xy[1] - 25))
 
+
 def refresh_graphics():
     draw_board()
 
@@ -395,7 +397,7 @@ def print_move(m):
     letter = piece_to_letter[get_type(m.piece_id)]
     start = square_num_to_notation(m.start)
     end = square_num_to_notation(m.end)
-    move = letter+start+end
+    move = letter + start + end
     print(move, end=' ')
 
 
@@ -564,6 +566,7 @@ def run_game(process):
         pygame.display.update()
         main_clock.tick(100)
 
+
 def rook_magic_squares_view(process):
     global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
     screen = pygame.display.set_mode((400, 400), 0, 32)
@@ -602,7 +605,7 @@ def rook_magic_squares_view(process):
             pygame.time.wait(wait_time)
         if keys[K_RIGHT]:
             blocker_index += blocker_interval
-            blocker_index = min(blocker_index, 2**blocker_max - 1)
+            blocker_index = min(blocker_index, 2 ** blocker_max - 1)
             send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
             send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
             pygame.time.wait(wait_time)
@@ -610,6 +613,9 @@ def rook_magic_squares_view(process):
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_m:
+                    send_command(process, 'write_rook_moves_lookup_to_file')
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
@@ -705,6 +711,7 @@ def read_from_process(process):
             rook_legal_moves = int(r)
             refresh_graphics()
 
+
 def open_communication_rook_magic_squares():
     process = init_process(path_to_exe)
     read_thread = threading.Thread(target=read_from_process, args=(process,))
@@ -719,7 +726,8 @@ def open_communication_rook_magic_squares():
     print('close communication')
     close_communication(process)
 
-#open_communication()
-open_communication_rook_magic_squares()
 
-#Pe2e4 pd7d5 Pe4d5 qd8d5 Nb1c3 qd5e6 Bf1e2 nb8c6 Pf2f4 nc6d4 Pd2d4 qe6g6 Be2f3 nc6b4 Bf3e4 pf7f5 Be4d3 qg6g2 Bd3f5 qg2h1
+if blocker_mode_enabled:
+    open_communication_rook_magic_squares()
+else:
+    open_communication()

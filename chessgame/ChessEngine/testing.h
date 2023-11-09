@@ -21,4 +21,6 @@ unsigned long long *get_blockers_rook_single_square(unsigned long long movement)
 
 unsigned long long get_rook_masks(int square);
 
+void write_rook_moves_lookup_to_file();
+
 #endif
