@@ -606,6 +606,7 @@ def rook_magic_squares_view(process):
         if keys[K_RIGHT]:
             blocker_index += blocker_interval
             blocker_index = min(blocker_index, 2 ** blocker_max - 1)
+            print('get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
             send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
             send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
             pygame.time.wait(wait_time)
@@ -662,7 +663,7 @@ def init_process(path):
 def send_command(process, cmd):
     process.stdin.write((cmd + '\n').encode())
     process.stdin.flush()
-
+    
 
 def open_communication():
     process = init_process(path_to_exe)

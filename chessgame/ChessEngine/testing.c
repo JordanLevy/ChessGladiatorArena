@@ -173,18 +173,25 @@ void write_rook_moves_lookup_to_file(){
         return;
     }
 
-    for(int i = 0; i < 1; i++){//64; i++){
+    for(int i = 0; i <= 63; i++){//64; i++){
         unsigned long long movement_mask = get_rook_masks(i);
         unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
         //fprintf(file, "%d,", 1 << 14);
-        print_bitboard(movement_mask);
-        for(int j = 0; j < 1 << 14; j++){
-            fprintf(file, "%d,", j);
-            fprintf(file, "%llu\n", movement_mask);
-            //unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
-            //fprintf(file, "%d,", i);
-            //fprintf(file, "%llu\n", blockers[j]);
-            //fprintf(file, "%llu\n", rook_legal_moves);
+        //print_bitboard(movement_mask);
+        int blocker_max = 10;
+        if(get_file(i) == 0 || get_file(i) == 7){
+            blocker_max += 1;
+        }
+        if(get_rank(i) == 0 || get_rank(i) == 7){
+            blocker_max += 1;
+        }
+        for(int j = 0; j < 1 << blocker_max; j++){
+            //fprintf(file, "%d,", j);
+            //fprintf(file, "%llu\n", movement_mask);
+            fprintf(file, "%d,", i);
+            fprintf(file, "%llu,", blockers[j]);
+            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
+            fprintf(file, "%llu\n", rook_legal_moves);
 
         }
         //this is for get_blockers_rook_single_square

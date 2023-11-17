@@ -129,29 +129,22 @@ void init_magic(){
     int pos;
     unsigned long long blockers, moves;
 
-    // Buffer to store a line from the file
-    char buffer[256];  // Adjust the buffer size as needed
 
     // Read each line from the file until the end
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        // Use sscanf to parse values from the buffer
-        if (sscanf(buffer, "%d,%llu,%llu", &pos, &blockers, &moves) == 3) {
-            // Process the values as needed
-            printf("Integer: %d, Value 1: %llu, Value 2: %llu\n", pos, blockers, moves);
-            rook_moves_lookup[pos][blockers] = moves;
-        } else {
-            // Handle parsing error if needed
-            printf("Error parsing line: %s", buffer);
-        }
-    }
+    // Use sscanf to parse values from the buffer
+
+    while(fscanf(file,"%d,%llu,%llu", &pos, &blockers, &moves) == 3){
+        rook_moves_lookup[pos][blockers] = moves;
+    } 
 
     // Close the file
     fclose(file);
 
-    printf("Test %llu\n", rook_moves_lookup[0][2]);
+    //printf("Test %llu\n", rook_moves_lookup[0][2]);
 }
 
 unsigned long long sliding_piece(unsigned long long mask, int location, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
+
     // squares this piece threatens, as a bitboard
     unsigned long long squares = 0ULL;
     // bitboard representing this piece's location

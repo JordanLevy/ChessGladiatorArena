@@ -1,1 +1,1 @@
-fprintf(file, "%llu,", movement_mask
+get_blockers
