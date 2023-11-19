@@ -1,11 +1,12 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include "values.h"
 #include "piece.h"
 #include "bitwise.h"
 #include "board.h"
 
-unsigned long long rook_moves_lookup[64][1024];
+unsigned long long** rook_moves_lookup;
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
 unsigned char get_type(unsigned char id){
@@ -129,10 +130,24 @@ void init_magic(){
     int pos;
     unsigned long long blockers, moves;
 
+    rook_moves_lookup = malloc(64 * sizeof(unsigned long long*));
+
+    if(rook_moves_lookup == NULL){
+        printf("Error allocating rook_moves_lookup.\n");
+        return;
+    }
+
+    for(int i = 0; i < 64; i++){
+        rook_moves_lookup[i] = malloc(1024 * sizeof(unsigned long long));
+
+        if(rook_moves_lookup[i] == NULL){
+            printf("Error allocating rook_moves_lookup.\n");
+            return;
+        }
+    }
 
     // Read each line from the file until the end
-    // Use sscanf to parse values from the buffer
-
+    // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d,%llu,%llu", &pos, &blockers, &moves) == 3){
         if(blockers < 1024){
             rook_moves_lookup[pos][blockers] = moves;
@@ -141,8 +156,6 @@ void init_magic(){
 
     // Close the file
     fclose(file);
-
-    //printf("Test %llu\n", rook_moves_lookup[0][2]);
 }
 
 unsigned long long sliding_piece(unsigned long long mask, int location, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
