@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-extern unsigned long long rook_moves_lookup[64][100];
+extern unsigned long long rook_moves_lookup[64][1024];
 
 unsigned char get_type(unsigned char id);
 

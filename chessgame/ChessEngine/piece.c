@@ -5,7 +5,7 @@
 #include "bitwise.h"
 #include "board.h"
 
-unsigned long long rook_moves_lookup[64][100];
+unsigned long long rook_moves_lookup[64][1024];
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
 unsigned char get_type(unsigned char id){
@@ -134,8 +134,10 @@ void init_magic(){
     // Use sscanf to parse values from the buffer
 
     while(fscanf(file,"%d,%llu,%llu", &pos, &blockers, &moves) == 3){
-        rook_moves_lookup[pos][blockers] = moves;
-    } 
+        if(blockers < 1024){
+            rook_moves_lookup[pos][blockers] = moves;
+        }
+    }
 
     // Close the file
     fclose(file);

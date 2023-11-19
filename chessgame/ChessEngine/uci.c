@@ -130,11 +130,10 @@ void inputGo(char* input){
 void inputBlockers(char* input){
     int rook_pos;
     int blocker_index;
-    //sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
-    //unsigned long long movement_mask = get_rook_masks(rook_pos);
-    //unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
-    //printf("blockers %llu\n", blockers[blocker_index]);
-    printf("blockers %llu\n", 5);           
+    sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
+    unsigned long long movement_mask = get_rook_masks(rook_pos);
+    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+    printf("blockers %llu\n", blockers[blocker_index]);        
 }
 
 void inputRookLegalMoves(char* input){
