@@ -610,6 +610,9 @@ def rook_magic_squares_view(process):
             send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
             send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
             pygame.time.wait(wait_time)
+        if keys[K_t]:
+            send_command(process, 'generate_magic')
+            pygame.time.wait(wait_time)
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()

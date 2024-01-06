@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "transposition.h"
 
 void print_legal_moves(Move* moves, int *numMoves){
     for(int i = 0; i < (*numMoves); i++){
@@ -202,12 +203,13 @@ void write_rook_moves_lookup_to_file(){
     fclose(file);
 }
 
-int get_index_from_magic(unsigned long long blocker, int magic_number, int shift){
+int get_index_from_magic(unsigned long long blocker, unsigned long long magic_number, int shift){
     return (blocker * magic_number) >> shift;
 }
 
-bool is_valid_rook_magic_number(int square, int magic_number, int shift){
-    bool *indices_seen = (bool *)calloc((1 << (64-shift)), sizeof(bool));
+bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int shift){
+    unsigned long long T_shift = (1 << (64-shift));
+    bool *indices_seen = (bool *)calloc(T_shift, sizeof(bool));
     unsigned long long movement_mask = get_rook_masks(square);
     unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
     int blocker_max = 10;
@@ -222,6 +224,7 @@ bool is_valid_rook_magic_number(int square, int magic_number, int shift){
         if(indices_seen[index]){
             return false;
         }
+        indices_seen[index] = true;
         //unsigned long long rook_legal_moves = rook_moves_single_square(square, blockers[j]);
     }
     free(blockers);
@@ -229,5 +232,12 @@ bool is_valid_rook_magic_number(int square, int magic_number, int shift){
 }
 
 bool generate_rook_magic_numbers(){
-    printf("Magic index: %d\n", get_index_from_magic(4503599728033792ULL, 10414575345181196316ULL, 54));
+    //printf("Magic index: %d\n", get_index_from_magic(4503599728033792ULL, 10414575345181196316ULL, 54));
+    unsigned long long r_num = get_random_U64_number();
+    if (is_valid_rook_magic_number(0, r_num, 49)){
+        printf("WORKING! %llu\n", r_num);
+    }
+    else{
+        printf("not valed %llu\n", r_num);
+    }
 }
