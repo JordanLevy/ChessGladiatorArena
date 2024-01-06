@@ -181,6 +181,9 @@ void uci_communication(){
             } else if(startswith(command, "write_rook_moves_lookup_to_file")){
                 printf("%s\n", command);
                 write_rook_moves_lookup_to_file();
+            } else if(startswith(command, "generate_magic")){
+                printf("%s\n", command);
+                generate_rook_magic_numbers();
             }
             else {
                 printf("Invalid command.\n");

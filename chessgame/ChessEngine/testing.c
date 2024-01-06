@@ -201,3 +201,33 @@ void write_rook_moves_lookup_to_file(){
 
     fclose(file);
 }
+
+int get_index_from_magic(unsigned long long blocker, int magic_number, int shift){
+    return (blocker * magic_number) >> shift;
+}
+
+bool is_valid_rook_magic_number(int square, int magic_number, int shift){
+    bool *indices_seen = (bool *)calloc((1 << (64-shift)), sizeof(bool));
+    unsigned long long movement_mask = get_rook_masks(square);
+    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+    int blocker_max = 10;
+    if(get_file(square) == 0 || get_file(square) == 7){
+        blocker_max += 1;
+    }
+    if(get_rank(square) == 0 || get_rank(square) == 7){
+        blocker_max += 1;
+    }
+    for(int j = 0; j < 1 << blocker_max; j++){
+        int index = get_index_from_magic(blockers[j], magic_number, shift);
+        if(indices_seen[index]){
+            return false;
+        }
+        //unsigned long long rook_legal_moves = rook_moves_single_square(square, blockers[j]);
+    }
+    free(blockers);
+    return true;
+}
+
+bool generate_rook_magic_numbers(){
+    printf("Magic index: %d\n", get_index_from_magic(4503599728033792ULL, 10414575345181196316ULL, 54));
+}

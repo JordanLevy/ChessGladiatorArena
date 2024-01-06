@@ -23,4 +23,10 @@ unsigned long long get_rook_masks(int square);
 
 void write_rook_moves_lookup_to_file();
 
+bool is_valid_rook_magic_number(int square, int magic_number, int shift);
+
+bool generate_rook_magic_numbers();
+
+int get_index_from_magic(unsigned long long blocker, int magic_number, int shift);
+
 #endif
