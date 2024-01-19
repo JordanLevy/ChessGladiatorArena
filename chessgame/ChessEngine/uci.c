@@ -150,6 +150,8 @@ void uci_communication(){
     char command[256];
 
     init(start_position, strlen(start_position));
+    bool cancellationValue = false;
+    bool* cancellationToken = &cancellationValue;
     if(uci_enabled){
         while (fgets(command, sizeof(command), stdin)) {
             // remove newline character from the command
@@ -183,7 +185,17 @@ void uci_communication(){
                 write_rook_moves_lookup_to_file();
             } else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
-                generate_rook_magic_numbers();
+                unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
+                int* result_shift = (int*)calloc(64, sizeof(int));
+                generate_rook_magic_numbers(48, 100000, result_magic, result_shift, cancellationToken);
+                for(int i = 0; i < 64; i++){
+                    printf("%d magic number: %llu, shift: %d\n", i, result_magic[i], result_shift[i]);
+                }
+                free(result_magic);
+                free(result_shift);
+            } else if(startswith(command, "cancel_magic_search")){
+                printf("%s\n", command);
+                *cancellationToken = true;
             }
             else {
                 printf("Invalid command.\n");

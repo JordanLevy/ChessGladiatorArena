@@ -231,13 +231,31 @@ bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int
     return true;
 }
 
-bool generate_rook_magic_numbers(){
+unsigned long long find_single_rook_magic_number(int square, int shift, int num_iterations){
     //printf("Magic index: %d\n", get_index_from_magic(4503599728033792ULL, 10414575345181196316ULL, 54));
-    unsigned long long r_num = get_random_U64_number();
-    if (is_valid_rook_magic_number(0, r_num, 49)){
-        printf("WORKING! %llu\n", r_num);
+    unsigned long long r_num;
+    for(int i = 0; i < num_iterations; i++){
+        r_num = get_random_U64_number();
+        if (is_valid_rook_magic_number(square, r_num, shift)){
+            return r_num;
+        }
     }
-    else{
-        printf("not valed %llu\n", r_num);
+    return 0ULL;
+}
+
+void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned long long* result_magic, int* result_shift, bool* cancellationToken){
+    for(int i = 0; i < 64; i++){
+        result_shift[i] = min_shift;
+    }
+    int shift = min_shift;
+    while(!(*cancellationToken)){
+        for(int i = 0; i < 64; i++){
+            shift = result_shift[i] + 1;
+            unsigned long long magic = find_single_rook_magic_number(i, shift, num_iterations);
+            if(magic != 0ULL){
+                result_magic[i] = magic;
+                result_shift[i] = shift;
+            }
+        }
     }
 }

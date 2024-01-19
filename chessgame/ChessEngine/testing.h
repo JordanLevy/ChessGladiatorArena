@@ -25,7 +25,9 @@ void write_rook_moves_lookup_to_file();
 
 bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int shift);
 
-bool generate_rook_magic_numbers();
+unsigned long long find_single_rook_magic_number(int square, int shift, int num_iterations);
+
+void generate_rook_magic_numbers(int min_shift, int min_num_iterations, unsigned long long* result_magic, int* result_shift, bool* cancellationToken);
 
 int get_index_from_magic(unsigned long long blocker, unsigned long long magic_number, int shift);
 
