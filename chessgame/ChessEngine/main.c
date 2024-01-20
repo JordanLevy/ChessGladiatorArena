@@ -19,6 +19,7 @@ int main(){
     init_hash_table();
     init_magic();
     uci_communication();
+
     return 0;
 }
 //get_blockers [rook_pos] [blocker_index]

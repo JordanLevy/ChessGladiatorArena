@@ -165,8 +165,8 @@ unsigned long long get_rook_masks(int square){
     return result;
 }
 
-void write_rook_moves_lookup_to_file(){
-    FILE *file = fopen("rook_moves.txt", "w");
+void write_rook_moves_lookup_to_file(unsigned long long* magic, int* shift){
+    FILE *file = fopen("magic_rook_nums.txt", "w");
 
     // Check if the file was opened successfully
     if (file == NULL) {
@@ -175,8 +175,10 @@ void write_rook_moves_lookup_to_file(){
     }
 
     for(int i = 0; i <= 63; i++){//64; i++){
+
         unsigned long long movement_mask = get_rook_masks(i);
         unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+        int index = 0;
         //fprintf(file, "%d,", 1 << 14);
         //print_bitboard(movement_mask);
         int blocker_max = 10;
@@ -186,14 +188,11 @@ void write_rook_moves_lookup_to_file(){
         if(get_rank(i) == 0 || get_rank(i) == 7){
             blocker_max += 1;
         }
-        for(int j = 0; j < 1 << blocker_max; j++){
-            //fprintf(file, "%d,", j);
-            //fprintf(file, "%llu\n", movement_mask);
-            fprintf(file, "%d,", i);
-            fprintf(file, "%llu,", blockers[j]);
-            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
-            fprintf(file, "%llu\n", rook_legal_moves);
 
+        for(int j = 0; j < 1 << blocker_max; j++){
+            unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
+            index = get_index_from_magic(blockers[j], magic[i], shift[i]);
+            fprintf(file, "%d %llu %d %d %llu\n",i, magic[i], shift[i], index, rook_legal_moves);
         }
         //this is for get_blockers_rook_single_square
         free(blockers);
@@ -243,12 +242,12 @@ unsigned long long find_single_rook_magic_number(int square, int shift, int num_
     return 0ULL;
 }
 
-void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned long long* result_magic, int* result_shift, bool* cancellationToken){
+void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned long long* result_magic, int* result_shift, int amount_run){
     for(int i = 0; i < 64; i++){
         result_shift[i] = min_shift;
     }
     int shift = min_shift;
-    while(!(*cancellationToken)){
+    for(int j = 0;j < amount_run; j++){
         for(int i = 0; i < 64; i++){
             shift = result_shift[i] + 1;
             unsigned long long magic = find_single_rook_magic_number(i, shift, num_iterations);

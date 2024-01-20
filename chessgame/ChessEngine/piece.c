@@ -118,42 +118,40 @@ bool is_black_piece(int id){
 
 void init_magic(){
     // Open the file in read mode
-    FILE *file = fopen("rook_moves.txt", "r");
+    FILE *file = fopen("magic_rook_nums.txt", "r");
 
     // Check if the file was opened successfully
     if (file == NULL) {
         printf("Error opening the file.\n");
         return;
     }
-
+    printf("hello worldA\n");
     // Variables to store the values read from the file
-    int pos;
-    unsigned long long blockers, moves;
-
+    int pos, index, shift;
+    unsigned long long magic, moves;
+    printf("hello worldB\n");
     rook_moves_lookup = malloc(64 * sizeof(unsigned long long*));
 
     if(rook_moves_lookup == NULL){
         printf("Error allocating rook_moves_lookup.\n");
         return;
     }
-
+    printf("hello worldC\n");
     for(int i = 0; i < 64; i++){
-        rook_moves_lookup[i] = malloc(1024 * sizeof(unsigned long long));
+        rook_moves_lookup[i] = malloc((1 << (64-50)) * sizeof(unsigned long long));
 
         if(rook_moves_lookup[i] == NULL){
             printf("Error allocating rook_moves_lookup.\n");
             return;
         }
     }
-
+    printf("hello worldD\n");
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
-    while(fscanf(file,"%d,%llu,%llu", &pos, &blockers, &moves) == 3){
-        if(blockers < 1024){
-            rook_moves_lookup[pos][blockers] = moves;
-        }
+    while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
+            rook_moves_lookup[pos][index] = moves;
     }
-
+    printf("hello worldE\n");
     // Close the file
     fclose(file);
 }

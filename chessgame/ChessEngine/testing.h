@@ -21,13 +21,13 @@ unsigned long long *get_blockers_rook_single_square(unsigned long long movement)
 
 unsigned long long get_rook_masks(int square);
 
-void write_rook_moves_lookup_to_file();
+void write_rook_moves_lookup_to_file(unsigned long long* magic, int* shift);
 
 bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int shift);
 
 unsigned long long find_single_rook_magic_number(int square, int shift, int num_iterations);
 
-void generate_rook_magic_numbers(int min_shift, int min_num_iterations, unsigned long long* result_magic, int* result_shift, bool* cancellationToken);
+void generate_rook_magic_numbers(int min_shift, int min_num_iterations, unsigned long long* result_magic, int* result_shift, int amount_run);
 
 int get_index_from_magic(unsigned long long blocker, unsigned long long magic_number, int shift);
 
