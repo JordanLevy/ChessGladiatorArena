@@ -7,6 +7,8 @@
 #include "board.h"
 
 unsigned long long** rook_moves_lookup;
+unsigned long long* rook_magic_numbers;
+int* rook_magic_shift;
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
 unsigned char get_type(unsigned char id){
@@ -117,6 +119,13 @@ bool is_black_piece(int id){
 }
 
 void init_magic(){
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Current working directory: %s\n", cwd);
+    } else {
+        perror("getcwd() error");
+        return;
+    }
     // Open the file in read mode
     FILE *file = fopen("magic_rook_nums.txt", "r");
 
@@ -125,18 +134,15 @@ void init_magic(){
         printf("Error opening the file.\n");
         return;
     }
-    printf("hello worldA\n");
     // Variables to store the values read from the file
     int pos, index, shift;
     unsigned long long magic, moves;
-    printf("hello worldB\n");
     rook_moves_lookup = malloc(64 * sizeof(unsigned long long*));
 
     if(rook_moves_lookup == NULL){
         printf("Error allocating rook_moves_lookup.\n");
         return;
     }
-    printf("hello worldC\n");
     for(int i = 0; i < 64; i++){
         rook_moves_lookup[i] = malloc((1 << (64-50)) * sizeof(unsigned long long));
 
@@ -145,13 +151,17 @@ void init_magic(){
             return;
         }
     }
-    printf("hello worldD\n");
+    //inishalis the magic nnumber array and the shif for a perticular magic number array
+    rook_magic_numbers = malloc(64 * sizeof(unsigned long long));
+    rook_magic_shift = malloc(64 * sizeof(int));
+
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
             rook_moves_lookup[pos][index] = moves;
+            rook_magic_numbers[pos] = magic;
+            rook_magic_shift[pos] = shift;
     }
-    printf("hello worldE\n");
     // Close the file
     fclose(file);
 }

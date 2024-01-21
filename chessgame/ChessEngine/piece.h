@@ -4,6 +4,8 @@
 #include <stdbool.h>
 
 extern unsigned long long** rook_moves_lookup;
+extern unsigned long long* rook_magic_numbers;
+extern int* rook_magic_shift;
 
 unsigned char get_type(unsigned char id);
 
