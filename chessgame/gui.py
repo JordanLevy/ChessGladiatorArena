@@ -104,7 +104,7 @@ engine_enabled = True
 
 path_to_exe = './ChessEngine/main.exe'
 
-blocker_mode_enabled = True
+blocker_mode_enabled = False
 blockers = 0
 rook_legal_moves = 0
 
@@ -513,7 +513,7 @@ def run_game(process):
                     else:
                         print("can't undo")
                 elif event.key == K_p:
-                    send_command(process, 'go perft 6')
+                    send_command(process, 'go perft 4')
                 elif event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:

@@ -5,9 +5,12 @@
 #include "piece.h"
 #include "bitwise.h"
 #include "board.h"
+#include "testing.h"
 
 unsigned long long** rook_moves_lookup;
 unsigned long long* rook_magic_numbers;
+unsigned long long* rook_masks;
+
 int* rook_magic_shift;
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
@@ -119,13 +122,6 @@ bool is_black_piece(int id){
 }
 
 void init_magic(){
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Current working directory: %s\n", cwd);
-    } else {
-        perror("getcwd() error");
-        return;
-    }
     // Open the file in read mode
     FILE *file = fopen("magic_rook_nums.txt", "r");
 
@@ -154,7 +150,12 @@ void init_magic(){
     //inishalis the magic nnumber array and the shif for a perticular magic number array
     rook_magic_numbers = malloc(64 * sizeof(unsigned long long));
     rook_magic_shift = malloc(64 * sizeof(int));
+    //this is to get the rooks (where the blockers could be)
+    rook_masks = malloc(64 * sizeof(unsigned long long));
+    for(int i = 0; i < 64; i++){
+        rook_masks[i] = get_rook_masks(i);
 
+    }
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
@@ -383,11 +384,14 @@ void possible_B(unsigned long long bb, unsigned long long mask, unsigned char co
 
 void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | ROOK);
+    //for all the rooks 4 ish times
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | ROOK | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, move_lists);
+        unsigned long long blockers = occupied & rook_masks[location];
+        int index = get_index_from_magic(blockers, rook_magic_numbers[location], rook_magic_shift[location]);
+        add_moves_position(rook_moves_lookup[location][index], location, 0, 0, move_lists);
     }
 }
 
