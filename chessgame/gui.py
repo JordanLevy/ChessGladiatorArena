@@ -522,6 +522,10 @@ def run_game(process):
                     promo_key = 'r'
                 elif event.key == K_q:
                     promo_key = 'q'
+                elif event.key == K_t:
+                    print('start')
+                    send_command(process, 'generate_magic')
+                    pygame.time.wait(200)
                 else:
                     promo_key = ''
             if event.type == KEYUP:
@@ -588,34 +592,9 @@ def rook_magic_squares_view(process):
     blocker_index = 0
     blocker_interval = 1
     blocker_max = 12
-    wait_time = 200
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
-        keys = pygame.key.get_pressed()
-        if keys[K_LSHIFT]:
-            wait_time = 0
-        else:
-            wait_time = 200
-        if keys[K_LEFT]:
-            blocker_index -= blocker_interval
-            blocker_index = max(blocker_index, 0)
-            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
-            pygame.time.wait(wait_time)
-        if keys[K_RIGHT]:
-            blocker_index += blocker_interval
-            blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-            print('get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
-            pygame.time.wait(wait_time)
-        if keys[K_t]:
-            send_command(process, 'generate_magic')
-            pygame.time.wait(wait_time)
-        if keys[K_o]:
-            send_command(process, 'cancel_magic_search')
-            pygame.time.wait(wait_time)
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
@@ -623,6 +602,22 @@ def rook_magic_squares_view(process):
             if event.type == KEYDOWN:
                 if event.key == K_m:
                     send_command(process, 'write_rook_moves_lookup_to_file')
+                if event.key == K_LEFT:
+                    blocker_index -= blocker_interval
+                    blocker_index = max(blocker_index, 0)
+                    send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
+                    send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
+                if event.key == K_RIGHT:
+                    blocker_index += blocker_interval
+                    blocker_index = min(blocker_index, 2 ** blocker_max - 1)
+                    print('get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
+                    send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
+                    send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
+                if event.key == K_t:
+                    print('start')
+                    send_command(process, 'generate_magic')
+                if event.key == K_o:
+                    send_command(process, 'cancel_magic_search')
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True

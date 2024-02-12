@@ -182,12 +182,20 @@ void uci_communication(){
                 break;
             } else if(startswith(command, "get_blockers")) {
                 printf("%s\n", command);
+                for(int i = 0; i < 64; i++){
+                    //rook_masks[i] = get_rook_masks(i);
+                    printf("%d %llu\n", i, rook_masks[i]);
+                    //print_bitboard(rook_masks[i]);
+                }
                 inputBlockers(command);
             } else if(startswith(command, "get_rook_legal_moves")) {
                 printf("%s\n", command);
                 inputRookLegalMoves(command);
             } else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
+                
+
+                printf("\n");
                 unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
                 int* result_shift = (int*)calloc(64, sizeof(int));
                 generate_rook_magic_numbers(48, 2000, result_magic, result_shift, 3);
