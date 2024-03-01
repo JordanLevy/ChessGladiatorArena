@@ -247,7 +247,8 @@ void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned lon
         result_shift[i] = min_shift;
     }
     int shift = min_shift;
-    for(int j = 0;j < amount_run; j++){
+    for(int j = 0; j < amount_run; j++){
+        printf("%d\n", j);
         for(int i = 0; i < 64; i++){
             shift = result_shift[i] + 1;
             unsigned long long magic = find_single_rook_magic_number(i, shift, num_iterations);

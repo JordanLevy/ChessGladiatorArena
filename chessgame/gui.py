@@ -48,7 +48,7 @@ position_list = []
 move_count = 0
 next_spec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-depth = 6
+depth = 4
 
 black_to_mate = 'r4k2/8/8/8/8/6R1/3QPPPP/6K1 w - - 0 1'
 mate_in_1_3 = '2K5/4q3/5r2/8/8/8/5k2/8 w - - 0 1'

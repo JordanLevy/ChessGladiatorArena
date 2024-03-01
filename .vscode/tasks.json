@@ -3,16 +3,24 @@
         {
             "type": "cppbuild",
             "label": "C/C++: gcc.exe build active file",
-            "command": "C:/mingw64/bin/gcc.exe",
+            "command": "C:/MinGW/bin/gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${fileDirname}\\main.c",
+                "${fileDirname}\\values.c",
+                "${fileDirname}\\board.c",
+                "${fileDirname}\\piece.c",
+                "${fileDirname}\\bitwise.c",
+                "${fileDirname}\\testing.c",
+                "${fileDirname}\\uci.c",
+                "${fileDirname}\\engine.c",
+                "${fileDirname}\\transposition.c",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
             "options": {
-                "cwd": "C:/mingw64/bin"
+                "cwd": "C:/MinGW/bin"
             },
             "problemMatcher": [
                 "$gcc"

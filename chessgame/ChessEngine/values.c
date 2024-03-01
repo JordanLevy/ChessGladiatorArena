@@ -290,15 +290,15 @@ Move move_list[256];
 
 unsigned long long not_black_pieces = 0ULL;
 unsigned long long not_white_pieces = 0ULL;
-unsigned long long all_squares = 0ULL;
+unsigned long long all_squares = ~0ULL;
 
 unsigned long long white_pieces = 0ULL;
 unsigned long long black_pieces = 0ULL;
 
 unsigned long long empty = 0ULL;
 unsigned long long occupied = 0ULL;
-unsigned long long file[9] = {0ULL};
-unsigned long long rank[9] = {0ULL};
+unsigned long long file[9] = {0ULL, 9259542123273814144ULL, 4629771061636907072ULL, 2314885530818453536ULL, 1157442765409226768ULL, 578721382704613384ULL, 289360691352306692ULL, 144680345676153346ULL, 72340172838076673ULL};
+unsigned long long rank[9] = {0ULL, 255ULL, 65280ULL, 16711680ULL, 4278190080ULL, 1095216660480ULL, 280375465082880ULL, 71776119061217280ULL, 18374686479671623680ULL};
 unsigned long long l_diag[15] = {0ULL};
 unsigned long long r_diag[15] = {0ULL};
 

@@ -97,6 +97,7 @@ void move_piece(unsigned char id, int start, int end){
 
 void init_masks(){
     all_squares = ~0ULL;
+    printf("%llu", all_squares);
     square_a8 = 1ULL << 63;
 
     int ns[] = {1, 8, 24, 33, 35, 28, 12, 3};
@@ -104,17 +105,6 @@ void init_masks(){
 
     int ks[] = {0, 1, 2, 8, 10, 16, 17, 18};
     king_span = generate_bitboard(ks, 8);
-
-    int f[] = {7, 15, 23, 31, 39, 47, 55, 63};
-    file[1] = generate_bitboard(f, 8);
-    for(int i = 1; i < 8; i++){
-        file[i + 1] = file[i] >> 1;
-    }
-
-    rank[1] = generate_bitboard_from_range(0, 7);
-    for(int i = 1; i < 8; i++){
-        rank[i + 1] = rank[i] << 8;
-    }
 
     int left = 0;
     int right = 0;
