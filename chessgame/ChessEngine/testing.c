@@ -8,6 +8,14 @@
 #include <stdio.h>
 #include "transposition.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <libgen.h>
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 void print_legal_moves(Move* moves, int *numMoves){
     for(int i = 0; i < (*numMoves); i++){
         Move move = moves[i];
@@ -165,8 +173,44 @@ unsigned long long get_rook_masks(int square){
     return result;
 }
 
+// Custom function to remove the last component of the path
+void removeLastPathComponent(char* path) {
+#ifdef _WIN32
+    // Windows platform
+    char* lastBackslash = strrchr(path, '\\');
+    if (lastBackslash != NULL) {
+        *lastBackslash = '\0';
+    }
+#else
+    // Unix-like platforms
+    char* lastSlash = strrchr(path, '/');
+    if (lastSlash != NULL) {
+        *lastSlash = '\0';
+    }
+#endif
+}
+
+FILE* openFileInProjectFolder(const char* filename, const char* mode) {
+    char path[PATH_MAX]; // Adjust the size based on your needs
+
+#ifdef _WIN32
+    // Windows platform
+    GetModuleFileName(NULL, path, sizeof(path));
+    removeLastPathComponent(path);
+#else
+    // Unix-like platforms
+    realpath(__FILE__, path);
+    removeLastPathComponent(path);
+#endif
+
+    strcat(path, "/");
+    strcat(path, filename);
+
+    return fopen(path, mode);
+}
+
 void write_rook_moves_lookup_to_file(unsigned long long* magic, int* shift){
-    FILE *file = fopen("magic_rook_nums.txt", "w");
+    FILE *file = openFileInProjectFolder("./magic_rook_nums.txt", "w");
 
     // Check if the file was opened successfully
     if (file == NULL) {

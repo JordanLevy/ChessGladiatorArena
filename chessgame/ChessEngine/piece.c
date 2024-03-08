@@ -140,7 +140,7 @@ void init_magic(){
 
 
     // Open the file in read mode
-    FILE *file = fopen("magic_rook_nums.txt", "r");
+    FILE *file = openFileInProjectFolder("./magic_rook_nums.txt", "r");
 
     // Check if the file was opened successfully
     if (file == NULL) {
@@ -167,9 +167,11 @@ void init_magic(){
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
-            rook_moves_lookup[pos][index] = moves;
-            rook_magic_numbers[pos] = magic;
-            rook_magic_shift[pos] = shift;
+        //printf("%d %llu %d %d\n", pos, magic, shift, index);
+        //print_bitboard(moves);
+        rook_moves_lookup[pos][index] = moves;
+        rook_magic_numbers[pos] = magic;
+        rook_magic_shift[pos] = shift;
     }
     // Close the file
     fclose(file);

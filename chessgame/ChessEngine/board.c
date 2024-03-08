@@ -95,30 +95,6 @@ void move_piece(unsigned char id, int start, int end){
     pos_eval -= square_incentive[type][start];
 }
 
-void init_masks(){
-    all_squares = ~0ULL;
-    printf("%llu", all_squares);
-    square_a8 = 1ULL << 63;
-
-    int ns[] = {1, 8, 24, 33, 35, 28, 12, 3};
-    knight_span = generate_bitboard(ns, 8);
-
-    int ks[] = {0, 1, 2, 8, 10, 16, 17, 18};
-    king_span = generate_bitboard(ks, 8);
-
-    int left = 0;
-    int right = 0;
-    for(int i = 0; i < 64; i++){
-        left = get_l_diag(i);
-        right = get_r_diag(i);
-        l_diag[left] |= 1ULL << i;
-        r_diag[right] |= 1ULL << i;
-    }
-
-    file_ab = file[1] | file[2];
-    file_gh = file[7] | file[8];
-}
-
 void reset_board(){
     best_alpha = INT_MIN;
     best_beta = INT_MAX;
@@ -136,29 +112,12 @@ void reset_board(){
 
     not_black_pieces = 0ULL;
     not_white_pieces = 0ULL;
-    all_squares = 0ULL;
 
     white_pieces = 0ULL;
     black_pieces = 0ULL;
 
     empty = 0ULL;
     occupied = 0ULL;
-    for(int i = 0; i < 9; i++){
-        file[i] = 0ULL;
-        rank[i] = 0ULL;
-    }
-    for(int i = 0; i < 15; i++){
-        l_diag[i] = 0ULL;
-        r_diag[i] = 0ULL;
-    }
-
-    square_a8 = 0ULL;
-
-    knight_span = 0ULL;
-    king_span = 0ULL;
-
-    file_ab = 0ULL;
-    file_gh = 0ULL;
 
     unsafe_white = 0ULL;
     unsafe_black = 0ULL;
@@ -664,7 +623,6 @@ bool black_in_checkmate(int numMoves){
 
 void init_board(char* fen, size_t len){
     init_fen(fen, len);
-    init_masks();
 }
 
 bool is_legal_move(int start, int end, int promo, Move* moves, size_t n){

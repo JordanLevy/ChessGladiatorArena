@@ -21,6 +21,10 @@ unsigned long long *get_blockers_rook_single_square(unsigned long long movement)
 
 unsigned long long get_rook_masks(int square);
 
+void removeLastPathComponent(char* path);
+
+FILE* openFileInProjectFolder(const char* filename, const char* mode);
+
 void write_rook_moves_lookup_to_file(unsigned long long* magic, int* shift);
 
 bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int shift);
