@@ -198,7 +198,7 @@ void uci_communication(){
                 printf("\n");
                 unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
                 int* result_shift = (int*)calloc(64, sizeof(int));
-                generate_rook_magic_numbers(48, 200, result_magic, result_shift, 5);
+                generate_rook_magic_numbers(48, 200, result_magic, result_shift, 5, 300);
                 for(int i = 0; i < 64; i++){
                     printf("%d magic number: %llu, shift: %d\n", i, result_magic[i], result_shift[i]);
                 }

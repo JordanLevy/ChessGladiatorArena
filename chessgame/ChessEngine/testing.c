@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "transposition.h"
+#include <time.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -191,7 +192,7 @@ void removeLastPathComponent(char* path) {
 }
 
 FILE* openFileInProjectFolder(const char* filename, const char* mode) {
-    char path[PATH_MAX]; // Adjust the size based on your needs
+    char path[260]; // Adjust the size based on your needs
 
 #ifdef _WIN32
     // Windows platform
@@ -250,11 +251,31 @@ int get_index_from_magic(unsigned long long blocker, unsigned long long magic_nu
     return (blocker * magic_number) >> shift;
 }
 
+unsigned long long get_blocker_rook_single_square(unsigned long long movement, int pattern_index){
+    int* moveSquares = (int*)calloc(14, sizeof(int));
+    unsigned long long result = 0;
+    //the number of squares that a bloker could take up
+    int numMoveSquares = 0;
+    for(int i = 0; i < 64; i++){
+        if(((movement >> i) & 1) == 1){
+            moveSquares[numMoveSquares] = i;
+            numMoveSquares++;
+        }
+    }
+
+    for(int j = 0; j < numMoveSquares; j++){
+        unsigned long long bit = (pattern_index >> j) & 1ULL;
+        result |= bit << moveSquares[j];
+    }
+
+    free(moveSquares);
+    return result;
+}
+
 bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int shift){
     unsigned long long T_shift = (1 << (64-shift));
     bool *indices_seen = (bool *)calloc(T_shift, sizeof(bool));
     unsigned long long movement_mask = get_rook_masks(square);
-    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
     int blocker_max = 10;
     if(get_file(square) == 0 || get_file(square) == 7){
         blocker_max += 1;
@@ -263,14 +284,14 @@ bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int
         blocker_max += 1;
     }
     for(int j = 0; j < 1 << blocker_max; j++){
-        int index = get_index_from_magic(blockers[j], magic_number, shift);
+        unsigned long long blocker = get_blocker_rook_single_square(movement_mask, j);
+        int index = get_index_from_magic(blocker, magic_number, shift);
         if(indices_seen[index]){
             return false;
         }
         indices_seen[index] = true;
         //unsigned long long rook_legal_moves = rook_moves_single_square(square, blockers[j]);
     }
-    free(blockers);
     return true;
 }
 
@@ -286,14 +307,24 @@ unsigned long long find_single_rook_magic_number(int square, int shift, int num_
     return 0ULL;
 }
 
-void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned long long* result_magic, int* result_shift, int amount_run){
+void generate_rook_magic_numbers(int min_shift, int num_iterations, unsigned long long* result_magic, int* result_shift, int amount_run, int t_limit){
+    time_t start_t;
+    time_t cer_time;
+    start_t = time(NULL);
+
+
     for(int i = 0; i < 64; i++){
         result_shift[i] = min_shift;
     }
+
     int shift = min_shift;
     for(int j = 0; j < amount_run; j++){
-        printf("%d\n", j);
         for(int i = 0; i < 64; i++){
+            cer_time = time(NULL);
+            if(cer_time - start_t >= t_limit){
+                printf("time limet reached\n");
+                return;
+            }
             shift = result_shift[i] + 1;
             unsigned long long magic = find_single_rook_magic_number(i, shift, num_iterations);
             if(magic != 0ULL){
