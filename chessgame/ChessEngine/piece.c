@@ -399,9 +399,14 @@ void possible_R(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | ROOK | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        unsigned long long blockers = occupied & rook_masks[location];
-        int index = get_index_from_magic(blockers, rook_magic_numbers[location], rook_magic_shift[location]);
-        add_moves_position(rook_moves_lookup[location][index], location, 0, 0, move_lists);
+        if(rook_magic_enabled){
+            unsigned long long blockers = occupied & rook_masks[location];
+            int index = get_index_from_magic(blockers, rook_magic_numbers[location], rook_magic_shift[location]);
+            add_moves_position(rook_moves_lookup[location][index], location, 0, 0, move_lists);  
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 

@@ -355,3 +355,6 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 //this is to set in UCI
 bool uci_enabled = true;
 
+//this is for inablaling the magic numbers in rook moves
+bool rook_magic_enabled = false;
+

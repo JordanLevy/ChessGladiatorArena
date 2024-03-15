@@ -222,7 +222,8 @@ extern char *start_position;
 //this is for UCI COMAND TO TERN ON AND OFF THE COMUNICATION
 extern bool uci_enabled;
 
-
+//this is for enablaing rook magic numbers for calculating rook moves
+extern bool rook_magic_enabled;
 
 
 #endif
