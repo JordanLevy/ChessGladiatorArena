@@ -287,11 +287,13 @@ bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int
         unsigned long long blocker = get_blocker_rook_single_square(movement_mask, j);
         int index = get_index_from_magic(blocker, magic_number, shift);
         if(indices_seen[index]){
+            free(indices_seen);
             return false;
         }
         indices_seen[index] = true;
         //unsigned long long rook_legal_moves = rook_moves_single_square(square, blockers[j]);
     }
+    free(indices_seen);
     return true;
 }
 
