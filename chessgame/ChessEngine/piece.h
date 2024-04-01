@@ -8,6 +8,11 @@ extern unsigned long long* rook_magic_numbers;
 extern unsigned long long rook_masks[64];
 extern int* rook_magic_shift;
 
+extern unsigned long long** bishop_moves_lookup;
+extern unsigned long long* bishop_magic_numbers;
+extern unsigned long long bishop_masks[64];
+extern int* bishop_magic_shift;
+
 unsigned char get_type(unsigned char id);
 
 char piece_id_to_notation(unsigned char id);

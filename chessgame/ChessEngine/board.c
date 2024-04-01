@@ -426,6 +426,7 @@ void add_moves_position(unsigned long long mask, int start_position, int min_id,
     }
 }
 
+//return all the squars that are not save for white
 unsigned long long unsafe_for_white(){
     num_pieces_delivering_check = 0;
     blocking_squares = 0ULL;

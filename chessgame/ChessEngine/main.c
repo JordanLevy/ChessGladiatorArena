@@ -17,18 +17,17 @@
 int main(){
     init_zobrist_keys();
     init_hash_table();
-    init_magic();
+    //init_magic();
     unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
     int* result_shift = (int*)calloc(64, sizeof(int));
-    generate_rook_magic_numbers(47, 5000, result_magic, result_shift, 45, 1800);
+    generate_bishop_magic_numbers(47, 5000, result_magic, result_shift, 45, 20);
     for(int i = 0; i < 64; i++){
         printf("%d magic number: %llu, shift: %d\n", i, result_magic[i], result_shift[i]);
     }
-    write_rook_moves_lookup_to_file(result_magic, result_shift);
+    write_bishop_moves_lookup_to_file(result_magic, result_shift);
     free(result_magic);
     free(result_shift);
     // uci_communication();
-
     return 0;
 }
 //get_blockers [rook_pos] [blocker_index]

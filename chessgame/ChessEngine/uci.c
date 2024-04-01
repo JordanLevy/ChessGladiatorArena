@@ -131,7 +131,7 @@ void inputBlockers(char* input){
     int rook_pos;
     int blocker_index;
     sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
-    unsigned long long movement_mask = get_rook_masks(rook_pos);
+    unsigned long long movement_mask = rook_masks[rook_pos];
     unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
     printf("blockers %llu\n", blockers[blocker_index]);        
 }
@@ -143,7 +143,7 @@ void inputRookLegalMoves(char* input){
     printf("we are geting to the first\n");
     sscanf(input, "get_rook_legal_moves %d %d", &rook_pos, &blocker_config);
     printf("after the scanf\n");
-    unsigned long long movement_mask = get_rook_masks(rook_pos);
+    unsigned long long movement_mask = rook_masks[rook_pos];
     unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
     printf("too llu asining\n");
     index = get_index_from_magic(blockers[blocker_config], rook_magic_numbers[rook_pos], rook_magic_shift[rook_pos]);
@@ -183,7 +183,6 @@ void uci_communication(){
             } else if(startswith(command, "get_blockers")) {
                 printf("%s\n", command);
                 for(int i = 0; i < 64; i++){
-                    //rook_masks[i] = get_rook_masks(i);
                     printf("%d %llu\n", i, rook_masks[i]);
                     //print_bitboard(rook_masks[i]);
                 }
