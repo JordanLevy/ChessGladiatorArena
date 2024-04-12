@@ -162,22 +162,24 @@ void init_rook_magic(){
         printf("Error allocating rook_moves_lookup.\n");
         return;
     }
-    for(int i = 0; i < 64; i++){
-        rook_moves_lookup[i] = malloc((1 << (64-50)) * sizeof(unsigned long long));
 
-        if(rook_moves_lookup[i] == NULL){
-            printf("Error allocating rook_moves_lookup.\n");
-            return;
-        }
-    }
+    int last_pos = -1;
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
+        if(pos != last_pos){
+            rook_moves_lookup[pos] = malloc((1 << (64-shift)) * sizeof(unsigned long long));
+            if(rook_moves_lookup[pos] == NULL){
+                printf("Error allocating rook_moves_lookup[%d].\n", pos);
+                return;
+            }
+        }
         //printf("%d %llu %d %d\n", pos, magic, shift, index);
         //print_bitboard(moves);
         rook_moves_lookup[pos][index] = moves;
         rook_magic_numbers[pos] = magic;
         rook_magic_shift[pos] = shift;
+        last_pos = pos;
     }
     // Close the file
     fclose(file);
@@ -206,22 +208,24 @@ void init_bishop_magic(){
         printf("Error allocating bishop_moves_lookup.\n");
         return;
     }
-    for(int i = 0; i < 64; i++){
-        bishop_moves_lookup[i] = malloc((1 << (64-50)) * sizeof(unsigned long long));
 
-        if(bishop_moves_lookup[i] == NULL){
-            printf("Error allocating bishop_moves_lookup.\n");
-            return;
-        }
-    }
+    int last_pos = -1;
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
+        if(pos != last_pos){
+            bishop_moves_lookup[pos] = malloc((1 << (64-shift)) * sizeof(unsigned long long));
+            if(bishop_moves_lookup[pos] == NULL){
+                printf("Error allocating bishop_moves_lookup[%d].\n", pos);
+                return;
+            }
+        }
         //printf("%d %llu %d %d\n", pos, magic, shift, index);
         //print_bitboard(moves);
         bishop_moves_lookup[pos][index] = moves;
         bishop_magic_numbers[pos] = magic;
         bishop_magic_shift[pos] = shift;
+        last_pos = pos;
     }
     // Close the file
     fclose(file);
@@ -229,6 +233,7 @@ void init_bishop_magic(){
 
 void init_magic(){
     init_rook_magic();
+    init_bishop_magic();
 }
 
 unsigned long long sliding_piece(unsigned long long mask, int location, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){

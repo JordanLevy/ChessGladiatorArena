@@ -127,29 +127,37 @@ void inputGo(char* input){
     }
 }
 
-void inputBlockers(char* input){
+void inputRookLegalMoves(char* input){
     int rook_pos;
-    int blocker_index;
-    sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
+    unsigned long long blockers;
+    int index;
+    sscanf(input, "get_rook_legal_moves %d %llu", &rook_pos, &blockers);
     unsigned long long movement_mask = rook_masks[rook_pos];
-    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
+    blockers &= movement_mask;
+    index = get_index_from_magic(blockers, rook_magic_numbers[rook_pos], rook_magic_shift[rook_pos]);
+    unsigned long long rook_legal_moves = rook_moves_lookup[rook_pos][index];
+    printf("legal_moves %llu\n", rook_legal_moves);
+}
+
+void inputBishopBlockers(char* input){
+    int bishop_pos;
+    int blocker_index;
+    sscanf(input, "get_bishop_blockers %d %d", &bishop_pos, &blocker_index);
+    unsigned long long movement_mask = bishop_masks[bishop_pos];
+    unsigned long long* blockers = get_blockers_bishop_single_square(movement_mask);
     printf("blockers %llu\n", blockers[blocker_index]);        
 }
 
-void inputRookLegalMoves(char* input){
-    int rook_pos;
+void inputBishopLegalMoves(char* input){
+    int bishop_pos;
     int blocker_config;
     int index;
-    printf("we are geting to the first\n");
-    sscanf(input, "get_rook_legal_moves %d %d", &rook_pos, &blocker_config);
-    printf("after the scanf\n");
-    unsigned long long movement_mask = rook_masks[rook_pos];
-    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
-    printf("too llu asining\n");
-    index = get_index_from_magic(blockers[blocker_config], rook_magic_numbers[rook_pos], rook_magic_shift[rook_pos]);
-    printf("index is done\n");
-    unsigned long long rook_legal_moves = rook_moves_lookup[rook_pos][index];
-    printf("rook_legal_moves %llu\n", rook_legal_moves);
+    sscanf(input, "get_bishop_legal_moves %d %d", &bishop_pos, &blocker_config);
+    unsigned long long movement_mask = bishop_masks[bishop_pos];
+    unsigned long long* blockers = get_blockers_bishop_single_square(movement_mask);
+    index = get_index_from_magic(blockers[blocker_config], bishop_magic_numbers[bishop_pos], bishop_magic_shift[bishop_pos]);
+    unsigned long long bishop_legal_moves = bishop_moves_lookup[bishop_pos][index];
+    printf("legal_moves %llu\n", bishop_legal_moves);
 }
 
 void uci_communication(){
@@ -180,16 +188,15 @@ void uci_communication(){
                 inputGo(command);
             } else if(startswith(command, "quit")) {
                 break;
-            } else if(startswith(command, "get_blockers")) {
-                printf("%s\n", command);
-                for(int i = 0; i < 64; i++){
-                    printf("%d %llu\n", i, rook_masks[i]);
-                    //print_bitboard(rook_masks[i]);
-                }
-                inputBlockers(command);
             } else if(startswith(command, "get_rook_legal_moves")) {
                 printf("%s\n", command);
                 inputRookLegalMoves(command);
+            } else if(startswith(command, "get_bishop_blockers")) {
+                printf("%s\n", command);
+                inputBishopBlockers(command);
+            } else if(startswith(command, "get_bishop_legal_moves")) {
+                printf("%s\n", command);
+                inputBishopLegalMoves(command);
             } else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
                 

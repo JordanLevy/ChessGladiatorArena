@@ -140,6 +140,10 @@ unsigned long long rook_moves_single_square(int square, unsigned long long block
     return sliding_piece(~0ULL, square, blockers, true, false, 0ULL);
 }
 
+unsigned long long bishop_moves_single_square(int square, unsigned long long blockers){
+    return sliding_piece(~0ULL, square, blockers, false, true, 0ULL);
+}
+
 unsigned long long* get_blockers_rook_single_square(unsigned long long movement){
     int* moveSquares = (int*)calloc(14, sizeof(int));
     //the number of squares that a bloker could take up
@@ -164,8 +168,8 @@ unsigned long long* get_blockers_rook_single_square(unsigned long long movement)
     return blockerBitboards;
 }
 
-unsigned long long* get_blockers_rook_single_square(unsigned long long movement){
-    int* moveSquares = (int*)calloc(14, sizeof(int));
+unsigned long long* get_blockers_bishop_single_square(unsigned long long movement){
+    int* moveSquares = (int*)calloc(13, sizeof(int));
     //the number of squares that a bloker could take up
     int numMoveSquares = 0;
     for(int i = 0; i < 64; i++){
@@ -262,13 +266,7 @@ void write_rook_moves_lookup_to_file(unsigned long long* magic, int* shift){
         int index = 0;
         //fprintf(file, "%d,", 1 << 14);
         //print_bitboard(movement_mask);
-        int blocker_max = 10;
-        if(get_file(i) == 0 || get_file(i) == 7){
-            blocker_max += 1;
-        }
-        if(get_rank(i) == 0 || get_rank(i) == 7){
-            blocker_max += 1;
-        }
+        int blocker_max = get_max_rook_blockers(i);
 
         for(int j = 0; j < 1 << blocker_max; j++){
             unsigned long long rook_legal_moves = rook_moves_single_square(i, blockers[j]);
@@ -364,13 +362,9 @@ bool is_valid_rook_magic_number(int square, unsigned long long magic_number, int
     unsigned long long T_shift = (1 << (64-shift));
     bool *indices_seen = (bool *)calloc(T_shift, sizeof(bool));
     unsigned long long movement_mask = rook_masks[square];
-    int blocker_max = 10;
-    if(get_file(square) == 0 || get_file(square) == 7){
-        blocker_max += 1;
-    }
-    if(get_rank(square) == 0 || get_rank(square) == 7){
-        blocker_max += 1;
-    }
+
+    int blocker_max = get_max_rook_blockers(square);
+
     for(int j = 0; j < 1 << blocker_max; j++){
         unsigned long long blocker = get_blocker_rook_single_square(movement_mask, j);
         int index = get_index_from_magic(blocker, magic_number, shift);
@@ -406,6 +400,17 @@ bool is_valid_bishop_magic_number(int square, unsigned long long magic_number, i
     return true;
 }
 
+int get_max_rook_blockers(int square){
+    int blocker_max = 10;
+    if(get_file(square) == 0 || get_file(square) == 7){
+        blocker_max += 1;
+    }
+    if(get_rank(square) == 0 || get_rank(square) == 7){
+        blocker_max += 1;
+    }
+    return blocker_max;
+}
+
 int get_max_bishop_blockers(int square){
     int blocker_max = 5;
     if(get_file(square) >=2 && get_file(square) <=5 && get_rank(square) >= 2 && get_rank(square) <= 5){
@@ -419,6 +424,7 @@ int get_max_bishop_blockers(int square){
     }
     return blocker_max;
 }
+
 unsigned long long find_single_rook_magic_number(int square, int shift, int num_iterations){
     //printf("Magic index: %d\n", get_index_from_magic(4503599728033792ULL, 10414575345181196316ULL, 54));
     unsigned long long r_num;

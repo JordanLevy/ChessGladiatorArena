@@ -24,6 +24,12 @@ void inputPosition(char *input);
 
 void inputGo(char *input);
 
+void inputRookLegalMoves(char *input);
+
+void inputBishopBlockers(char *input);
+
+void inputBishopLegalMoves(char *input);
+
 void uci_communication();
 
 #endif
