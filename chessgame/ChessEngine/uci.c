@@ -127,25 +127,27 @@ void inputGo(char* input){
     }
 }
 
-void inputRookLegalMoves(char* input){
-    int rook_pos;
+
+void inputLegalMoves(char* input){
+    int pos;
+    char type;
     unsigned long long blockers;
     int index;
-    sscanf(input, "get_rook_legal_moves %d %llu", &rook_pos, &blockers);
-    unsigned long long movement_mask = rook_masks[rook_pos];
-    blockers &= movement_mask;
-    index = get_index_from_magic(blockers, rook_magic_numbers[rook_pos], rook_magic_shift[rook_pos]);
-    unsigned long long rook_legal_moves = rook_moves_lookup[rook_pos][index];
-    printf("legal_moves %llu\n", rook_legal_moves);
-}
-
-void inputBishopBlockers(char* input){
-    int bishop_pos;
-    int blocker_index;
-    sscanf(input, "get_bishop_blockers %d %d", &bishop_pos, &blocker_index);
-    unsigned long long movement_mask = bishop_masks[bishop_pos];
-    unsigned long long* blockers = get_blockers_bishop_single_square(movement_mask);
-    printf("blockers %llu\n", blockers[blocker_index]);        
+    sscanf(input, "get_legal_moves %c %d %llu",&type, &pos, &blockers);
+    unsigned long long legal_moves = 0;
+    if(type == 'r' || type == 'q'){
+        unsigned long long movement_mask = rook_masks[pos];
+        blockers &= movement_mask;
+        index = get_index_from_magic(blockers, rook_magic_numbers[pos], rook_magic_shift[pos]);
+        legal_moves |= rook_moves_lookup[pos][index];
+    }
+    if(type == 'b' || type == 'q'){
+        unsigned long long movement_mask = bishop_masks[pos];
+        blockers &= movement_mask;
+        index = get_index_from_magic(blockers, bishop_magic_numbers[pos], bishop_magic_shift[pos]);
+        legal_moves |= bishop_moves_lookup[pos][index];
+    }
+    printf("legal_moves %llu\n", legal_moves);
 }
 
 void inputBishopLegalMoves(char* input){
@@ -188,15 +190,9 @@ void uci_communication(){
                 inputGo(command);
             } else if(startswith(command, "quit")) {
                 break;
-            } else if(startswith(command, "get_rook_legal_moves")) {
+            } else if(startswith(command, "get_legal_moves")) {
                 printf("%s\n", command);
-                inputRookLegalMoves(command);
-            } else if(startswith(command, "get_bishop_blockers")) {
-                printf("%s\n", command);
-                inputBishopBlockers(command);
-            } else if(startswith(command, "get_bishop_legal_moves")) {
-                printf("%s\n", command);
-                inputBishopLegalMoves(command);
+                inputLegalMoves(command);
             } else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
                 
@@ -216,7 +212,7 @@ void uci_communication(){
                 *cancellationToken = true;
             }
             else {
-                printf("Invalid command.\n");
+                printf("Invalid command. %s\n", command);
             }
             fflush(stdout);
         }

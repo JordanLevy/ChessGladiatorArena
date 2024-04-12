@@ -113,7 +113,7 @@ class GameMode(Enum):
     QUEEN_BLOCKERS = 3
 
 
-game_mode = GameMode.ROOK_BLOCKERS
+game_mode = GameMode.QUEEN_BLOCKERS
 blockers = 0
 legal_moves = 0
 
@@ -584,7 +584,7 @@ def run_game(process):
         main_clock.tick(100)
 
 
-def rook_magic_squares_view(process):
+def magic_squares_view(process):
     global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start, blockers
     screen = pygame.display.set_mode((400, 400), 0, 32)
     main_clock = pygame.time.Clock()
@@ -594,14 +594,22 @@ def rook_magic_squares_view(process):
     clicking = False
     init_board()
     init_fen('8/8/8/8/8/8/8/8 w - - 0 1')
-    add_piece(0, wR)
+    if(game_mode == GameMode.ROOK_BLOCKERS):
+        add_piece(0, wR)
+        piece_type = 'r'
+    elif(game_mode == GameMode.BISHOP_BLOCKERS):
+        add_piece(0, wB)
+        piece_type = 'b'
+    elif(game_mode == GameMode.QUEEN_BLOCKERS):
+        add_piece(0, wQ)
+        piece_type = 'q'
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
     press_square = -1
     release_square = -1
 
-    rook_pos = 0
+    pos = 0
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
@@ -609,14 +617,6 @@ def rook_magic_squares_view(process):
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_m:
-                    send_command(process, 'write_rook_moves_lookup_to_file')
-                if event.key == K_t:
-                    print('start')
-                    send_command(process, 'generate_magic')
-                if event.key == K_o:
-                    send_command(process, 'cancel_magic_search')
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
@@ -634,9 +634,9 @@ def rook_magic_squares_view(process):
                     # can't start and end a move on the same square
                     if press_square != release_square and piece != 0:
                         # human move
-                        rook_pos = release_square
+                        pos = release_square
                         apply_move(press_square, release_square, 0)
-                        send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blockers))
+                        send_command(process, 'get_legal_moves ' + piece_type + ' ' + str(pos) + ' ' + str(blockers))
                     else:
                         if get_piece(release_square):
                             next_spec[bP] -= 1
@@ -646,169 +646,7 @@ def rook_magic_squares_view(process):
                         print(release_square)
                         blockers ^= (1 << release_square)
                         print(blockers)
-                        send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blockers))
-                    press_xy = (-1, -1)
-                    release_xy = (-1, -1)
-                    press_square = -1
-                    release_square = -1
-                    refresh_graphics()
-            if press_square > -1:
-                refresh_graphics()
-
-        pygame.display.update()
-        main_clock.tick(100)
-
-
-def bishop_magic_squares_view(process):
-    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
-    screen = pygame.display.set_mode((400, 400), 0, 32)
-    main_clock = pygame.time.Clock()
-    pygame.display.init()
-    pygame.display.set_caption('Chess')
-    pygame.font.init()
-    clicking = False
-    init_board()
-    init_fen('8/8/8/8/8/8/8/8 w - - 0 1')
-    add_piece(0, wB)
-    refresh_graphics()
-    press_xy = (-1, -1)
-    release_xy = (-1, -1)
-    press_square = -1
-    release_square = -1
-
-    bishop_pos = 0
-    blocker_index = 0
-    blocker_interval = 1
-    blocker_max = 5
-
-    while True:
-        mouse_xy = pygame.mouse.get_pos()
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                pygame.quit()
-                sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_m:
-                    send_command(process, 'write_bishop_moves_lookup_to_file')
-                if event.key == K_LEFT:
-                    blocker_index -= blocker_interval
-                    blocker_index = max(blocker_index, 0)
-                    send_command(process, 'get_bishop_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_bishop_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
-                if event.key == K_RIGHT:
-                    blocker_index += blocker_interval
-                    blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-                    print('get_bishop_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_bishop_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_bishop_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
-                if event.key == K_t:
-                    print('start')
-                    send_command(process, 'generate_magic')
-                if event.key == K_o:
-                    send_command(process, 'cancel_magic_search')
-            if event.type == MOUSEBUTTONDOWN:
-                if event.button == BUTTON_LEFT and not clicking:
-                    clicking = True
-                    press_xy = mouse_xy
-                    press_xy = math.floor(press_xy[0] / 50), math.ceil(7 - press_xy[1] / 50)
-                    press_square = coords_to_num(press_xy)
-            if event.type == MOUSEBUTTONUP:
-                if event.button == BUTTON_LEFT and clicking:
-                    clicking = False
-                    release_xy = mouse_xy
-                    release_xy = math.floor(release_xy[0] / 50), math.ceil(7 - release_xy[1] / 50)
-                    release_square = coords_to_num(release_xy)
-                    piece = get_piece(press_square)
-
-                    # can't start and end a move on the same square
-                    if press_square != release_square and piece != 0:
-                        # human move
-                        bishop_pos = release_square
-                        blocker_max = get_max_bishop_blockers()
-                        blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-                        apply_move(press_square, release_square, 0)
-                        send_command(process, 'get_bishop_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                        send_command(process, 'get_bishop_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    press_xy = (-1, -1)
-                    release_xy = (-1, -1)
-                    press_square = -1
-                    release_square = -1
-                    refresh_graphics()
-            if press_square > -1:
-                refresh_graphics()
-
-        pygame.display.update()
-        main_clock.tick(100)
-
-
-def queen_magic_squares_view(process):
-    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
-    screen = pygame.display.set_mode((400, 400), 0, 32)
-    main_clock = pygame.time.Clock()
-    pygame.display.init()
-    pygame.display.set_caption('Chess')
-    pygame.font.init()
-    clicking = False
-    init_board()
-    init_fen('8/8/8/8/8/8/8/8 w - - 0 1')
-    add_piece(0, wQ)
-    refresh_graphics()
-    press_xy = (-1, -1)
-    release_xy = (-1, -1)
-    press_square = -1
-    release_square = -1
-
-    bishop_pos = 0
-    blocker_index = 0
-    blocker_interval = 1
-    blocker_max = 5
-
-    while True:
-        mouse_xy = pygame.mouse.get_pos()
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                pygame.quit()
-                sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_LEFT:
-                    blocker_index -= blocker_interval
-                    blocker_index = max(blocker_index, 0)
-                    send_command(process, 'get_queen_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_queen_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
-                if event.key == K_RIGHT:
-                    blocker_index += blocker_interval
-                    blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-                    print('get_queen_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_queen_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                    send_command(process, 'get_queen_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
-                if event.key == K_t:
-                    print('start')
-                    send_command(process, 'generate_magic')
-                if event.key == K_o:
-                    send_command(process, 'cancel_magic_search')
-            if event.type == MOUSEBUTTONDOWN:
-                if event.button == BUTTON_LEFT and not clicking:
-                    clicking = True
-                    press_xy = mouse_xy
-                    press_xy = math.floor(press_xy[0] / 50), math.ceil(7 - press_xy[1] / 50)
-                    press_square = coords_to_num(press_xy)
-            if event.type == MOUSEBUTTONUP:
-                if event.button == BUTTON_LEFT and clicking:
-                    clicking = False
-                    release_xy = mouse_xy
-                    release_xy = math.floor(release_xy[0] / 50), math.ceil(7 - release_xy[1] / 50)
-                    release_square = coords_to_num(release_xy)
-                    piece = get_piece(press_square)
-
-                    # can't start and end a move on the same square
-                    if press_square != release_square and piece != 0:
-                        # human move
-                        bishop_pos = release_square
-                        blocker_max = get_max_bishop_blockers()
-                        blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-                        apply_move(press_square, release_square, 0)
-                        send_command(process, 'get_queen_blockers ' + str(bishop_pos) + ' ' + str(blocker_index))
-                        send_command(process, 'get_queen_legal_moves ' + str(bishop_pos) + ' ' + str(blocker_index))
+                        send_command(process, 'get_legal_moves ' + piece_type + ' ' + str(pos) + ' ' + str(blockers))
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -847,11 +685,14 @@ def send_command(process, cmd):
     process.stdin.flush()
     
 
-def open_communication(thread_function):
+def open_communication():
     process = init_process(path_to_exe)
     read_thread = threading.Thread(target=read_from_process, args=(process,))
     # write_thread = threading.Thread(target=write_to_process, args=(process,))
-    game_thread = threading.Thread(target=thread_function, args=(process,))
+    mode = magic_squares_view
+    if(game_mode == GameMode.GAME):
+        mode = run_game
+    game_thread = threading.Thread(target=mode, args=(process,))
     read_thread.start()
     # write_thread.start()
     game_thread.start()
@@ -891,11 +732,4 @@ def read_from_process(process):
             refresh_graphics()
 
 
-if game_mode == GameMode.ROOK_BLOCKERS:
-    open_communication(rook_magic_squares_view)
-elif game_mode == GameMode.BISHOP_BLOCKERS:
-    open_communication(bishop_magic_squares_view)
-elif game_mode == GameMode.QUEEN_BLOCKERS:
-    open_communication(queen_magic_squares_view)
-else:
-    open_communication()
+open_communication()
