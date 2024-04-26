@@ -224,6 +224,7 @@ extern bool uci_enabled;
 
 //this is for enablaing rook magic numbers for calculating rook moves
 extern bool rook_magic_enabled;
-
+extern bool bishop_magic_enabled;
+extern bool queen_magic_enabled;
 
 #endif

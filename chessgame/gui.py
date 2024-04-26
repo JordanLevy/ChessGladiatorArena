@@ -113,7 +113,7 @@ class GameMode(Enum):
     QUEEN_BLOCKERS = 3
 
 
-game_mode = GameMode.QUEEN_BLOCKERS
+game_mode = GameMode.GAME
 blockers = 0
 legal_moves = 0
 

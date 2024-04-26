@@ -137,14 +137,14 @@ void inputLegalMoves(char* input){
     unsigned long long legal_moves = 0;
     if(type == 'r' || type == 'q'){
         unsigned long long movement_mask = rook_masks[pos];
-        blockers &= movement_mask;
-        index = get_index_from_magic(blockers, rook_magic_numbers[pos], rook_magic_shift[pos]);
+        unsigned long long rook_blockers = blockers & movement_mask;
+        index = get_index_from_magic(rook_blockers, rook_magic_numbers[pos], rook_magic_shift[pos]);
         legal_moves |= rook_moves_lookup[pos][index];
     }
     if(type == 'b' || type == 'q'){
         unsigned long long movement_mask = bishop_masks[pos];
-        blockers &= movement_mask;
-        index = get_index_from_magic(blockers, bishop_magic_numbers[pos], bishop_magic_shift[pos]);
+        unsigned long long bishop_blockers = blockers & movement_mask;
+        index = get_index_from_magic(bishop_blockers, bishop_magic_numbers[pos], bishop_magic_shift[pos]);
         legal_moves |= bishop_moves_lookup[pos][index];
     }
     printf("legal_moves %llu\n", legal_moves);

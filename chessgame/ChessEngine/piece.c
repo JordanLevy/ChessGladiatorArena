@@ -447,7 +447,14 @@ void possible_B(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | BISHOP | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, move_lists);
+        if(bishop_magic_enabled){
+            unsigned long long blockers = occupied & bishop_masks[location];
+            int index = get_index_from_magic(blockers, bishop_magic_numbers[location], bishop_magic_shift[location]);
+            add_moves_position(bishop_moves_lookup[location][index], location, 0, 0, move_lists);  
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 
@@ -475,7 +482,24 @@ void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | QUEEN | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, move_lists);
+        if(queen_magic_enabled){
+            unsigned long long legal_moves = 0;
+
+            unsigned long long movement_mask = rook_masks[location];
+            unsigned long long rook_blockers = occupied & movement_mask;
+            int index = get_index_from_magic(rook_blockers, rook_magic_numbers[location], rook_magic_shift[location]);
+            legal_moves |= rook_moves_lookup[location][index];
+
+            unsigned long long movement_mask = bishop_masks[location];
+            unsigned long long bishop_blockers = occupied & movement_mask;
+            index = get_index_from_magic(bishop_blockers, bishop_magic_numbers[location], bishop_magic_shift[location]);
+            legal_moves |= bishop_moves_lookup[location][index];
+
+            add_moves_position(legal_moves, location, 0, 0, move_lists);
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 
