@@ -7,7 +7,7 @@
     "code-runner.executorMap": {
         "javascript": "node",
         "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
-        "c": "cd $dir && gcc -o main main.c values.c board.c piece.c bitwise.c testing.c uci.c engine.c transposition.c", // && ./main
+        "c": "cd $dir && gcc -o main main.c values.c board.c piece.c bitwise.c testing.c uci.c engine.c transposition.c && ./main",
         "zig": "zig run",
         "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
         "objective-c": "cd $dir && gcc -framework Cocoa $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",

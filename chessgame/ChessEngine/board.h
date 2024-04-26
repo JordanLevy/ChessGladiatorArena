@@ -20,8 +20,6 @@ void revive_piece(unsigned char id, int square);
 
 void move_piece(unsigned char id, int start, int end);
 
-void init_masks();
-
 void reset_board();
 
 int notation_to_number(char c, int i);

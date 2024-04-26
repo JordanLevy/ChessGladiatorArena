@@ -5,10 +5,21 @@
 #include "piece.h"
 #include "bitwise.h"
 #include "board.h"
+#include "testing.h"
+#include <stdio.h>
+#include <unistd.h>
 
 unsigned long long** rook_moves_lookup;
 unsigned long long* rook_magic_numbers;
+unsigned long long rook_masks[64] = {282578800148862,565157600297596,1130315200595066,2260630401190006,4521260802379886,9042521604759646,18085043209519166,36170086419038334,282578800180736,565157600328704,1130315200625152,2260630401218048,4521260802403840,9042521604775424,18085043209518592,36170086419037696,282578808340736,565157608292864,1130315208328192,2260630408398848,4521260808540160,9042521608822784,18085043209388032,36170086418907136,282580897300736,565159647117824,1130317180306432,2260632246683648,4521262379438080,9042522644946944,18085043175964672,36170086385483776,283115671060736,565681586307584,1130822006735872,2261102847592448,4521664529305600,9042787892731904,18085034619584512,36170077829103616,420017753620736,699298018886144,1260057572672512,2381576680245248,4624614895390720,9110691325681664,18082844186263552,36167887395782656,35466950888980736,34905104758997504,34344362452452352,33222877839362048,30979908613181440,26493970160820224,17522093256097792,35607136465616896,9079539427579068672,8935706818303361536,8792156787827803136,8505056726876686336,7930856604974452736,6782456361169985536,4485655873561051136,9115426935197958144};
+
 int* rook_magic_shift;
+
+unsigned long long** bishop_moves_lookup;
+unsigned long long* bishop_magic_numbers;
+unsigned long long bishop_masks[64] = {18049651735527936,70506452091904,275415828992,1075975168,38021120,8657588224,2216338399232,567382630219776,9024825867763712,18049651735527424,70506452221952,275449643008,9733406720,2216342585344,567382630203392,1134765260406784,4512412933816832,9024825867633664,18049651768822272,70515108615168,2491752130560,567383701868544,1134765256220672,2269530512441344,2256206450263040,4512412900526080,9024834391117824,18051867805491712,637888545440768,1135039602493440,2269529440784384,4539058881568768,1128098963916800,2256197927833600,4514594912477184,9592139778506752,19184279556981248,2339762086609920,4538784537380864,9077569074761728,562958610993152,1125917221986304,2814792987328512,5629586008178688,11259172008099840,22518341868716544,9007336962655232,18014673925310464,2216338399232,4432676798464,11064376819712,22137335185408,44272556441600,87995357200384,35253226045952,70506452091904,567382630219776,1134765260406784,2832480465846272,5667157807464448,11333774449049600,22526811443298304,9024825867763712,18049651735527936};
+
+int* bishop_magic_shift;
 
 // turns |color(1)|type(3)|spec(4)| into |0000|color(1)|type(3)| so colortype can be used as a 0-15 index
 unsigned char get_type(unsigned char id){
@@ -118,16 +129,24 @@ bool is_black_piece(int id){
     return id & BLACK;
 }
 
-void init_magic(){
+void init_rook_magic(){
+    //inishalis the magic nnumber array and the shif for a perticular magic number array
+    rook_magic_numbers = malloc(64 * sizeof(unsigned long long));
+    rook_magic_shift = malloc(64 * sizeof(int));
+    //this is to get the rooks (where the blockers could be)
+
     char cwd[1024];
+
+    // Get the current working directory
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         printf("Current working directory: %s\n", cwd);
     } else {
         perror("getcwd() error");
-        return;
     }
+
+
     // Open the file in read mode
-    FILE *file = fopen("magic_rook_nums.txt", "r");
+    FILE *file = openFileInProjectFolder("./magic_rook_nums.txt", "r");
 
     // Check if the file was opened successfully
     if (file == NULL) {
@@ -143,27 +162,78 @@ void init_magic(){
         printf("Error allocating rook_moves_lookup.\n");
         return;
     }
-    for(int i = 0; i < 64; i++){
-        rook_moves_lookup[i] = malloc((1 << (64-50)) * sizeof(unsigned long long));
 
-        if(rook_moves_lookup[i] == NULL){
-            printf("Error allocating rook_moves_lookup.\n");
-            return;
-        }
-    }
-    //inishalis the magic nnumber array and the shif for a perticular magic number array
-    rook_magic_numbers = malloc(64 * sizeof(unsigned long long));
-    rook_magic_shift = malloc(64 * sizeof(int));
-
+    int last_pos = -1;
     // Read each line from the file until the end
     // Use fscanf to parse values from the buffer
     while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
-            rook_moves_lookup[pos][index] = moves;
-            rook_magic_numbers[pos] = magic;
-            rook_magic_shift[pos] = shift;
+        if(pos != last_pos){
+            rook_moves_lookup[pos] = malloc((1 << (64-shift)) * sizeof(unsigned long long));
+            if(rook_moves_lookup[pos] == NULL){
+                printf("Error allocating rook_moves_lookup[%d].\n", pos);
+                return;
+            }
+        }
+        //printf("%d %llu %d %d\n", pos, magic, shift, index);
+        //print_bitboard(moves);
+        rook_moves_lookup[pos][index] = moves;
+        rook_magic_numbers[pos] = magic;
+        rook_magic_shift[pos] = shift;
+        last_pos = pos;
     }
     // Close the file
     fclose(file);
+}
+
+void init_bishop_magic(){
+    //inishalis the magic nnumber array and the shif for a perticular magic number array
+    bishop_magic_numbers = malloc(64 * sizeof(unsigned long long));
+    bishop_magic_shift = malloc(64 * sizeof(int));
+    //this is to get the rooks (where the blockers could be)
+
+    // Open the file in read mode
+    FILE *file = openFileInProjectFolder("./magic_bishop_nums.txt", "r");
+
+    // Check if the file was opened successfully
+    if (file == NULL) {
+        printf("Error opening the file.\n");
+        return;
+    }
+    // Variables to store the values read from the file
+    int pos, index, shift;
+    unsigned long long magic, moves;
+    bishop_moves_lookup = malloc(64 * sizeof(unsigned long long*));
+
+    if(bishop_moves_lookup == NULL){
+        printf("Error allocating bishop_moves_lookup.\n");
+        return;
+    }
+
+    int last_pos = -1;
+    // Read each line from the file until the end
+    // Use fscanf to parse values from the buffer
+    while(fscanf(file,"%d %llu %d %d %llu", &pos, &magic, &shift, &index, &moves) == 5){
+        if(pos != last_pos){
+            bishop_moves_lookup[pos] = malloc((1 << (64-shift)) * sizeof(unsigned long long));
+            if(bishop_moves_lookup[pos] == NULL){
+                printf("Error allocating bishop_moves_lookup[%d].\n", pos);
+                return;
+            }
+        }
+        //printf("%d %llu %d %d\n", pos, magic, shift, index);
+        //print_bitboard(moves);
+        bishop_moves_lookup[pos][index] = moves;
+        bishop_magic_numbers[pos] = magic;
+        bishop_magic_shift[pos] = shift;
+        last_pos = pos;
+    }
+    // Close the file
+    fclose(file);
+}
+
+void init_magic(){
+    init_rook_magic();
+    init_bishop_magic();
 }
 
 unsigned long long sliding_piece(unsigned long long mask, int location, unsigned long long blockers, bool rook_moves, bool bishop_moves, unsigned long long king_bb){
@@ -377,17 +447,32 @@ void possible_B(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | BISHOP | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, move_lists);
+        if(bishop_magic_enabled){
+            unsigned long long blockers = occupied & bishop_masks[location];
+            int index = get_index_from_magic(blockers, bishop_magic_numbers[location], bishop_magic_shift[location]);
+            add_moves_position(bishop_moves_lookup[location][index], location, 0, 0, move_lists);  
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, false, true, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 
 void possible_R(unsigned long long bb, unsigned long long mask, unsigned char color, MoveList* move_lists){
     unsigned char type = get_type(color | ROOK);
+    //for all the rooks 4 ish times
     for(int i = 0; i < next_spec[type]; i++){
         unsigned char id = color | ROOK | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, move_lists);
+        if(rook_magic_enabled){
+            unsigned long long blockers = occupied & rook_masks[location];
+            int index = get_index_from_magic(blockers, rook_magic_numbers[location], rook_magic_shift[location]);
+            add_moves_position(rook_moves_lookup[location][index], location, 0, 0, move_lists);  
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, true, false, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 
@@ -397,7 +482,24 @@ void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char co
         unsigned char id = color | QUEEN | i;
         int location = piece_location[id];
         if(location == -1) continue;
-        add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, move_lists);
+        if(queen_magic_enabled){
+            unsigned long long legal_moves = 0;
+
+            unsigned long long movement_mask = rook_masks[location];
+            unsigned long long rook_blockers = occupied & movement_mask;
+            int index = get_index_from_magic(rook_blockers, rook_magic_numbers[location], rook_magic_shift[location]);
+            legal_moves |= rook_moves_lookup[location][index];
+
+            unsigned long long movement_mask = bishop_masks[location];
+            unsigned long long bishop_blockers = occupied & movement_mask;
+            index = get_index_from_magic(bishop_blockers, bishop_magic_numbers[location], bishop_magic_shift[location]);
+            legal_moves |= bishop_moves_lookup[location][index];
+
+            add_moves_position(legal_moves, location, 0, 0, move_lists);
+        }
+        else{
+            add_moves_position(sliding_piece(mask, location, occupied, true, true, 0ULL), location, 0, 0, move_lists);
+        }
     }
 }
 

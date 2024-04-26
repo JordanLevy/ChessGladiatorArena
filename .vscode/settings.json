@@ -7,6 +7,8 @@
     ],
     "files.associations": {
         "random": "c",
-        "array": "c"
+        "array": "c",
+        "windows.h": "c",
+        "limits.h": "c"
     }
 }

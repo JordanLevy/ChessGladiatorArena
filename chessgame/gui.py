@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 import subprocess
+from enum import Enum
 
 import pygame
 from pygame.locals import *
@@ -104,9 +105,17 @@ engine_enabled = True
 
 path_to_exe = './ChessEngine/main.exe'
 
-blocker_mode_enabled = True
+
+class GameMode(Enum):
+    GAME = 0
+    ROOK_BLOCKERS = 1
+    BISHOP_BLOCKERS = 2
+    QUEEN_BLOCKERS = 3
+
+
+game_mode = GameMode.GAME
 blockers = 0
-rook_legal_moves = 0
+legal_moves = 0
 
 
 # get what file you are on given an index 0-63
@@ -341,6 +350,10 @@ def init_fen(fen):
             queenside_bR_num_moves = 0
 
 
+def blocker_mode_enabled():
+    return game_mode == GameMode.ROOK_BLOCKERS or game_mode == GameMode.BISHOP_BLOCKERS or game_mode == GameMode.QUEEN_BLOCKERS
+
+
 def draw_board():
     w_check = False
     b_check = False
@@ -362,16 +375,16 @@ def draw_board():
             square_color = WHITE
         # if a king is in check, color their square red
         if (w_check and piece_type == wK) or (b_check and piece_type == bK) or (
-                blocker_mode_enabled and rook_legal_moves & (1 << i)):
+                blocker_mode_enabled() and legal_moves & (1 << i)):
             square_color = RED
-        if prev_move and not blocker_mode_enabled:
+        if prev_move and not blocker_mode_enabled():
             if prev_move.start == i:
                 square_color = YELLOW
             elif prev_move.end == i:
                 square_color = YELLOW
         # draw the squares on the board
         pygame.draw.rect(screen, square_color, (350 - (i % 8) * 50, 350 - (i // 8) * 50, 50, 50))
-        if blocker_mode_enabled and blockers & (1 << i):
+        if blocker_mode_enabled() and blockers & (1 << i):
             screen.blit(pygame.transform.rotate(piece_img[bP], 0), (350 - (i % 8) * 50, 350 - (i // 8) * 50))
         # if there is a piece on this square and it's not currently being held
         elif piece_type != EMPTY_SQUARE and i != press_square:
@@ -513,7 +526,7 @@ def run_game(process):
                     else:
                         print("can't undo")
                 elif event.key == K_p:
-                    send_command(process, 'go perft 6')
+                    send_command(process, 'go perft 4')
                 elif event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:
@@ -522,6 +535,10 @@ def run_game(process):
                     promo_key = 'r'
                 elif event.key == K_q:
                     promo_key = 'q'
+                elif event.key == K_t:
+                    print('start')
+                    send_command(process, 'generate_magic')
+                    pygame.time.wait(200)
                 else:
                     promo_key = ''
             if event.type == KEYUP:
@@ -567,8 +584,8 @@ def run_game(process):
         main_clock.tick(100)
 
 
-def rook_magic_squares_view(process):
-    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
+def magic_squares_view(process):
+    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start, blockers
     screen = pygame.display.set_mode((400, 400), 0, 32)
     main_clock = pygame.time.Clock()
     pygame.display.init()
@@ -577,52 +594,29 @@ def rook_magic_squares_view(process):
     clicking = False
     init_board()
     init_fen('8/8/8/8/8/8/8/8 w - - 0 1')
-    add_piece(0, wR)
+    if(game_mode == GameMode.ROOK_BLOCKERS):
+        add_piece(0, wR)
+        piece_type = 'r'
+    elif(game_mode == GameMode.BISHOP_BLOCKERS):
+        add_piece(0, wB)
+        piece_type = 'b'
+    elif(game_mode == GameMode.QUEEN_BLOCKERS):
+        add_piece(0, wQ)
+        piece_type = 'q'
     refresh_graphics()
     press_xy = (-1, -1)
     release_xy = (-1, -1)
     press_square = -1
     release_square = -1
 
-    rook_pos = 0
-    blocker_index = 0
-    blocker_interval = 1
-    blocker_max = 12
-    wait_time = 200
+    pos = 0
 
     while True:
         mouse_xy = pygame.mouse.get_pos()
-        keys = pygame.key.get_pressed()
-        if keys[K_LSHIFT]:
-            wait_time = 0
-        else:
-            wait_time = 200
-        if keys[K_LEFT]:
-            blocker_index -= blocker_interval
-            blocker_index = max(blocker_index, 0)
-            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
-            pygame.time.wait(wait_time)
-        if keys[K_RIGHT]:
-            blocker_index += blocker_interval
-            blocker_index = min(blocker_index, 2 ** blocker_max - 1)
-            print('get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-            send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
-            pygame.time.wait(wait_time)
-        if keys[K_t]:
-            send_command(process, 'generate_magic')
-            pygame.time.wait(wait_time)
-        if keys[K_o]:
-            send_command(process, 'cancel_magic_search')
-            pygame.time.wait(wait_time)
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_m:
-                    send_command(process, 'write_rook_moves_lookup_to_file')
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == BUTTON_LEFT and not clicking:
                     clicking = True
@@ -640,16 +634,19 @@ def rook_magic_squares_view(process):
                     # can't start and end a move on the same square
                     if press_square != release_square and piece != 0:
                         # human move
-                        rook_pos = release_square
-                        blocker_max = 10
-                        if get_rank(release_square) in [0, 7]:
-                            blocker_max += 1
-                        if get_file(release_square) in [0, 7]:
-                            blocker_max += 1
-                        blocker_index = min(blocker_index, 2 ** blocker_max - 1)
+                        pos = release_square
                         apply_move(press_square, release_square, 0)
-                        send_command(process, 'get_blockers ' + str(rook_pos) + ' ' + str(blocker_index))
-                        send_command(process, 'get_rook_legal_moves ' + str(rook_pos) + ' ' + str(blocker_index))
+                        send_command(process, 'get_legal_moves ' + piece_type + ' ' + str(pos) + ' ' + str(blockers))
+                    else:
+                        if get_piece(release_square):
+                            next_spec[bP] -= 1
+                            set_piece(release_square, EMPTY_SQUARE)
+                        else:
+                            add_piece(release_square, bP)
+                        print(release_square)
+                        blockers ^= (1 << release_square)
+                        print(blockers)
+                        send_command(process, 'get_legal_moves ' + piece_type + ' ' + str(pos) + ' ' + str(blockers))
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -661,6 +658,23 @@ def rook_magic_squares_view(process):
         pygame.display.update()
         main_clock.tick(100)
 
+def get_max_rook_blockers():
+    blocker_max = 10
+    if get_rank(release_square) in [0, 7]:
+        blocker_max += 1
+    if get_file(release_square) in [0, 7]:
+        blocker_max += 1
+    return blocker_max
+
+def get_max_bishop_blockers():
+    blocker_max = 5
+    if get_file(release_square) in [2, 3, 4, 5] and get_rank(release_square) in [2, 3, 4, 5]:
+        blocker_max += 2
+    if get_file(release_square) in [3, 4] and get_rank(release_square) in [3, 4]:
+        blocker_max += 2
+    if get_file(release_square) in [0, 7] and get_rank(release_square) in [0, 7]:
+        blocker_max += 1
+    return blocker_max
 
 def init_process(path):
     return subprocess.Popen([path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -675,7 +689,10 @@ def open_communication():
     process = init_process(path_to_exe)
     read_thread = threading.Thread(target=read_from_process, args=(process,))
     # write_thread = threading.Thread(target=write_to_process, args=(process,))
-    game_thread = threading.Thread(target=run_game, args=(process,))
+    mode = magic_squares_view
+    if(game_mode == GameMode.GAME):
+        mode = run_game
+    game_thread = threading.Thread(target=mode, args=(process,))
     read_thread.start()
     # write_thread.start()
     game_thread.start()
@@ -691,7 +708,7 @@ def close_communication(process):
 
 
 def read_from_process(process):
-    global blockers, rook_legal_moves
+    global blockers, legal_moves
     while True:
         output = process.stdout.readline()
         if output == b'':
@@ -709,32 +726,10 @@ def read_from_process(process):
             fen = board_to_fen()
             position_list.append(fen)
             refresh_graphics()
-        elif response.startswith('blockers'):
-            cmd, b = response.split(' ')
-            blockers = int(b)
-            refresh_graphics()
-        elif response.startswith('rook_legal_moves'):
+        elif response.startswith('legal_moves'):
             cmd, r = response.split(' ')
-            rook_legal_moves = int(r)
+            legal_moves = int(r)
             refresh_graphics()
 
 
-def open_communication_rook_magic_squares():
-    process = init_process(path_to_exe)
-    read_thread = threading.Thread(target=read_from_process, args=(process,))
-    # write_thread = threading.Thread(target=write_to_process, args=(process,))
-    game_thread = threading.Thread(target=rook_magic_squares_view, args=(process,))
-    read_thread.start()
-    # write_thread.start()
-    game_thread.start()
-    read_thread.join()
-    # write_thread.join()
-    game_thread.join()
-    print('close communication')
-    close_communication(process)
-
-
-if blocker_mode_enabled:
-    open_communication_rook_magic_squares()
-else:
-    open_communication()
+open_communication()

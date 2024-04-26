@@ -127,29 +127,39 @@ void inputGo(char* input){
     }
 }
 
-void inputBlockers(char* input){
-    int rook_pos;
-    int blocker_index;
-    sscanf(input, "get_blockers %d %d", &rook_pos, &blocker_index);
-    unsigned long long movement_mask = get_rook_masks(rook_pos);
-    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
-    printf("blockers %llu\n", blockers[blocker_index]);        
+
+void inputLegalMoves(char* input){
+    int pos;
+    char type;
+    unsigned long long blockers;
+    int index;
+    sscanf(input, "get_legal_moves %c %d %llu",&type, &pos, &blockers);
+    unsigned long long legal_moves = 0;
+    if(type == 'r' || type == 'q'){
+        unsigned long long movement_mask = rook_masks[pos];
+        unsigned long long rook_blockers = blockers & movement_mask;
+        index = get_index_from_magic(rook_blockers, rook_magic_numbers[pos], rook_magic_shift[pos]);
+        legal_moves |= rook_moves_lookup[pos][index];
+    }
+    if(type == 'b' || type == 'q'){
+        unsigned long long movement_mask = bishop_masks[pos];
+        unsigned long long bishop_blockers = blockers & movement_mask;
+        index = get_index_from_magic(bishop_blockers, bishop_magic_numbers[pos], bishop_magic_shift[pos]);
+        legal_moves |= bishop_moves_lookup[pos][index];
+    }
+    printf("legal_moves %llu\n", legal_moves);
 }
 
-void inputRookLegalMoves(char* input){
-    int rook_pos;
+void inputBishopLegalMoves(char* input){
+    int bishop_pos;
     int blocker_config;
     int index;
-    printf("we are geting to the first\n");
-    sscanf(input, "get_rook_legal_moves %d %d", &rook_pos, &blocker_config);
-    printf("after the scanf\n");
-    unsigned long long movement_mask = get_rook_masks(rook_pos);
-    unsigned long long* blockers = get_blockers_rook_single_square(movement_mask);
-    printf("too llu asining\n");
-    index = get_index_from_magic(blockers[blocker_config], rook_magic_numbers[rook_pos], rook_magic_shift[rook_pos]);
-    printf("index is done\n");
-    unsigned long long rook_legal_moves = rook_moves_lookup[rook_pos][index];
-    printf("rook_legal_moves %llu\n", rook_legal_moves);
+    sscanf(input, "get_bishop_legal_moves %d %d", &bishop_pos, &blocker_config);
+    unsigned long long movement_mask = bishop_masks[bishop_pos];
+    unsigned long long* blockers = get_blockers_bishop_single_square(movement_mask);
+    index = get_index_from_magic(blockers[blocker_config], bishop_magic_numbers[bishop_pos], bishop_magic_shift[bishop_pos]);
+    unsigned long long bishop_legal_moves = bishop_moves_lookup[bishop_pos][index];
+    printf("legal_moves %llu\n", bishop_legal_moves);
 }
 
 void uci_communication(){
@@ -180,17 +190,17 @@ void uci_communication(){
                 inputGo(command);
             } else if(startswith(command, "quit")) {
                 break;
-            } else if(startswith(command, "get_blockers")) {
+            } else if(startswith(command, "get_legal_moves")) {
                 printf("%s\n", command);
-                inputBlockers(command);
-            } else if(startswith(command, "get_rook_legal_moves")) {
-                printf("%s\n", command);
-                inputRookLegalMoves(command);
+                inputLegalMoves(command);
             } else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
+                
+
+                printf("\n");
                 unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
                 int* result_shift = (int*)calloc(64, sizeof(int));
-                generate_rook_magic_numbers(48, 2000, result_magic, result_shift, 3);
+                generate_rook_magic_numbers(48, 200, result_magic, result_shift, 5, 300);
                 for(int i = 0; i < 64; i++){
                     printf("%d magic number: %llu, shift: %d\n", i, result_magic[i], result_shift[i]);
                 }
@@ -202,7 +212,7 @@ void uci_communication(){
                 *cancellationToken = true;
             }
             else {
-                printf("Invalid command.\n");
+                printf("Invalid command. %s\n", command);
             }
             fflush(stdout);
         }
