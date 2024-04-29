@@ -356,6 +356,6 @@ char *start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
 bool uci_enabled = true;
 
 //this is for inablaling the magic numbers in rook moves
-bool rook_magic_enabled = true;
-bool bishop_magic_enabled = true;
-bool queen_magic_enabled = true;
+bool rook_magic_enabled = false;
+bool bishop_magic_enabled = false;
+bool queen_magic_enabled = false;

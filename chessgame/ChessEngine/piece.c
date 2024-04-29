@@ -490,7 +490,7 @@ void possible_Q(unsigned long long bb, unsigned long long mask, unsigned char co
             int index = get_index_from_magic(rook_blockers, rook_magic_numbers[location], rook_magic_shift[location]);
             legal_moves |= rook_moves_lookup[location][index];
 
-            unsigned long long movement_mask = bishop_masks[location];
+            movement_mask = bishop_masks[location];
             unsigned long long bishop_blockers = occupied & movement_mask;
             index = get_index_from_magic(bishop_blockers, bishop_magic_numbers[location], bishop_magic_shift[location]);
             legal_moves |= bishop_moves_lookup[location][index];
