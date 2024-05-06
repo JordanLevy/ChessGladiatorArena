@@ -286,7 +286,6 @@ int num_moves = 0;
 bool white_turn = true;
 
 unsigned long long bitboards[15] = {0ULL};
-Move move_list[256];
 
 unsigned long long not_black_pieces = 0ULL;
 unsigned long long not_white_pieces = 0ULL;
@@ -359,3 +358,6 @@ bool uci_enabled = true;
 bool rook_magic_enabled = false;
 bool bishop_magic_enabled = false;
 bool queen_magic_enabled = false;
+
+//this is for enpassant
+int enpassant_square = -1;

@@ -28,7 +28,7 @@ int main(){
     free(result_magic);
     free(result_shift);*/
     uci_communication();
-    return 0;
+        return 0;
 }
 //get_blockers [rook_pos] [blocker_index]
 //get_num_blockers [rook_pos]

@@ -153,7 +153,6 @@ extern int num_moves;
 extern bool white_turn;
 
 extern unsigned long long bitboards[15];
-extern Move move_list[256];
 
 extern unsigned long long not_black_pieces;
 extern unsigned long long not_white_pieces;
@@ -226,5 +225,8 @@ extern bool uci_enabled;
 extern bool rook_magic_enabled;
 extern bool bishop_magic_enabled;
 extern bool queen_magic_enabled;
+
+//this is for enpassant squair
+extern int enpassant_square;
 
 #endif

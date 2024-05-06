@@ -68,8 +68,6 @@ void flip_turns();
 
 bool apply_move(int start, int end, int move_id);
 
-void undo_move();
-
 bool get_white_check();
 
 bool get_black_check();
