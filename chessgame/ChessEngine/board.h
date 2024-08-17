@@ -1,3 +1,5 @@
+#include <string.h>
+
 #ifndef BOARD_H_INCLUDED
 #define BOARD_H_INCLUDED
 
@@ -5,6 +7,38 @@
 #define CAN_CASTLE_WQ 2
 #define CAN_CASTLE_BK 4
 #define CAN_CASTLE_BQ 8
+
+// preserve board state
+#define copy_board()                                             \
+    unsigned char board_copy[64];                                \
+    unsigned long long bitboards_copy[15];                       \
+    unsigned long long white_pieces_copy = white_pieces;         \
+    unsigned long long black_pieces_copy = black_pieces;         \
+    unsigned long long not_white_pieces_copy = not_white_pieces; \
+    unsigned long long not_black_pieces_copy = not_black_pieces; \
+    unsigned long long empty_copy = empty;                       \
+    unsigned long long occupied_copy = occupied;                 \
+    COPY_ARRAY(board_copy, board, 64);                           \
+    COPY_ARRAY(bitboards_copy, bitboards, 15);                   \
+    bool white_turn_copy = white_turn;                           \
+    int  enpassant_square_copy = enpassant_square;               \
+    int castling_rights_copy = castling_rights;                  \
+//unsigned long long hash_key_copy = hash_key;
+
+// restore board state
+//the new undo_move
+#define take_back()                            \
+    COPY_ARRAY(board, board_copy, 64);         \
+    COPY_ARRAY(bitboards, bitboards_copy, 15); \
+    white_pieces = white_pieces_copy;          \
+    black_pieces = black_pieces_copy;          \
+    not_white_pieces = not_white_pieces_copy;  \
+    not_black_pieces = not_black_pieces_copy;  \
+    empty = empty_copy;                        \
+    occupied = occupied_copy;                  \
+    white_turn = white_turn_copy;              \
+    enpassant_square = enpassant_square_copy;  \
+    castling_rights = castling_rights_copy;    \
 
 unsigned char get_piece(int square);
 
@@ -42,15 +76,9 @@ void add_moves_offset(unsigned long long mask, int start_offset, int end_offset,
 
 void add_moves_position(unsigned long long mask, int start_position, int min_id, int max_id, MoveList* move_lists);
 
-unsigned long long unsafe_for_white();
-
-unsigned long long unsafe_for_black();
-
 bool white_in_check();
 
 bool black_in_check();
-
-void update_unsafe();
 
 bool white_in_checkmate(int numMoves);
 
@@ -71,8 +99,6 @@ bool apply_move(int start, int end, int move_id);
 bool get_white_check();
 
 bool get_black_check();
-
-bool try_undo_move();
 
 bool is_game_legal_move(int start, int end, int promo);
 

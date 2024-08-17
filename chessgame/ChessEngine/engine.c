@@ -133,6 +133,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     update_possible_moves(move_lists);
     order_moves(move_lists[ALL].moves, move_lists[ALL].size, player);
+    print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);
     Move move;
 
     if(move_lists[ALL].size == 0){
@@ -159,12 +160,25 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int maxEval = INT_MIN;
         for(int i = 0; i < move_lists[ALL].size; i++){
             move = move_lists[ALL].moves[i];
-            apply_move(move.start, move.end, move.move_id);
+            printf("%d beforew\n", depth);
+            draw_board();
+            printf("\n");
+            copy_board();
+            bool succeeded = apply_move(move.start, move.end, move.move_id);
+            if(!succeeded){
+                printf("%d failedw\n", depth);
+                draw_board();
+                print_move(move);
+                printf("\n");
+                exit(5);
+            }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
-            undo_move();
+            take_back();
+            printf("%d afterw\n", depth);
+            draw_board();
+            printf("\n");
             decr_num_moves();
-            flip_turns();
             if(evaluation > maxEval){
                 maxEval = evaluation;
                 best_line[depth] = move;
@@ -186,12 +200,25 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int minEval = INT_MAX;
         for(int i = 0; i < move_lists[ALL].size; i++){
             move = move_lists[ALL].moves[i];
-            apply_move(move.start, move.end, move.move_id);
+            printf("%d beforeb\n", depth);
+            draw_board();
+            printf("\n");
+            copy_board();
+            bool succeeded = apply_move(move.start, move.end, move.move_id);
+            if(!succeeded){
+                printf("%d failedb\n", depth);
+                draw_board();
+                print_move(move);
+                printf("\n");
+                exit(5);
+            }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
-            undo_move();
+            take_back();
+            printf("%d afterb\n", depth);
+            draw_board();
+            printf("\n");
             decr_num_moves();
-            flip_turns();
             if(evaluation < minEval){
                 minEval = evaluation;
                 best_line[depth] = move;
@@ -234,14 +261,27 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
 
     for(int i = 0; i < move_lists[ALL].size; i++){
         move = move_lists[ALL].moves[i];
-        apply_move(move.start, move.end, move.move_id);
+        printf("before\n");
+        draw_board();
+        printf("\n");
+        copy_board();
+        bool succeeded = apply_move(move.start, move.end, move.move_id);
+        if(!succeeded){
+            printf("failed\n");
+            draw_board();
+            print_move(move);
+            printf("\n");
+            exit(5);
+        }
         line[depth] = move;
         ply++;
         val = -search_moves_transposition(depth - 1, start_depth, -beta, -alpha, !player, line, best_line);
         ply--;
-        undo_move();
+        take_back();
+        printf("after\n");
+        draw_board();
+        printf("\n");
         decr_num_moves();
-        flip_turns();
         if(val >= beta){
             WriteHash(depth, beta, BETA_FLAG);
             free(move_lists[ALL].moves);
@@ -299,13 +339,13 @@ int search_moves_captures(int alpha, int beta, bool player){
         if(move.capture == EMPTY_SQUARE){
             continue;
         }
+        copy_board();
         apply_move(move.start, move.end, move.move_id);
         ply++;
         val = -search_moves_captures(-beta, -alpha, !player);
         ply--;
-        undo_move();
+        take_back();
         decr_num_moves();
-        flip_turns();
         if(val >= beta){
             free(move_lists[ALL].moves);
             free(move_lists);

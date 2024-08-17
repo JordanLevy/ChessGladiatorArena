@@ -187,24 +187,12 @@ extern bool black_check;
 
 extern int num_pieces_delivering_check;
 extern unsigned long long blocking_squares;
-extern unsigned long long pinning_squares[64];
-extern int en_passant_pinned;
 
 // piece id of the 4 rooks you can castle with
 extern unsigned char kingside_wR;
 extern unsigned char queenside_wR;
 extern unsigned char kingside_bR;
 extern unsigned char queenside_bR;
-
-// number of times each of the 4 castling rooks has moved
-extern int kingside_wR_num_moves;
-extern int queenside_wR_num_moves;
-extern int kingside_bR_num_moves;
-extern int queenside_bR_num_moves;
-
-// number of times each king has moved
-extern int wK_num_moves;
-extern int bK_num_moves;
 
 // given a square 0-63, get the piece_id of the piece on that square
 extern unsigned char board[64];

@@ -321,23 +321,12 @@ bool black_check = false;
 int num_pieces_delivering_check = 0;
 unsigned long long blocking_squares = 0ULL;
 unsigned long long pinning_squares[64] = {0ULL};
-int en_passant_pinned = -1;
 
 // piece id of the 4 rooks you can castle with
 unsigned char kingside_wR = EMPTY_SQUARE;
 unsigned char queenside_wR = EMPTY_SQUARE;
 unsigned char kingside_bR = EMPTY_SQUARE;
 unsigned char queenside_bR = EMPTY_SQUARE;
-
-// number of times each of the 4 castling rooks has moved
-int kingside_wR_num_moves = 0;
-int queenside_wR_num_moves = 0;
-int kingside_bR_num_moves = 0;
-int queenside_bR_num_moves = 0;
-
-// number of times each king has moved
-int wK_num_moves = 0;
-int bK_num_moves = 0;
 
 // given a square 0-63, get the piece_id of the piece on that square
 unsigned char board[64] = {EMPTY_SQUARE};

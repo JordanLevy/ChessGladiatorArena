@@ -262,15 +262,8 @@ unsigned long long sliding_piece(unsigned long long mask, int location, unsigned
 
     unsigned long long d = 0ULL;
     unsigned long long new_squares = 0ULL;
-    // bitboard with ones on a straight line from this piece to the enemy king
-    unsigned long long king_line = 0ULL;
-    // bitboard possible pinning line
-    unsigned long long pos_pin = 0ULL;
     // number of pieces along the possible pinning line
     int counter = 0;
-    // location of up to 2 pieces on the possible pinning line
-    // only one piece can be pinned, but 2 pawns can be pinned w/ en passant
-    int pin_loc[] = {-1, -1};
 
     // for each direction this piece can move along
     for(int k = 0; k < 4; k++){
@@ -291,85 +284,12 @@ unsigned long long sliding_piece(unsigned long long mask, int location, unsigned
             blocking_squares |= line_between_pieces(d, location, king_square);
             blocking_squares |= slider;
         }
-        // if this function was called with the king_bb parameter (checking for pins)
-        else if(king_square >= 0){
-            // draw a line from this piece to the enemy king
-            king_line = line_between_pieces(d, location, king_square);
-            // if there is no such line, continue. Piece doesn't pin in this direction
-            if(!king_line){
-                continue;
-            }
-            // pieces on the line between the piece and the king could possibly be pinned
-            pos_pin = blockers & king_line;
-
-            // count and store the first two pieces on the king line
-            counter = 0;
-            pin_loc[0] = -1;
-            pin_loc[1] = -1;
-            for(int i = 0; i < 64; i++){
-                if((1ULL << i) & pos_pin){
-                    counter += 1;
-                    if(counter > 2){
-                        break;
-                    }
-                    pin_loc[counter - 1] = i;
-                }
-            }
-            // if there is only one piece on the pinning line
-            if(counter == 1){
-                bool pinned_piece_color = is_white_piece(get_piece(pin_loc[0]));
-                // if the piece is the same color as the king, consider it pinned
-                if(pinned_piece_color == king_color){
-                    // pinned piece may capture the piece that delivers the pin
-                    king_line = king_line | slider;
-                    // pinned piece is restricted to only move along the pinning line
-                    pinning_squares[pin_loc[0]] = king_line;
-                }
-            }
-            // if there are two pieces on this pinning line
-            else if(counter == 2){
-                int p1 = get_piece(pin_loc[0]);
-                int p2 = get_piece(pin_loc[1]);
-                // and they are opposite colored pawns
-                if((p1 == 1 && p2 == 7) || (p1 == 7 && p2 == 1)){
-                    // and this isn't the first move of the game
-                    if(num_moves > 0){
-                        // get the previous move
-                        Move move = move_list[num_moves - 1];
-                        // and the previous move was a double pawn push
-                        if(move.move_id == 13){
-                            // we only care about this en passant pinning situation horizontally
-                            // everything else is handled via regular pins
-                            if(get_rank(pin_loc[0]) == get_rank(pin_loc[1])){
-                                // if it's a white pawn
-                                if(is_white_piece(get_piece(move.end))){
-                                    // mark that it is illegal for white to capture en passant on that square
-                                    en_passant_pinned = move.end - 8;
-                                }
-                                else{
-                                    // mark that it is illegal for black to capture en passant on that square
-                                    en_passant_pinned = move.end + 8;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
     return squares;
 }
 
 void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned long long promo_rank, unsigned long long enemy_pawns, unsigned long long double_push_rank, int fwd, unsigned char color, MoveList* move_lists){
     bool is_white = (color == WHITE);
-    int e = 0;
-    int m = 0;
-    Move prev_move;
-    if(num_moves > 0){
-        prev_move = move_list[num_moves - 1];
-        e = prev_move.end;
-        m = prev_move.move_id;
-    }
 
     int promo_min = bN;
     int promo_max = bQ;
@@ -410,7 +330,16 @@ void possible_P(unsigned long long bb, unsigned long long can_capture, unsigned 
     add_moves_offset(mask, -fwd * 8, 0, promo_min, promo_max, move_lists);
 
     // if the previous move was a double pawn push, en passant might be possible
-    if(m == DOUBLE_PAWN_PUSH){
+    if(enpassant_square != -1){
+        int e = 0;
+
+        if(color == WHITE){
+            e = enpassant_square - 8;
+        }
+        else{
+            e = enpassant_square + 8;
+        }
+
         unsigned long long pushed_pawn_location = 1ULL << e;
 
         // left en passant
@@ -525,27 +454,27 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
         return;
     }
     // this is white king, hasn't moved yet
-    if(is_white && wK_num_moves == 0){
+    if(is_white){
         // white queenside castle
-        if(piece_location[queenside_wR] == 7 && queenside_wR_num_moves == 0){
+        if(castling_rights & CAN_CASTLE_WQ){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, move_lists);
         }
         // white kingside castle
-        if(piece_location[kingside_wR] == 0 && kingside_wR_num_moves == 0){
+        if(castling_rights & CAN_CASTLE_WK){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, move_lists);
         }
     }
     // this is black king, hasn't moved yet
-    else if(!is_white && bK_num_moves == 0){
+    else if(!is_white){
         // black queenside castle
-        if(piece_location[queenside_bR] == 63 && queenside_bR_num_moves == 0){
+        if(castling_rights & CAN_CASTLE_BQ){
             squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
             add_moves_offset(squares, -2, 0, 0, 0, move_lists);
         }
         // black kingside castle
-        if(piece_location[kingside_bR] == 56 && kingside_bR_num_moves == 0){
+        if(castling_rights & CAN_CASTLE_BK){
             squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
             add_moves_offset(squares, 2, 0, 0, 0, move_lists);
         }
@@ -563,7 +492,6 @@ void update_piece_masks(){
 
 void possible_moves_white(MoveList* move_lists){
     update_piece_masks();
-    update_unsafe();
     //2 is jenarick because we have 2 lists right now 
     //this could change in the futcher
     move_lists[ALL].size = 0;
@@ -577,7 +505,6 @@ void possible_moves_white(MoveList* move_lists){
 
 void possible_moves_black(MoveList* move_lists){
     update_piece_masks();
-    update_unsafe();
     //2 is jenarick because we have 2 lists right now 
     //this could change in the futcher
     move_lists[ALL].size = 0;
@@ -635,7 +562,6 @@ bool apply_castling(unsigned char id, int start, int end){
             piece_location[queenside_wR] = 4;
             is_castling = true;
         }
-        wK_num_moves++;
     }
     else if(type == bK){
         //black kingside castling
@@ -650,26 +576,8 @@ bool apply_castling(unsigned char id, int start, int end){
             piece_location[queenside_bR] = 60;
             is_castling = true;
         }
-        bK_num_moves++;
     }
     return is_castling;
-}
-
-// if they moved one of the castling rooks, decrement the number of moves it has made
-// given the id of the piece that was moved, and whose turn it was
-void undo_rook_move(unsigned char id){
-    if(id == kingside_wR){
-        kingside_wR_num_moves--;
-    }
-    else if(id == queenside_wR){
-        queenside_wR_num_moves--;
-    }
-    else if(id == kingside_bR){
-        kingside_bR_num_moves--;
-    }
-    else if(id == queenside_bR){
-        queenside_bR_num_moves--;
-    }
 }
 
 /*

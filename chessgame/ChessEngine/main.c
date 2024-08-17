@@ -18,6 +18,10 @@ int main(){
     init_zobrist_keys();
     init_hash_table();
     init_magic();
+    char* fen = start_position;
+    size_t fen_length = strlen(fen);
+    init_fen(fen, fen_length);
+    draw_board();
     /*unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
     int* result_shift = (int*)calloc(64, sizeof(int));
     generate_bishop_magic_numbers(50, 1000, result_magic, result_shift, 15, 30);
@@ -28,7 +32,7 @@ int main(){
     free(result_magic);
     free(result_shift);*/
     uci_communication();
-        return 0;
+    return 0;
 }
 //get_blockers [rook_pos] [blocker_index]
 //get_num_blockers [rook_pos]

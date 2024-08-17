@@ -3,7 +3,9 @@
 
 #include "values.h"
 
-void print_legal_moves(Move *moves, int *numMoves);
+#define COPY_ARRAY(dest, src, n) memcpy((dest), (src), (n) * sizeof(*(src)))
+
+void print_legal_moves(Move *moves, int numMoves);
 
 void print_move(Move move);
 
@@ -54,5 +56,7 @@ void generate_bishop_magic_numbers(int min_shift, int num_iterations, unsigned l
 int get_index_from_magic(unsigned long long blocker, unsigned long long magic_number, int shift);
 
 unsigned long long get_blocker_rook_single_square(unsigned long long movement, int pattern_index);
+
+void test_take_back(char* position);
 
 #endif

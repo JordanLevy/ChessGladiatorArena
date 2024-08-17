@@ -526,7 +526,7 @@ def run_game(process):
                     else:
                         print("can't undo")
                 elif event.key == K_p:
-                    send_command(process, 'go perft 4')
+                    send_command(process, 'go perft 2')
                 elif event.key == K_n:
                     promo_key = 'n'
                 elif event.key == K_b:

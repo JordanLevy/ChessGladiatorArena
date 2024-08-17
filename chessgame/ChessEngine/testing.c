@@ -17,8 +17,8 @@
 #include <unistd.h>
 #endif
 
-void print_legal_moves(Move* moves, int *numMoves){
-    for(int i = 0; i < (*numMoves); i++){
+void print_legal_moves(Move* moves, int numMoves){
+    for(int i = 0; i < numMoves; i++){
         Move move = moves[i];
         int s = move.start;
         int e = move.end;
@@ -68,11 +68,11 @@ unsigned long long perft_test(int depth){
 
     for(int i = 0; i < move_lists[ALL].size; i++){
         move = move_lists[ALL].moves[i];
+        copy_board();
         apply_move(move.start, move.end, move.move_id);
         num_positions += perft_test(depth - 1);
-        undo_move();
+        take_back();
         decr_num_moves();
-        flip_turns();
         update_piece_masks();
     }
 
@@ -102,6 +102,7 @@ unsigned long long detailed_perft(int depth){
     for(int i = 0; i < move_lists[ALL].size; i++){
 
         move = move_lists[ALL].moves[i];
+        copy_board();
         apply_move(move.start, move.end, move.move_id);
         n = perft_test(depth - 1);
         num_positions += n;
@@ -116,9 +117,8 @@ unsigned long long detailed_perft(int depth){
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
         printf("%c%d\t%d\t%d\n", file, rank, m, n);
-        undo_move();
+        take_back();
         decr_num_moves();
-        flip_turns();
     }
 
         free(move_lists[ALL].moves);
@@ -503,4 +503,13 @@ void generate_bishop_magic_numbers(int min_shift, int num_iterations, unsigned l
             }
         }
     }
+}
+
+void test_take_back(char* position){
+    init_fen(position, strlen(position));
+    draw_board();
+    copy_board();
+    apply_move(12, 28, 0);
+    take_back();
+    draw_board();
 }
