@@ -8,6 +8,8 @@ from enum import Enum
 
 import pygame
 from pygame.locals import *
+import os
+
 
 
 class Move:
@@ -103,7 +105,8 @@ bK_num_moves = 0
 show_spec = True
 engine_enabled = True
 
-path_to_exe = './ChessEngine/main.exe'
+file_dir=os.path.dirname(os.path.realpath(__file__))
+path_to_exe = file_dir +"\ChessEngine\main.exe"
 
 
 class GameMode(Enum):
@@ -677,7 +680,7 @@ def get_max_bishop_blockers():
     return blocker_max
 
 def init_process(path):
-    return subprocess.Popen([path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    return subprocess.Popen([path], stdin=subprocess.PIPE, stdout=subprocess.PIPE,shell=True)
 
 
 def send_command(process, cmd):
