@@ -133,7 +133,7 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
 
     update_possible_moves(move_lists);
     order_moves(move_lists[ALL].moves, move_lists[ALL].size, player);
-    print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);
+    //print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);
     Move move;
 
     if(move_lists[ALL].size == 0){
@@ -160,24 +160,15 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int maxEval = INT_MIN;
         for(int i = 0; i < move_lists[ALL].size; i++){
             move = move_lists[ALL].moves[i];
-            printf("%d beforew\n", depth);
-            draw_board();
-            printf("\n");
             copy_board();
             bool succeeded = apply_move(move.start, move.end, move.move_id);
             if(!succeeded){
                 printf("%d failedw\n", depth);
-                draw_board();
-                print_move(move);
-                printf("\n");
                 exit(5);
             }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
             take_back();
-            printf("%d afterw\n", depth);
-            draw_board();
-            printf("\n");
             decr_num_moves();
             if(evaluation > maxEval){
                 maxEval = evaluation;
@@ -200,24 +191,18 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
         int minEval = INT_MAX;
         for(int i = 0; i < move_lists[ALL].size; i++){
             move = move_lists[ALL].moves[i];
-            printf("%d beforeb\n", depth);
-            draw_board();
-            printf("\n");
+            if(move.start == 52 && move.end == 36){
+                int a = 1;
+            }
             copy_board();
             bool succeeded = apply_move(move.start, move.end, move.move_id);
             if(!succeeded){
                 printf("%d failedb\n", depth);
-                draw_board();
-                print_move(move);
-                printf("\n");
                 exit(5);
             }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
             take_back();
-            printf("%d afterb\n", depth);
-            draw_board();
-            printf("\n");
             decr_num_moves();
             if(evaluation < minEval){
                 minEval = evaluation;

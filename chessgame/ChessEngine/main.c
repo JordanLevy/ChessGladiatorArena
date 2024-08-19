@@ -13,6 +13,7 @@
 #include "testing.h"
 #include "uci.h"
 #include "transposition.h"
+#include "engine.h"
 
 int main(){
     init_zobrist_keys();
