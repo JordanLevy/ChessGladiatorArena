@@ -105,6 +105,12 @@ void quick_sort(int* scores, Move* legal_moves, int low, int hi){
 // this function should order the moves that we search
 // best moves at the start of the list
 void order_moves(Move* ordered, int size, bool is_white_turn){
+    if(size > 80){
+        draw_board();
+        printf("white_turn: %d\n", is_white_turn);
+        print_legal_moves(ordered, size);
+        exit(1);
+    }
     int* move_val = (int*)malloc(size * sizeof(int));
     for(int i = 0; i < size; i++){
         move_val[i] = calc_static_move_eval(ordered[i], is_white_turn);
@@ -131,8 +137,21 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
     move_lists[ALL].size = 0; 
     move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
 
+    if(bitboards[0] == 0ULL && bitboards[1] == 42511517576331264ULL && bitboards[2] == 4611686018427387920ULL && bitboards[3] == 288230376151711744ULL && bitboards[4] == 9295429630892703744ULL && bitboards[5] == 1152921504606846976ULL && bitboards[6] == 576460752303423488ULL && bitboards[7] == 0ULL && bitboards[8] == 0ULL && bitboards[9] == 18014398513718016ULL && bitboards[10] == 66ULL 
+&& bitboards[11] == 36ULL && bitboards[12] == 129ULL && bitboards[13] == 0ULL && bitboards[14] == 8ULL) {
+        draw_board();
+    }
+
     update_possible_moves(move_lists);
+    if(bitboards[0] == 0ULL && bitboards[1] == 42511517576331264ULL && bitboards[2] == 4611686018427387920ULL && bitboards[3] == 288230376151711744ULL && bitboards[4] == 9295429630892703744ULL && bitboards[5] == 1152921504606846976ULL && bitboards[6] == 576460752303423488ULL && bitboards[7] == 0ULL && bitboards[8] == 0ULL && bitboards[9] == 18014398513718016ULL && bitboards[10] == 66ULL 
+&& bitboards[11] == 36ULL && bitboards[12] == 129ULL && bitboards[13] == 0ULL && bitboards[14] == 8ULL) {
+        print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);
+    }
     order_moves(move_lists[ALL].moves, move_lists[ALL].size, player);
+    if(bitboards[0] == 0ULL && bitboards[1] == 42511517576331264ULL && bitboards[2] == 4611686018427387920ULL && bitboards[3] == 288230376151711744ULL && bitboards[4] == 9295429630892703744ULL && bitboards[5] == 1152921504606846976ULL && bitboards[6] == 576460752303423488ULL && bitboards[7] == 0ULL && bitboards[8] == 0ULL && bitboards[9] == 18014398513718016ULL && bitboards[10] == 66ULL 
+&& bitboards[11] == 36ULL && bitboards[12] == 129ULL && bitboards[13] == 0ULL && bitboards[14] == 8ULL) {
+        //exit(1);
+    }
     //print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);
     Move move;
 
