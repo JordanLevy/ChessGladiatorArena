@@ -111,9 +111,10 @@ class GameMode(Enum):
     ROOK_BLOCKERS = 1
     BISHOP_BLOCKERS = 2
     QUEEN_BLOCKERS = 3
+    PERFT_DEBUG = 4
 
 
-game_mode = GameMode.GAME
+game_mode = GameMode.PERFT_DEBUG
 blockers = 0
 legal_moves = 0
 
@@ -487,7 +488,7 @@ def apply_move(start, end, promo_val):
         set_piece(end, promo_val)
     new_move = Move(start, end, move_id, capture, piece_id, evaluation)
     append_move(new_move)
-    print_move_list()
+
 
 
 def run_game(process):
@@ -572,6 +573,89 @@ def run_game(process):
                             clock_start = time.time()
                         else:
                             send_command(process, 'position fen ' + fen)
+                    press_xy = (-1, -1)
+                    release_xy = (-1, -1)
+                    press_square = -1
+                    release_square = -1
+                    refresh_graphics()
+            if press_square > -1:
+                refresh_graphics()
+
+        pygame.display.update()
+        main_clock.tick(100)
+
+#this is for debuging it will show the legal moives for the opesit player
+def perft_debug(process):
+    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start
+    screen = pygame.display.set_mode((400, 400), 0, 32)
+    main_clock = pygame.time.Clock()
+    pygame.display.init()
+    pygame.display.set_caption('Chess')
+    pygame.font.init()
+    clicking = False
+    init_board()
+    init_fen(start_pos)
+    position_list.append(start_pos)
+    refresh_graphics()
+    press_xy = (-1, -1)
+    release_xy = (-1, -1)
+    press_square = -1
+    release_square = -1
+    promo_key = ''
+
+    while True:
+        mouse_xy = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    send_command(process, 'isready')
+                elif event.key == K_LEFT:
+                    # if there is a move to undo
+                    if len(position_list) > 1:
+                        position_list.pop()
+                        init_fen(position_list[-1])
+                        refresh_graphics()
+                    else:
+                        print("can't undo")
+                elif event.key == K_n:
+                    promo_key = 'n'
+                elif event.key == K_b:
+                    promo_key = 'b'
+                elif event.key == K_r:
+                    promo_key = 'r'
+                elif event.key == K_q:
+                    promo_key = 'q'
+                else:
+                    promo_key = ''
+            if event.type == KEYUP:
+                promo_key = ''
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == BUTTON_LEFT and not clicking:
+                    clicking = True
+                    press_xy = mouse_xy
+                    press_xy = math.floor(press_xy[0] / 50), math.ceil(7 - press_xy[1] / 50)
+                    press_square = coords_to_num(press_xy)
+            if event.type == MOUSEBUTTONUP:
+                if event.button == BUTTON_LEFT and clicking:
+                    clicking = False
+                    release_xy = mouse_xy
+                    release_xy = math.floor(release_xy[0] / 50), math.ceil(7 - release_xy[1] / 50)
+                    release_square = coords_to_num(release_xy)
+                    piece = get_piece(press_square)
+                    promo_num = get_promo_num(is_white_piece(piece), promo_key)
+
+                    # can't start and end a move on the same square
+                    if press_square != release_square and piece != 0:
+                        # human move
+                        apply_move(press_square, release_square, promo_num)
+                        white_turn = not white_turn
+                        fen = board_to_fen()
+                        position_list.append(fen)
+                        send_command(process, 'position fen ' + fen)
+                        send_command(process, 'pos_moves')
                     press_xy = (-1, -1)
                     release_xy = (-1, -1)
                     press_square = -1
@@ -692,6 +776,8 @@ def open_communication():
     mode = magic_squares_view
     if(game_mode == GameMode.GAME):
         mode = run_game
+    if(game_mode == GameMode.PERFT_DEBUG):
+        mode = perft_debug
     game_thread = threading.Thread(target=mode, args=(process,))
     read_thread.start()
     # write_thread.start()
@@ -714,7 +800,7 @@ def read_from_process(process):
         if output == b'':
             break
         response = output.decode().strip()
-        print(response)
+        #print(response)
         if response.startswith('bestmove'):
             print('time: ', time.time() - clock_start)
             cmd, move = response.split(' ')
@@ -730,6 +816,11 @@ def read_from_process(process):
             cmd, r = response.split(' ')
             legal_moves = int(r)
             refresh_graphics()
+        elif response.startswith('pos_start'):
+            cmd, r = response.split(' ', 1)
+            print(r)
+
+
 
 
 open_communication()

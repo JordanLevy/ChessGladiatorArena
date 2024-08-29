@@ -17,7 +17,7 @@
 #include <unistd.h>
 #endif
 
-void print_legal_moves(Move* moves, int numMoves){
+void print_legal_moves(Move* moves, int numMoves, char delimeter){
     for(int i = 0; i < numMoves; i++){
         Move move = moves[i];
         int s = move.start;
@@ -31,7 +31,7 @@ void print_legal_moves(Move* moves, int numMoves){
 
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
-        printf("%c%d\t%d\n", file, rank, m);
+        printf("%c%d\t%d%c", file, rank, m, delimeter);
     }
 }
 

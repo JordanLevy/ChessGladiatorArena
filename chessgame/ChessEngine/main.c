@@ -19,28 +19,12 @@ int main(){
     init_zobrist_keys();
     init_hash_table();
     init_magic();
-    char* fen = "rn1qkb1r/pP1p1ppp/4p3/8/8/1P6/P1P3PP/RNBnKBNR b KQkq - 0 3";//start_position;
+    char* fen = start_position;
     size_t fen_length = strlen(fen);
     init_fen(fen, fen_length);
 
-    /*MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
-    move_lists[ALL].size = 0; 
-    move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));*/
-
-    draw_board();
-    /*printf("if(");
-    for(int i = 0; i < 15; i++){
-        printf("bitboards[%d] == %lluULL && ", i, bitboards[i]);
-    }
-
-    printf(")");*/
-
-    /*update_possible_moves(move_lists);
-    order_moves(move_lists[ALL].moves, move_lists[ALL].size, true);
-    print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size);*/
-
-    inputGo("go depth 6");
-    /*unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
+    /*
+    unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
     int* result_shift = (int*)calloc(64, sizeof(int));
     generate_bishop_magic_numbers(50, 1000, result_magic, result_shift, 15, 30);
     for(int i = 0; i < 64; i++){
@@ -49,7 +33,7 @@ int main(){
     write_bishop_moves_lookup_to_file(result_magic, result_shift);
     free(result_magic);
     free(result_shift);*/
-    //uci_communication();
+    uci_communication();
     return 0;
 }
 //get_blockers [rook_pos] [blocker_index]

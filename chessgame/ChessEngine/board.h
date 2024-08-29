@@ -12,6 +12,7 @@
 #define copy_board()                                             \
     unsigned char board_copy[64];                                \
     unsigned long long bitboards_copy[15];                       \
+    int next_spec_copy[15];                                      \
     int piece_location_copy[256];                                \
     unsigned long long white_pieces_copy = white_pieces;         \
     unsigned long long black_pieces_copy = black_pieces;         \
@@ -22,6 +23,7 @@
     COPY_ARRAY(board_copy, board, 64);                           \
     COPY_ARRAY(piece_location_copy, piece_location, 256);        \
     COPY_ARRAY(bitboards_copy, bitboards, 15);                   \
+    COPY_ARRAY(next_spec_copy, next_spec, 15);                   \
     bool white_turn_copy = white_turn;                           \
     int  enpassant_square_copy = enpassant_square;               \
     int castling_rights_copy = castling_rights;                  \
@@ -31,8 +33,9 @@
 //the new undo_move
 #define take_back()                                       \
     COPY_ARRAY(board, board_copy, 64);                    \
-    COPY_ARRAY(bitboards, bitboards_copy, 15);            \
     COPY_ARRAY(piece_location, piece_location_copy, 256); \
+    COPY_ARRAY(bitboards, bitboards_copy, 15);            \
+    COPY_ARRAY(next_spec, next_spec_copy, 15);            \
     white_pieces = white_pieces_copy;                     \
     black_pieces = black_pieces_copy;                     \
     not_white_pieces = not_white_pieces_copy;             \

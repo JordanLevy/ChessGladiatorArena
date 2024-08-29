@@ -5,7 +5,7 @@
 
 #define COPY_ARRAY(dest, src, n) memcpy((dest), (src), (n) * sizeof(*(src)))
 
-void print_legal_moves(Move *moves, int numMoves);
+void print_legal_moves(Move *moves, int numMoves, char delimeter);
 
 void print_move(Move move);
 
