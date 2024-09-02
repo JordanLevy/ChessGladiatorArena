@@ -105,6 +105,8 @@ engine_enabled = True
 
 path_to_exe = './ChessEngine/main.exe'
 
+move_aray_fin = []
+
 
 class GameMode(Enum):
     GAME = 0
@@ -132,6 +134,17 @@ def get_file_letter(n):
 # get what rank you are on given an index 0-63
 def get_rank(n):
     return n // 8
+
+def letter_to_file_num(l):
+    rank = ord(l) - 97
+    return  rank
+
+#tern in notation to position on the board
+#eg. B7 = 75,75 c7 = 75, 125
+def notation_to_pixel(notation, offset = (0, 0)):
+    file = letter_to_file_num(notation[0]) * 50 + offset[0]
+    rank = (8 - int(notation[1])) * 50 + offset[1]
+    return file, rank
 
 
 # takes in a number and spits out the square in algabraic notation
@@ -354,11 +367,12 @@ def init_fen(fen):
 def blocker_mode_enabled():
     return game_mode == GameMode.ROOK_BLOCKERS or game_mode == GameMode.BISHOP_BLOCKERS or game_mode == GameMode.QUEEN_BLOCKERS
 
+def perft_debug_enabled():
+    return game_mode == GameMode.PERFT_DEBUG
 
 def draw_board():
     w_check = False
     b_check = False
-
     font = pygame.font.SysFont('Arial', 18, bold=True)
     prev_move = None
     if move_list:
@@ -402,6 +416,9 @@ def draw_board():
             img = font.render(str(piece_spec), True, pygame.Color(WHITE), pygame.Color(GRAY_GREEN))
             screen.blit(img, (mouse_xy[0] - 25, mouse_xy[1] - 25))
 
+    if(perft_debug_enabled()):
+        for i in range(len(move_aray_fin)):
+            pygame.draw.line(screen, GREEN, notation_to_pixel(move_aray_fin[i][0][1:3], (25, 25)), notation_to_pixel(move_aray_fin[i][0][3:5], (25, 25)), 4)
 
 def refresh_graphics():
     draw_board()
@@ -794,7 +811,7 @@ def close_communication(process):
 
 
 def read_from_process(process):
-    global blockers, legal_moves
+    global blockers, legal_moves, move_aray_fin
     while True:
         output = process.stdout.readline()
         if output == b'':
@@ -818,7 +835,17 @@ def read_from_process(process):
             refresh_graphics()
         elif response.startswith('pos_start'):
             cmd, r = response.split(' ', 1)
-            print(r)
+            #print(r)
+            move_aray1 = r.split(',')
+            #print(move_aray1)
+            move_aray_fin = []
+            for i in range(len(move_aray1)):
+                move = move_aray1[i].split('\t')
+                #print(move)
+                move_aray_fin.append((move[1], move[2]))
+
+
+
 
 
 

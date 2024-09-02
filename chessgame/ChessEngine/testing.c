@@ -31,8 +31,12 @@ void print_legal_moves(Move* moves, int numMoves, char delimeter){
 
         file = file_letter(7 - get_file(e));
         rank = get_rank(e) + 1;
-        printf("%c%d\t%d%c", file, rank, m, delimeter);
+        printf("%c%d\t%d", file, rank, m);
+        if(i != numMoves-1){
+           printf("%c", delimeter);
+        }
     }
+    printf("\n");
 }
 
 void print_move(Move move){
