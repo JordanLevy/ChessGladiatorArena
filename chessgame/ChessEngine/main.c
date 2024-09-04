@@ -13,6 +13,7 @@
 #include "testing.h"
 #include "uci.h"
 #include "transposition.h"
+#include "engine.h"
 
 int main(){
     init_zobrist_keys();
@@ -21,8 +22,9 @@ int main(){
     char* fen = start_position;
     size_t fen_length = strlen(fen);
     init_fen(fen, fen_length);
-    draw_board();
-    /*unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
+
+    /*
+    unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
     int* result_shift = (int*)calloc(64, sizeof(int));
     generate_bishop_magic_numbers(50, 1000, result_magic, result_shift, 15, 30);
     for(int i = 0; i < 64; i++){

@@ -150,6 +150,19 @@ void inputLegalMoves(char* input){
     printf("legal_moves %llu\n", legal_moves);
 }
 
+void imputPossibleMoves(char* moves){
+    //makes the move_list
+    MoveList* move_lists = (MoveList*)malloc(1 * sizeof(MoveList));
+    move_lists[ALL].size = 0; 
+    move_lists[ALL].moves = (Move*)malloc(80 * sizeof(Move));
+
+    update_possible_moves(move_lists);
+
+    printf("pos_start ");
+    print_legal_moves(move_lists[ALL].moves, move_lists[ALL].size, ',');
+    
+}
+
 void inputBishopLegalMoves(char* input){
     int bishop_pos;
     int blocker_config;
@@ -193,7 +206,10 @@ void uci_communication(){
             } else if(startswith(command, "get_legal_moves")) {
                 printf("%s\n", command);
                 inputLegalMoves(command);
-            } else if(startswith(command, "generate_magic")){
+            } else if(startswith(command, "pos_moves")) {
+                printf("%s\n", command);
+                imputPossibleMoves(command);
+            }else if(startswith(command, "generate_magic")){
                 printf("%s\n", command);
                 
 
