@@ -442,6 +442,10 @@ def print_move_list():
         print_move(m)
     print()
 
+def print_position_list():
+    for position in position_list:
+        print(position)
+    print()
 
 def apply_move(start, end, promo_val):
     global board, wK_num_moves, bK_num_moves, kingside_wR_num_moves, queenside_wR_num_moves, kingside_bR_num_moves, queenside_bR_num_moves
@@ -511,10 +515,8 @@ def apply_move(start, end, promo_val):
     new_move = Move(start, end, move_id, capture, piece_id, evaluation)
     append_move(new_move)
 
-
-
 def run_game(process):
-    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start, move_count
+    global board, white_turn, screen, press_xy, release_xy, press_square, release_square, mouse_xy, clock_start, move_count, position_list
     screen = pygame.display.set_mode((400, 400), 0, 32)
     main_clock = pygame.time.Clock()
     pygame.display.init()
@@ -609,8 +611,11 @@ def run_game(process):
                         apply_move(press_square, release_square, promo_num)
                         white_turn = not white_turn
                         fen = board_to_fen()
-                        position_list.append(fen)
+                        if(move_count < len(position_list)-1):
+                            position_list= position_list[0:move_count+1]
+                        
                         move_count = move_count +1
+                        position_list.append(fen)
                         if perft_debug_enabled:
                             send_command(process, 'position fen ' + fen)
                             send_command(process, 'pos_moves')
@@ -757,7 +762,7 @@ def close_communication(process):
 
 
 def read_from_process(process):
-    global blockers, legal_moves, move_aray_fin, move_count
+    global blockers, legal_moves, move_aray_fin, move_count, position_list
     while True:
         output = process.stdout.readline()
         if output == b'':
@@ -773,11 +778,10 @@ def read_from_process(process):
             start, end, promo = decode_notation(move)
             apply_move(start, end, promo)
             fen = board_to_fen()
+            if(move_count < len(position_list)-1):
+                position_list= position_list[0:move_count+1]
+            position_list.append(fen)
             move_count = move_count +1
-            if move_count < len(position_list):
-                position_list[move_count]= fen
-            else:
-                position_list.append(fen)
             if perft_debug_enabled:
                 send_command(process, 'position fen ' + fen)
                 send_command(process, 'pos_moves')
