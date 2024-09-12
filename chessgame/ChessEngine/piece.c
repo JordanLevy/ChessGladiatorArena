@@ -530,18 +530,18 @@ void update_possible_moves(MoveList* move_lists){
 void apply_rook_move(unsigned char id){
     if(white_turn){
         if(id == kingside_wR){
-            castling_rights &= ~CAN_CASTLE_WK;
+            kingside_wR_num_moves++;
         }
         else if(id == queenside_wR){
-            castling_rights &= ~CAN_CASTLE_WQ;
+            queenside_wR_num_moves++;
         }
     }
     else{
         if(id == kingside_bR){
-            castling_rights &= ~CAN_CASTLE_BK;
+            kingside_bR_num_moves++;
         }
         else if(id == queenside_bR){
-            castling_rights &= ~CAN_CASTLE_BQ;
+            queenside_bR_num_moves++;
         }
     }
 }

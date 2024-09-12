@@ -135,6 +135,8 @@ typedef struct MoveList{
     int size;
 } MoveList;
 
+extern Move move_list[256];
+
 extern Move engine_move;
 
 // best test alpha and beta

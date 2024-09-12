@@ -350,3 +350,5 @@ bool queen_magic_enabled = false;
 
 //this is for enpassant
 int enpassant_square = -1;
+
+Move move_list[256];

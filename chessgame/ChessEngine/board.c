@@ -251,11 +251,7 @@ void init_fen(char *fen, size_t fen_length){
         else if (fen_section == 3){
             //section 3 code
             //this handels in enpasont casle
-            if(current == '-'){
-                enpassant_square = -1;
-
-            }
-            else{
+           if(current != '-'){
                 char en_passant_file = current;
                 i += 1;
                 current = fen[i];
@@ -263,8 +259,20 @@ void init_fen(char *fen, size_t fen_length){
 
                 int en_passant_rank = (int)en_passant_rank_char - 48;
 
+                Move double_pawn;
                 //this is notation to num eg. a1 to 7
-                enpassant_square = notation_to_number(en_passant_file, en_passant_rank);
+                int square_num = notation_to_number(en_passant_file, en_passant_rank);
+                double_pawn.move_id = DOUBLE_PAWN_PUSH;
+                if(en_passant_rank == 6){
+                    double_pawn.start = square_num + 8;
+                    double_pawn.end = square_num - 8;
+                }
+                else if(en_passant_rank == 3){
+                    double_pawn.start = square_num - 8;
+                    double_pawn.end = square_num + 8;
+                }
+                double_pawn.piece_id = get_piece(double_pawn.end);
+                append_move(move_list, double_pawn, &num_moves);
             }
         }
     }
@@ -422,21 +430,24 @@ bool apply_move(int start, int end, int move_id){
     }
     else{
         // previous move start, end, and move_id
-        if(enpassant_square != -1 && end == enpassant_square){
-
-            int remove_square = enpassant_square;
+       if(num_moves > 0){
+            Move prev_move = move_list[num_moves - 1];
+            int e = prev_move.end;
+            int m = prev_move.move_id;
+            unsigned char ep_pawn = get_piece(e);  // pawn that was captured en passant
+            unsigned char ep_pawn_type = get_type(ep_pawn);
             // white capturing en passant
-            if(type == wP){
-                remove_square -= 8;
+            if(m == DOUBLE_PAWN_PUSH && type == wP && ep_pawn_type == bP && end - e == 8){
+                remove_piece(ep_pawn, e);
+                new_m = EN_PASSANT_CAPTURE;
+                new_c = ep_pawn;
             }
             // black capturing en passant
-            else if(type == bP){
-                remove_square += 8;
+            else if(m == DOUBLE_PAWN_PUSH && type == bP && ep_pawn_type == wP && end - e == -8){
+                remove_piece(ep_pawn, e);
+                new_m = EN_PASSANT_CAPTURE;
+                new_c = ep_pawn;
             }
-            unsigned char ep_pawn = get_piece(remove_square);  // pawn that was captured en passant
-            remove_piece(ep_pawn, remove_square);
-            new_m = EN_PASSANT_CAPTURE;
-            new_c = ep_pawn;
         }
     }
     Move move;
@@ -445,7 +456,7 @@ bool apply_move(int start, int end, int move_id){
     move.move_id = new_m;
     move.piece_id = moved_piece;
     move.capture = new_c;
-
+    move_list[num_moves] = move;
     incr_num_moves();
     flip_turns();
     return true;
@@ -459,6 +470,79 @@ bool get_black_check(){
     return black_check;
 }
 
+void undo_move(){
+    // can't undo if nothing has been played
+    if(num_moves == 0){
+        return;
+    }
+
+    if (!white_turn){
+        zobrist_hash ^= side_key;
+    }
+
+    //previous move (the one we're undoing)
+    Move move = move_list[num_moves - 1];
+    int start = move.start;
+    int end = move.end;
+    int move_id = move.move_id;
+    int capture = move.capture;
+    // the piece that was moved
+    unsigned char moved_piece = get_piece(end);
+    unsigned char type = get_type(moved_piece);
+    bool is_white = is_white_piece(moved_piece);
+    move_piece(moved_piece, end, start);
+    undo_rook_move(moved_piece);
+    // last move was a capture
+    if(capture > 0){
+        // last move was en passant
+        if(move_id == EN_PASSANT_CAPTURE){
+            // en passant is the only case where the captured piece isn't on the end square
+            if(is_white){
+                revive_piece(capture, end - 8);
+            }
+            else{
+                revive_piece(capture, end + 8);
+            }
+        }
+        else{
+            revive_piece(capture, end);
+        }
+    }
+    if(move_id == 0){
+    }
+    // last move was pawn promotion
+    else if(1 <= move_id && move_id <= 15){
+        destroy_piece(moved_piece, start);
+        unsigned char promoted_pawn = move.piece_id;
+        revive_piece(promoted_pawn, start);
+    }
+    // last move was double pawn push
+    else if(move_id == DOUBLE_PAWN_PUSH){
+    }
+    // last move was castling
+    else if(move_id == CASTLING){
+        undo_castling(moved_piece, start, end);
+    }
+
+    // if we're undoing a white king move
+    if(type == wK){
+        wK_num_moves -= 1;
+    }
+    // if we're undoing a black king move
+    else if(type == bK){
+        bK_num_moves -= 1;
+    }
+}
+
+bool try_undo_move(){
+    if(num_moves > 0){
+        undo_move();
+        decr_num_moves();
+        flip_turns();
+        return true;
+    }
+    return false;
+}
 
 char piece_letter(int piece_id, bool caps){
     char letters[] = "_PNBRQK__pnbrqk";

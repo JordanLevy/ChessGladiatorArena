@@ -46,6 +46,9 @@
     enpassant_square = enpassant_square_copy;             \
     castling_rights = castling_rights_copy;               \
 
+
+void undo_move();
+
 unsigned char get_piece(int square);
 
 void draw_board();
