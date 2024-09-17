@@ -22,7 +22,7 @@ int main(){
     char* fen = start_position;
     size_t fen_length = strlen(fen);
     init_fen(fen, fen_length);
-
+   // inputGo("go depth 6");
     /*
     unsigned long long* result_magic = (unsigned long long*)calloc(64, sizeof(unsigned long long));
     int* result_shift = (int*)calloc(64, sizeof(int));

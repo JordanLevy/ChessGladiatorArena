@@ -479,6 +479,33 @@ void possible_K(unsigned long long bb, unsigned long long mask, unsigned char co
             add_moves_offset(squares, 2, 0, 0, 0, move_lists);
         }
     }
+
+        // this is white king, hasn't moved yet
+    if(is_white && wK_num_moves == 0){
+        // white queenside castle
+        if(piece_location[queenside_wR] == 7 && queenside_wR_num_moves == 0){
+            squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
+            add_moves_offset(squares, -2, 0, 0, 0, move_lists);
+        }
+        // white kingside castle
+        if(piece_location[kingside_wR] == 0 && kingside_wR_num_moves == 0){
+            squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
+            add_moves_offset(squares, 2, 0, 0, 0, move_lists);
+        }
+    }
+    // this is black king, hasn't moved yet
+    else if(!is_white && bK_num_moves == 0){
+        // black queenside castle
+        if(piece_location[queenside_bR] == 63 && queenside_bR_num_moves == 0){
+            squares = l_shift(bb, 2) & l_shift(empty_and_safe, 1) & empty_and_safe & l_shift(empty, -1);
+            add_moves_offset(squares, -2, 0, 0, 0, move_lists);
+        }
+        // black kingside castle
+        if(piece_location[kingside_bR] == 56 && kingside_bR_num_moves == 0){
+            squares = l_shift(bb, -2) & l_shift(empty_and_safe, -1) & empty_and_safe;
+            add_moves_offset(squares, 2, 0, 0, 0, move_lists);
+        }
+    }
 }
 
 void update_piece_masks(){
@@ -517,6 +544,10 @@ void possible_moves_black(MoveList* move_lists){
 }
 
 void update_possible_moves(MoveList* move_lists){
+    if(move_lists[ALL].size == 17){
+        printf("Before disaster\n");
+        print_legal_moves(move_lists[ALL].moves,move_lists[ALL].size,' ');
+    }
     if(white_turn){
         possible_moves_white(move_lists);
     }
@@ -545,7 +576,6 @@ void apply_rook_move(unsigned char id){
         }
     }
 }
-
 bool apply_castling(unsigned char id, int start, int end){
     unsigned char type = get_type(id);
     bool is_castling = false;
@@ -562,6 +592,7 @@ bool apply_castling(unsigned char id, int start, int end){
             piece_location[queenside_wR] = 4;
             is_castling = true;
         }
+        wK_num_moves++;
     }
     else if(type == bK){
         //black kingside castling
@@ -576,8 +607,61 @@ bool apply_castling(unsigned char id, int start, int end){
             piece_location[queenside_bR] = 60;
             is_castling = true;
         }
+        bK_num_moves++;
     }
     return is_castling;
+}
+
+// bool apply_castling(unsigned char id, int start, int end){
+//     unsigned char type = get_type(id);
+//     bool is_castling = false;
+//     if(type == wK){
+//         //white kingside castling
+//         if(end - start == -2){
+//             move_piece(kingside_wR, 0, 2);
+//             piece_location[kingside_wR] = 2;
+//             is_castling = true;
+//         }
+//         //white queenside castling
+//         if(end - start == 2){
+//             move_piece(queenside_wR, 7, 4);
+//             piece_location[queenside_wR] = 4;
+//             is_castling = true;
+//         }
+//     }
+//     else if(type == bK){
+//         //black kingside castling
+//         if(end - start == -2){
+//             move_piece(kingside_bR, 56, 58);
+//             piece_location[kingside_bR] = 58;
+//             is_castling = true;
+//         }
+//         //black queenside castling
+//         if(end - start == 2){
+//             move_piece(queenside_bR, 63, 60);
+//             piece_location[queenside_bR] = 60;
+//             is_castling = true;
+//         }
+//     }
+//     return is_castling;
+// }
+
+
+// if they moved one of the castling rooks, decrement the number of moves it has made
+// given the id of the piece that was moved, and whose turn it was
+void undo_rook_move(unsigned char id){
+    if(id == kingside_wR){
+        kingside_wR_num_moves--;
+    }
+    else if(id == queenside_wR){
+        queenside_wR_num_moves--;
+    }
+    else if(id == kingside_bR){
+        kingside_bR_num_moves--;
+    }
+    else if(id == queenside_bR){
+        queenside_bR_num_moves--;
+    }
 }
 
 /*

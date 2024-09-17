@@ -103,7 +103,7 @@ wK_num_moves = 0
 bK_num_moves = 0
 
 show_spec = True
-engine_enabled = True
+engine_enabled = False
 perft_debug_enabled = True
 
 file_dir=os.path.dirname(os.path.realpath(__file__))

@@ -201,6 +201,15 @@ extern unsigned char board[64];
 
 // given a piece_id, get the square 0-63 that piece is on
 extern int piece_location[256];
+// number of times each of the 4 castling rooks has moved
+extern int kingside_wR_num_moves;
+extern int queenside_wR_num_moves;
+extern int kingside_bR_num_moves;
+extern int queenside_bR_num_moves;
+
+// number of times each king has moved
+extern int wK_num_moves;
+extern int bK_num_moves;
 
 // next available spec to assign to a new piece of a given type
 //e.g. If I create a new white knight, what will its spec be? next_spec[wN]

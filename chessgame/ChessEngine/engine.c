@@ -169,12 +169,16 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             copy_board();
             bool succeeded = apply_move(move.start, move.end, move.move_id);
             if(!succeeded){
+
+                print_legal_moves(move_lists[ALL].moves,move_lists[ALL].size,'\n');
                 printf("%d failedw\n", depth);
                 exit(5);
             }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, false, line, best_line);
-            take_back();
+            //take_back();
+            undo_move();
+            flip_turns();
             decr_num_moves();
             if(evaluation > maxEval){
                 maxEval = evaluation;
@@ -208,7 +212,9 @@ int search_moves_pruning(int depth, int start_depth, int alpha, int beta, bool p
             }
             line[depth] = move;
             int evaluation = search_moves_pruning(depth - 1, start_depth, alpha, beta, true, line, best_line);
-            take_back();
+            //take_back();
+            undo_move();
+            flip_turns();
             decr_num_moves();
             if(evaluation < minEval){
                 minEval = evaluation;
@@ -268,7 +274,9 @@ int search_moves_transposition(int depth, int start_depth, int alpha, int beta, 
         ply++;
         val = -search_moves_transposition(depth - 1, start_depth, -beta, -alpha, !player, line, best_line);
         ply--;
-        take_back();
+        //take_back();
+        undo_move();
+        flip_turns();
         printf("after\n");
         draw_board();
         printf("\n");
@@ -335,7 +343,9 @@ int search_moves_captures(int alpha, int beta, bool player){
         ply++;
         val = -search_moves_captures(-beta, -alpha, !player);
         ply--;
-        take_back();
+        //take_back();
+        undo_move();
+        flip_turns();
         decr_num_moves();
         if(val >= beta){
             free(move_lists[ALL].moves);

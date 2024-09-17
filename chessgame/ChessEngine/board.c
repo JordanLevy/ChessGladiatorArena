@@ -119,6 +119,16 @@ void reset_board(){
     empty = 0ULL;
     occupied = 0ULL;
 
+    
+    kingside_wR_num_moves = 0;
+    queenside_wR_num_moves = 0;
+    kingside_bR_num_moves = 0;
+    queenside_bR_num_moves = 0;
+
+    // number of times each king has moved
+    wK_num_moves = 0;
+    bK_num_moves = 0;
+
     unsafe_white = 0ULL;
     unsafe_black = 0ULL;
 
@@ -173,6 +183,11 @@ void init_fen(char *fen, size_t fen_length){
     int square = 63;
     char current = '_';
     int fen_section = 0;
+    castling_rights = 0;
+    kingside_wR_num_moves = 1;
+    queenside_wR_num_moves = 1;
+    kingside_bR_num_moves = 1;
+    queenside_bR_num_moves = 1;
     castling_rights = 0;
     for(int i = 0; i < fen_length; i++){
         current = fen[i];
@@ -230,6 +245,26 @@ void init_fen(char *fen, size_t fen_length){
             }
             // this is the end of secton 1
 
+        }
+                //this is the start of section 2
+        //this section handals casaling rights
+        else if (fen_section == 2){
+            if (current == 'K'){
+                castling_rights |= CAN_CASTLE_WK;
+                kingside_wR_num_moves = 0;
+            }
+            else if (current == 'Q'){
+                castling_rights |= CAN_CASTLE_WQ;
+                queenside_wR_num_moves = 0;
+            }
+            else if (current == 'k'){
+                castling_rights |= CAN_CASTLE_BK;
+                kingside_bR_num_moves = 0;
+            }
+            else if (current == 'q'){
+                castling_rights |= CAN_CASTLE_BQ;
+                queenside_bR_num_moves = 0;
+            }
         }
         //this is the start of section 2
         //this section handals casaling rights
@@ -533,6 +568,7 @@ void undo_move(){
         bK_num_moves -= 1;
     }
 }
+
 
 bool try_undo_move(){
     if(num_moves > 0){

@@ -334,6 +334,16 @@ unsigned char board[64] = {EMPTY_SQUARE};
 // given a piece_id, get the square 0-63 that piece is on
 int piece_location[256] = {-1};
 
+// number of times each of the 4 castling rooks has moved
+int kingside_wR_num_moves = 0;
+int queenside_wR_num_moves = 0;
+int kingside_bR_num_moves = 0;
+int queenside_bR_num_moves = 0;
+
+// number of times each king has moved
+int wK_num_moves = 0;
+int bK_num_moves = 0;
+
 // next available spec to assign to a new piece of a given type
 //e.g. If I create a new white knight, what will its spec be? next_spec[wN]
 int next_spec[15] = {0};
